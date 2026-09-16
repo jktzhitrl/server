@@ -225,6 +225,48 @@
     color: var(--ink-soft);
     font-size: 11.5px;
   }
+
+  .kmgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    align-items: start;
+  }
+  .kmcol h3 {
+    margin-bottom: 6px;
+  }
+  table.kmtab {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table.kmtab thead th {
+    position: static;
+    background: var(--paper-raised);
+    border-bottom: 2px solid var(--rule-strong);
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+  }
+  table.kmtab td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  table.kmtab tbody tr:last-child td { border-bottom: none; }
+  table.kmtab td.kmval {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    font-weight: 600;
+  }
+  table.kmtab tr.kmest { background: var(--gz-bg); }
+  .kmstar { color: var(--accent); font-weight: 700; margin-left: 1px; }
 </style>
 
 <div class="masthead">
@@ -244,6 +286,59 @@
   <span><span class="dot rb"></span><b>RB</b> &ndash; Regionalbahn</span>
   <span><span class="dot gz"></span><b>G&uuml;ter</b> &ndash; G&uuml;terzug</span>
 </div>
+
+<section class="route" id="kilometrierung">
+<h2>Kilometrierung</h2>
+<p class="meta">Streckenkilometer aller Betriebsstellen. Geschätzte Werte sind mit * markiert – sie stammen nicht aus der Aufgabenstellung, sondern sind zwischen den bekannten Nachbar-Kilometern interpoliert.</p>
+<div class="kmgrid">
+<div class="kmcol">
+<h3>Strecke 1: Krug ↔ Furth</h3>
+<table class="kmtab"><thead><tr><th>Betriebsstelle</th><th>km</th></tr></thead><tbody>
+<tr><td>Krug</td><td class="kmval">34.5</td></tr>
+<tr><td>Zollfurt</td><td class="kmval">35.5</td></tr>
+<tr class="kmest"><td>Waldenberg<span class="kmstar">*</span></td><td class="kmval">37.5</td></tr>
+<tr><td>Burgwald</td><td class="kmval">40.0</td></tr>
+<tr class="kmest"><td>Steinbruch-Anschl.<span class="kmstar">*</span></td><td class="kmval">42.0</td></tr>
+<tr><td>Langenbach</td><td class="kmval">45.0</td></tr>
+<tr><td>Hyxel</td><td class="kmval">49.0</td></tr>
+<tr><td>Lindenau</td><td class="kmval">58.0</td></tr>
+<tr class="kmest"><td>Großrafenerie-Anschl.<span class="kmstar">*</span></td><td class="kmval">60.0</td></tr>
+<tr class="kmest"><td>Altensund<span class="kmstar">*</span></td><td class="kmval">62.0</td></tr>
+<tr><td>Obersosa</td><td class="kmval">63.5</td></tr>
+<tr class="kmest"><td>Kunststoffwerk<span class="kmstar">*</span></td><td class="kmval">65.5</td></tr>
+<tr><td>Rotheim</td><td class="kmval">68.0</td></tr>
+<tr><td>Feldheim</td><td class="kmval">75.5</td></tr>
+<tr><td>Unterfels</td><td class="kmval">81.5</td></tr>
+<tr><td>Lossow</td><td class="kmval">88.0</td></tr>
+<tr><td>Furth</td><td class="kmval">117.5</td></tr>
+</tbody></table>
+</div>
+<div class="kmcol">
+<h3>Strecke 2: Bernstein ↔ Obersosa</h3>
+<table class="kmtab"><thead><tr><th>Betriebsstelle</th><th>km</th></tr></thead><tbody>
+<tr><td>Bernstein</td><td class="kmval">0.0</td></tr>
+<tr><td>Silberberg</td><td class="kmval">24.5</td></tr>
+<tr><td>Chem. I</td><td class="kmval">30.0</td></tr>
+<tr><td>Feldkirchen</td><td class="kmval">31.0</td></tr>
+<tr><td>Finsterberg</td><td class="kmval">40.0</td></tr>
+<tr><td>Chem. II</td><td class="kmval">41.0</td></tr>
+<tr><td>Hochstein</td><td class="kmval">46.0</td></tr>
+<tr><td>Obersosa</td><td class="kmval">51.0</td></tr>
+</tbody></table>
+</div>
+<div class="kmcol">
+<h3>Strecke 3: Waldenberg ↔ Gbf (Nebenbahn)</h3>
+<table class="kmtab"><thead><tr><th>Betriebsstelle</th><th>km</th></tr></thead><tbody>
+<tr><td>Waldenberg</td><td class="kmval">0.0</td></tr>
+<tr><td>Wehrheim</td><td class="kmval">7.0</td></tr>
+<tr><td>Sandheide</td><td class="kmval">14.5</td></tr>
+<tr><td>Getreide</td><td class="kmval">18.0</td></tr>
+<tr><td>Wassergrund</td><td class="kmval">19.0</td></tr>
+<tr><td>Gbf</td><td class="kmval">29.5</td></tr>
+</tbody></table>
+</div>
+</div>
+</section>
 
 <section class="route">
 <h2>Strecke 1: Krug ↔ Furth</h2>
