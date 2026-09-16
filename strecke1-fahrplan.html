@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bildfahrplan Strecke 1 - Mitteltrasse Los 5</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -58,7 +60,9 @@
 
         .table-wrapper {
             overflow-x: auto;
-            font-size: 11px;
+            font-size: 10px;
+            max-height: 500px;
+            overflow-y: auto;
         }
 
         table {
@@ -69,53 +73,55 @@
 
         th, td {
             border: 1px solid #ddd;
-            padding: 5px 3px;
+            padding: 4px 2px;
             text-align: center;
         }
 
         th {
             background: #f0f0f0;
             font-weight: 600;
-            font-size: 10px;
+            font-size: 9px;
+            position: sticky;
+            top: 0;
         }
 
         td {
             background: white;
-            font-size: 10px;
+            font-size: 9px;
         }
 
         input[type="text"], input[type="time"], input[type="number"] {
             width: 100%;
             border: 1px solid #bbb;
-            padding: 3px 2px;
-            border-radius: 3px;
-            font-size: 10px;
+            padding: 2px;
+            border-radius: 2px;
+            font-size: 9px;
         }
 
         select {
             width: 100%;
             border: 1px solid #bbb;
-            padding: 3px 2px;
-            border-radius: 3px;
-            font-size: 10px;
+            padding: 2px;
+            border-radius: 2px;
+            font-size: 9px;
         }
 
         input:focus, select:focus {
             outline: none;
             border-color: #0066cc;
-            box-shadow: 0 0 3px rgba(0,102,204,0.3);
+            box-shadow: 0 0 2px rgba(0,102,204,0.3);
         }
 
         button {
             background: #0066cc;
             color: white;
             border: none;
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
-            margin-top: 8px;
-            margin-right: 5px;
+            font-size: 10px;
+            margin-top: 6px;
+            margin-right: 4px;
         }
 
         button:hover {
@@ -130,6 +136,14 @@
             background: #218838;
         }
 
+        .export-btn {
+            background: #fd7e14;
+        }
+
+        .export-btn:hover {
+            background: #e0680b;
+        }
+
         canvas {
             border: 1px solid #ddd;
             background: white;
@@ -140,11 +154,11 @@
 
         .legend {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 8px;
-            font-size: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 6px;
+            font-size: 9px;
             margin-top: 10px;
-            padding: 10px;
+            padding: 8px;
             background: #f9f9f9;
             border-radius: 4px;
         }
@@ -152,58 +166,59 @@
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .legend-color {
-            width: 3px;
-            height: 15px;
-            border-radius: 2px;
+            width: 2px;
+            height: 12px;
+            border-radius: 1px;
         }
 
         .settings-box {
             background: #f0f8ff;
             border-left: 4px solid #0066cc;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 8px;
+            margin-bottom: 12px;
             border-radius: 3px;
         }
 
         .time-range {
             display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 6px;
+            margin-bottom: 6px;
             align-items: center;
             flex-wrap: wrap;
-            font-size: 11px;
+            font-size: 10px;
         }
 
         .button-row {
             display: flex;
-            gap: 5px;
+            gap: 4px;
             flex-wrap: wrap;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Bildfahrplan Strecke 1: Krug – Obersosa – Furth (Notion-Daten)</h1>
+        <h1>📊 Bildfahrplan Strecke 1: Krug–Furth (Vollständig)</h1>
 
         <div class="panel">
             <div class="settings-box">
-                <h2 style="border: none; margin-bottom: 8px; font-size: 12px;">⚙️ Einstellungen</h2>
+                <h2 style="border: none; margin-bottom: 6px; font-size: 11px;">⚙️ Einstellungen</h2>
 
                 <div class="time-range">
-                    <label style="flex: 0;">Von:</label>
-                    <input type="time" id="startTime" value="09:30" style="flex: 1; min-width: 70px;">
-                    <label style="flex: 0;">Bis:</label>
-                    <input type="time" id="endTime" value="12:00" style="flex: 1; min-width: 70px;">
+                    <label style="flex: 0; font-size: 9px;">Von:</label>
+                    <input type="time" id="startTime" value="09:00" style="flex: 0.8; min-width: 60px;">
+                    <label style="flex: 0; font-size: 9px;">Bis:</label>
+                    <input type="time" id="endTime" value="12:00" style="flex: 0.8; min-width: 60px;">
                 </div>
 
                 <div class="button-row">
-                    <button onclick="app.updateDisplay()" style="margin-top: 0;">Fahrplan aktualisieren</button>
-                    <button class="add-row-btn" onclick="app.addRowWithAutoCalc('hin')" style="margin-top: 0;">+ Zug</button>
+                    <button onclick="app.updateDisplay()">Aktualisieren</button>
+                    <button class="export-btn" onclick="app.exportPDF()">📄 PDF Export</button>
+                    <button class="add-row-btn" onclick="app.addRow()">+ Zug</button>
                 </div>
             </div>
 
@@ -216,10 +231,17 @@
                             <th>Linie</th>
                             <th>Typ</th>
                             <th>Krug</th>
+                            <th>Zollfurt</th>
                             <th>Wald.</th>
+                            <th>Burg.</th>
+                            <th>Lang.</th>
+                            <th>Alt.</th>
                             <th>Hyxel</th>
+                            <th>Lind.</th>
                             <th>Obers.</th>
+                            <th>Roth.</th>
                             <th>Feldh.</th>
+                            <th>Unterf.</th>
                             <th>Lossow</th>
                             <th>Furth</th>
                             <th></th>
@@ -231,10 +253,10 @@
 
             <div class="button-row">
                 <button onclick="app.saveData()">💾 Speichern</button>
-                <button onclick="app.exportJSON()">📋 JSON Export</button>
+                <button onclick="app.exportJSON()">📋 JSON</button>
             </div>
 
-            <h2 style="margin-top: 15px;">Rück-Richtung (Furth → Krug)</h2>
+            <h2 style="margin-top: 12px;">Rück-Richtung (Furth → Krug)</h2>
 
             <div class="table-wrapper">
                 <table id="tableRueck">
@@ -244,10 +266,17 @@
                             <th>Typ</th>
                             <th>Furth</th>
                             <th>Lossow</th>
+                            <th>Unterf.</th>
                             <th>Feldh.</th>
+                            <th>Roth.</th>
                             <th>Obers.</th>
+                            <th>Lind.</th>
                             <th>Hyxel</th>
+                            <th>Alt.</th>
+                            <th>Lang.</th>
+                            <th>Burg.</th>
                             <th>Wald.</th>
+                            <th>Zollfurt</th>
                             <th>Krug</th>
                             <th></th>
                         </tr>
@@ -256,28 +285,28 @@
                 </table>
             </div>
 
-            <button class="add-row-btn" onclick="app.addRowWithAutoCalc('rueck')" style="margin-top: 10px;">+ Zug</button>
+            <button class="add-row-btn" onclick="app.addRow()">+ Zug</button>
         </div>
 
         <div class="panel">
             <h2>Gleis 1: Hin-Richtung (Krug → Furth)</h2>
-            <canvas id="canvasHin" width="500" height="380"></canvas>
+            <canvas id="canvasHin" width="520" height="400"></canvas>
 
-            <h2 style="margin-top: 15px;">Gleis 2: Rück-Richtung (Furth → Krug)</h2>
-            <canvas id="canvasRueck" width="500" height="380"></canvas>
+            <h2 style="margin-top: 12px;">Gleis 2: Rück-Richtung (Furth → Krug)</h2>
+            <canvas id="canvasRueck" width="520" height="400"></canvas>
 
             <div class="legend">
                 <div class="legend-item">
                     <div class="legend-color" style="background: #e63946;"></div>
-                    <span>IC</span>
+                    <span>IC (Fernzug)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #06a77d;"></div>
-                    <span>RE</span>
+                    <span>RE (Express)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #1d72b8;"></div>
-                    <span>RB</span>
+                    <span>RB (Lokal)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #6c757d;"></div>
@@ -288,24 +317,38 @@
     </div>
 
     <script>
-        // Strecke 1 Stationen mit realen Kilometern (14 Stationen)
+        // Alle 14 Stationen Strecke 1
         const stations = {
             hin: [
                 { name: 'Krug', km: 34.5 },
+                { name: 'Zollfurt', km: 35.5 },
                 { name: 'Waldenberg', km: 36.5 },
+                { name: 'Burgwald', km: 40.0 },
+                { name: 'Langenbach', km: 45.0 },
+                { name: 'Altensund', km: 47.0 },
                 { name: 'Hyxel', km: 49.0 },
+                { name: 'Lindenau', km: 56.0 },
                 { name: 'Obersosa', km: 63.5 },
+                { name: 'Rotheim', km: 68.0 },
                 { name: 'Feldheim', km: 75.5 },
+                { name: 'Unterfels', km: 81.5 },
                 { name: 'Lossow', km: 88.0 },
                 { name: 'Furth', km: 117.5 }
             ],
             rueck: [
                 { name: 'Furth', km: 117.5 },
                 { name: 'Lossow', km: 88.0 },
+                { name: 'Unterfels', km: 81.5 },
                 { name: 'Feldheim', km: 75.5 },
+                { name: 'Rotheim', km: 68.0 },
                 { name: 'Obersosa', km: 63.5 },
+                { name: 'Lindenau', km: 56.0 },
                 { name: 'Hyxel', km: 49.0 },
+                { name: 'Altensund', km: 47.0 },
+                { name: 'Langenbach', km: 45.0 },
+                { name: 'Burgwald', km: 40.0 },
                 { name: 'Waldenberg', km: 36.5 },
+                { name: 'Zollfurt', km: 35.5 },
                 { name: 'Krug', km: 34.5 }
             ]
         };
@@ -313,27 +356,25 @@
         const trainTypes = {
             'IC 11': { color: '#e63946' },
             'IC 13': { color: '#e63946' },
-            'RE 70': { color: '#06a77d' },
             'RE 71': { color: '#06a77d' },
             'RE 70/71': { color: '#06a77d' },
             'RB 61': { color: '#1d72b8' },
-            'RB 63': { color: '#1d72b8' },
-            'RB 64': { color: '#1d72b8' },
             'GZ': { color: '#6c757d' }
         };
 
-        // Notion-Daten für Strecke 1 (10:00-12:00 Fenster)
+        // Notion-Daten vollständig
         const notionData = {
             hin: [
-                { line: 'RE 71', type: 'RE', times: ['09:45', '09:46', '09:53', '10:00', '', '', ''] },
-                { line: 'RE 70/71', type: 'RE', times: ['', '', '', '10:07', '10:13', '10:19', '10:35'] },
-                { line: 'IC 11', type: 'IC', times: ['', '', '', '10:15', '', '', '10:43'] },
-                { line: 'IC 13', type: 'IC', times: ['11:00', '10:59', '', '10:45', '', '', ''] },
-                { line: 'RB 61', type: 'RB', times: ['10:15', '10:18', '10:29', '10:39', '10:49', '10:57', '11:13'] },
+                { line: 'RE 71', type: 'RE', times: ['09:45', '', '09:46', '', '', '', '09:53', '', '10:00', '', '', '', '', ''] },
+                { line: 'RE 70/71', type: 'RE', times: ['', '', '', '', '', '', '', '', '10:07', '10:13', '10:13', '10:19', '10:19', '10:35'] },
+                { line: 'IC 11', type: 'IC', times: ['', '', '', '', '', '', '', '', '10:15', '', '', '', '10:43', '10:43'] },
+                { line: 'IC 13', type: 'IC', times: ['11:00', '', '10:59', '', '', '', '', '', '10:45', '', '', '', '', ''] },
+                { line: 'RB 61', type: 'RB', times: ['10:15', '10:16', '10:18', '10:21', '10:25', '10:27', '10:29', '10:34', '10:39', '10:44', '10:49', '10:53', '10:57', '11:13'] },
+                { line: 'GZ 2', type: 'Güter', times: ['', '', '10:30', '', '', '', '', '', '', '', '', '', '', '10:47'] }
             ],
             rueck: [
-                { line: 'RE 71', type: 'RE', times: ['10:57', '11:04', '11:10', '11:12', '', '', ''] },
-                { line: 'RE 70/71', type: 'RE', times: ['10:22', '10:37', '10:44', '10:50', '', '', ''] },
+                { line: 'RE 71', type: 'RE', times: ['10:57', '', '11:04', '', '', '', '11:10', '', '11:12', '', '', '', '', ''] },
+                { line: 'RE 70/71', type: 'RE', times: ['10:22', '', '10:37', '', '', '', '10:44', '', '10:50', '', '', '', '', ''] }
             ]
         };
 
@@ -380,34 +421,15 @@
                         ${stationList.map((_, i) => `
                             <td><input type="time" value="${row.times[i] || ''}" onchange="app.updateDisplay()"></td>
                         `).join('')}
-                        <td><button onclick="app.deleteRow('${tableId}', ${idx})" style="background: #dc3545; padding: 3px 5px; margin: 0; font-size: 9px;">×</button></td>
+                        <td><button onclick="app.deleteRow('${tableId}', ${idx})" style="background: #dc3545; padding: 2px 3px; margin: 0; font-size: 8px;">×</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
             },
 
-            addRowWithAutoCalc(direction) {
-                const lineName = prompt('Linie (z.B. RE 71):');
-                if (!lineName) return;
-
-                const typeStr = prompt('Typ (IC/RE/RB/Güter):');
-                if (!typeStr) return;
-
-                const startTimeStr = prompt('Abfahrtszeit (HH:MM):');
-                if (!startTimeStr) return;
-
-                const times = Array(7).fill('');
-
-                if (direction === 'hin') {
-                    this.dataHin.push({ line: lineName, type: typeStr, times: times });
-                    this.dataRueck.push({ line: lineName, type: typeStr, times: Array(7).fill('') });
-                } else {
-                    this.dataRueck.push({ line: lineName, type: typeStr, times: times });
-                    this.dataHin.push({ line: lineName, type: typeStr, times: Array(7).fill('') });
-                }
-
+            addRow() {
+                this.dataHin.push({ line: 'Neue Linie', type: 'RB', times: Array(14).fill('') });
                 this.renderTables();
-                this.updateDisplay();
             },
 
             deleteRow(tableId, idx) {
@@ -454,7 +476,7 @@
                 const canvas = document.getElementById(canvasId);
                 const ctx = canvas.getContext('2d');
 
-                const padding = 50;
+                const padding = 55;
                 const width = canvas.width - padding * 2;
                 const height = canvas.height - padding * 2;
 
@@ -469,9 +491,9 @@
 
                 if (totalMin <= 0) return;
 
-                // Grid
-                ctx.strokeStyle = '#ddd';
-                ctx.lineWidth = 1;
+                // Zeitgitter
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 0.5;
                 for (let i = 0; i <= totalMin; i += 15) {
                     const x = padding + (i / totalMin) * width;
                     ctx.beginPath();
@@ -483,13 +505,15 @@
                     const h = Math.floor(min / 60) % 24;
                     const m = min % 60;
                     ctx.fillStyle = '#666';
-                    ctx.font = 'bold 9px sans-serif';
+                    ctx.font = 'bold 8px sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, x, canvas.height - 30);
+                    ctx.fillText(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, x, canvas.height - 32);
                 }
 
+                // Stationen
                 ctx.strokeStyle = '#ddd';
-                ctx.font = 'bold 10px sans-serif';
+                ctx.lineWidth = 0.5;
+                ctx.font = 'bold 9px sans-serif';
                 ctx.textAlign = 'right';
 
                 stationList.forEach((st, i) => {
@@ -503,14 +527,14 @@
                     ctx.fillText(st.name, padding - 5, y + 3);
                 });
 
-                // Trains
+                // Züge
                 data.forEach(train => {
                     if (!train.times.some(t => t)) return;
 
                     const color = trainTypes[train.line]?.color || '#999';
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 2;
-                    ctx.globalAlpha = 0.8;
+                    ctx.globalAlpha = 0.75;
 
                     let first = null;
 
@@ -534,7 +558,7 @@
 
                         ctx.fillStyle = color;
                         ctx.beginPath();
-                        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+                        ctx.arc(x, y, 2, 0, Math.PI * 2);
                         ctx.fill();
                     });
 
@@ -546,6 +570,12 @@
                 if (!t) return 0;
                 const [h, m] = t.split(':').map(Number);
                 return h * 60 + m;
+            },
+
+            minToTime(m) {
+                const h = Math.floor(m / 60) % 24;
+                const mn = m % 60;
+                return `${String(h).padStart(2, '0')}:${String(mn).padStart(2, '0')}`;
             },
 
             saveData() {
@@ -562,13 +592,49 @@
 
             exportJSON() {
                 const data = {
-                    strecke: 'Strecke 1: Krug–Obersosa–Furth',
+                    strecke: 'Strecke 1: Krug–Furth (vollständig)',
                     zeitfenster: `${document.getElementById('startTime').value} - ${document.getElementById('endTime').value}`,
+                    stationen: stations.hin.length,
                     hin: this.dataHin,
                     rueck: this.dataRueck
                 };
-                alert('JSON in Console (Ctrl+Shift+J):\n\n' + JSON.stringify(data, null, 2));
-                console.log(data);
+                console.log(JSON.stringify(data, null, 2));
+                alert('JSON in Console (Ctrl+Shift+J)');
+            },
+
+            async exportPDF() {
+                const { jsPDF } = window.jspdf;
+
+                try {
+                    // Canvas zu Bild
+                    const canvasHin = document.getElementById('canvasHin');
+                    const canvasRueck = document.getElementById('canvasRueck');
+
+                    const imgHin = canvasHin.toDataURL('image/png');
+                    const imgRueck = canvasRueck.toDataURL('image/png');
+
+                    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+                    // Titel
+                    pdf.setFontSize(16);
+                    pdf.text('Bildfahrplan Strecke 1: Krug–Furth', 15, 15);
+                    pdf.setFontSize(10);
+                    pdf.text(`Zeitfenster: ${document.getElementById('startTime').value} - ${document.getElementById('endTime').value}`, 15, 25);
+
+                    // Hin-Bild
+                    pdf.addImage(imgHin, 'PNG', 15, 35, 150, 80);
+
+                    // Neue Seite für Rückfahrt
+                    pdf.addPage();
+                    pdf.setFontSize(16);
+                    pdf.text('Bildfahrplan Strecke 1: Furth–Krug (Rückfahrt)', 15, 15);
+                    pdf.addImage(imgRueck, 'PNG', 15, 35, 150, 80);
+
+                    pdf.save('Strecke1-Fahrplan.pdf');
+                    alert('✅ PDF exportiert: Strecke1-Fahrplan.pdf');
+                } catch (e) {
+                    alert('PDF-Export Fehler: ' + e.message);
+                }
             }
         };
 
