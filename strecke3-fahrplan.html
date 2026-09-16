@@ -415,9 +415,9 @@
                 canvas.height *= dpr;
                 ctx.scale(dpr, dpr);
 
-                const padding = 70;
-                const width = (canvas.width / dpr) - padding * 2;
-                const height = (canvas.height / dpr) - padding * 2;
+                const padding = 80;
+                const width = (canvas.width / dpr) - padding - 30;
+                const height = (canvas.height / dpr) - padding - 30;
 
                 ctx.fillStyle = 'white';
                 ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
@@ -428,59 +428,57 @@
 
                 if (totalMin <= 0) return;
 
-                // Halbstunden (gelb)
                 ctx.strokeStyle = '#ffc500';
                 ctx.lineWidth = 3;
                 for (let i = 0; i <= totalMin; i += 30) {
-                    const x = padding + (i / totalMin) * width;
+                    const y = padding + (i / totalMin) * height;
                     ctx.beginPath();
-                    ctx.moveTo(x, padding);
-                    ctx.lineTo(x, (canvas.height / dpr) - padding);
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(padding + width, y);
                     ctx.stroke();
                 }
 
-                // Viertelstunden
                 ctx.strokeStyle = '#e8e8e8';
                 ctx.lineWidth = 1;
                 for (let i = 15; i < totalMin; i += 30) {
-                    const x = padding + (i / totalMin) * width;
+                    const y = padding + (i / totalMin) * height;
                     ctx.beginPath();
-                    ctx.moveTo(x, padding);
-                    ctx.lineTo(x, (canvas.height / dpr) - padding);
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(padding + width, y);
                     ctx.stroke();
                 }
 
-                // Zeit-Labels
                 ctx.fillStyle = '#333';
                 ctx.font = 'bold 11px Arial';
-                ctx.textAlign = 'center';
+                ctx.textAlign = 'right';
                 for (let i = 0; i <= totalMin; i += 30) {
                     const min = startMin + i;
                     const h = Math.floor(min / 60) % 24;
                     const m = min % 60;
                     const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                    const x = padding + (i / totalMin) * width;
-                    ctx.fillText(timeStr, x, padding - 10);
-                    ctx.fillText(timeStr, x, (canvas.height / dpr) - 18);
+                    const y = padding + (i / totalMin) * height;
+                    ctx.fillText(timeStr, padding - 10, y + 4);
                 }
 
-                // Stationen
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 1;
-                ctx.font = 'bold 10px Arial';
-                ctx.textAlign = 'right';
+                ctx.font = 'bold 9px Arial';
                 ctx.fillStyle = '#000';
 
                 stationList.forEach((st, i) => {
-                    const y = padding + (i / Math.max(1, stationList.length - 1)) * height;
+                    const x = padding + (i / Math.max(1, stationList.length - 1)) * width;
                     ctx.beginPath();
-                    ctx.moveTo(padding, y);
-                    ctx.lineTo((canvas.width / dpr) - padding, y);
+                    ctx.moveTo(x, padding);
+                    ctx.lineTo(x, padding + height);
                     ctx.stroke();
-                    ctx.fillText(st.name.padEnd(10), padding - 8, y + 4);
+                    ctx.save();
+                    ctx.translate(x, padding - 15);
+                    ctx.rotate(-Math.PI / 4);
+                    ctx.textAlign = 'right';
+                    ctx.fillText(st.name, 0, 0);
+                    ctx.restore();
                 });
 
-                // Züge
                 data.forEach(train => {
                     if (!train.times.some(t => t)) return;
 
@@ -493,8 +491,8 @@
                         if (!time) return;
                         const min = this.timeToMin(time);
                         if (min < startMin || min > endMin) return;
-                        const x = padding + ((min - startMin) / totalMin) * width;
-                        const y = padding + (i / Math.max(1, stationList.length - 1)) * height;
+                        const x = padding + (i / Math.max(1, stationList.length - 1)) * width;
+                        const y = padding + ((min - startMin) / totalMin) * height;
                         points.push({ x, y, time });
                     });
 
@@ -513,15 +511,15 @@
                         ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.fillStyle = color;
-                        ctx.font = 'bold 8px Arial';
-                        ctx.textAlign = 'left';
-                        ctx.fillText(pt.time, pt.x + 4, pt.y - 1);
+                        ctx.font = 'bold 7px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(pt.time, pt.x, pt.y - 5);
                     });
 
                     if (points.length > 0) {
                         const mid = Math.floor(points.length / 2);
                         ctx.fillStyle = color;
-                        ctx.font = 'bold 9px Arial';
+                        ctx.font = 'bold 8px Arial';
                         ctx.textAlign = 'center';
                         ctx.save();
                         ctx.translate(points[mid].x - 8, points[mid].y);
