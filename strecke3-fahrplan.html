@@ -187,6 +187,16 @@
             background: #218838;
         }
 
+        #tabBtnHin, #tabBtnRueck {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        #tabBtnHin.active, #tabBtnRueck.active {
+            background: #0066cc;
+            color: white;
+        }
+
         .export-btn {
             background: #fd7e14;
         }
@@ -334,11 +344,14 @@
         </div>
 
         <div class="panel">
-            <h2>Gleis 1: Hin-Richtung</h2>
-            <canvas id="canvasHin" width="900" height="450" style="border: 2px solid #333;"></canvas>
+            <div class="button-row">
+                <button id="tabBtnHin" onclick="app.showDirection('hin')">Hin-Richtung (Waldenberg → Gbf)</button>
+                <button id="tabBtnRueck" onclick="app.showDirection('rueck')">Rück-Richtung (Gbf → Waldenberg)</button>
+            </div>
 
-            <h2 style="margin-top: 12px;">Gleis 2: Rück-Richtung</h2>
-            <canvas id="canvasRueck" width="900" height="450" style="border: 2px solid #333;"></canvas>
+            <h2 id="canvasTitle">Gleis 1: Hin-Richtung</h2>
+            <canvas id="canvasHin" width="900" height="450" style="border: 2px solid #333;"></canvas>
+            <canvas id="canvasRueck" width="900" height="450" style="border: 2px solid #333; display: none;"></canvas>
 
             <div class="legend">
                 <div class="legend-item"><div class="legend-color" style="background: #1d72b8;"></div><span>RB</span></div>
@@ -392,6 +405,8 @@
             dataHin: [],
             dataRueck: [],
 
+            currentDirection: 'hin',
+
             init() {
                 this.loadData();
                 if (this.dataHin.length === 0) {
@@ -400,6 +415,7 @@
                 }
                 this.renderTables();
                 this.updateDisplay();
+                this.showDirection('hin');
 
                 document.querySelectorAll('input, select').forEach(el => {
                     el.addEventListener('change', () => {
@@ -407,6 +423,15 @@
                         this.saveData();
                     });
                 });
+            },
+
+            showDirection(dir) {
+                this.currentDirection = dir;
+                document.getElementById('canvasHin').style.display = dir === 'hin' ? 'block' : 'none';
+                document.getElementById('canvasRueck').style.display = dir === 'rueck' ? 'block' : 'none';
+                document.getElementById('tabBtnHin').classList.toggle('active', dir === 'hin');
+                document.getElementById('tabBtnRueck').classList.toggle('active', dir === 'rueck');
+                document.getElementById('canvasTitle').textContent = dir === 'hin' ? 'Gleis 1: Hin-Richtung' : 'Gleis 2: Rück-Richtung';
             },
 
             renderTables() {
