@@ -344,18 +344,14 @@
         </div>
 
         <div class="panel">
-            <div class="button-row">
-                <button id="tabBtnHin" onclick="app.showDirection('hin')">Hin-Richtung (Waldenberg → Gbf)</button>
-                <button id="tabBtnRueck" onclick="app.showDirection('rueck')">Rück-Richtung (Gbf → Waldenberg)</button>
-            </div>
-
-            <h2 id="canvasTitle">Gleis 1: Hin-Richtung</h2>
-            <canvas id="canvasHin" width="900" height="450" style="border: 2px solid #333;"></canvas>
-            <canvas id="canvasRueck" width="900" height="450" style="border: 2px solid #333; display: none;"></canvas>
+            <h2>Bildfahrplan: Waldenberg ↔ Gbf (Hin &amp; Rück in einem Diagramm)</h2>
+            <canvas id="canvasFahrplan" width="900" height="500" style="border: 2px solid #333;"></canvas>
 
             <div class="legend">
                 <div class="legend-item"><div class="legend-color" style="background: #1d72b8;"></div><span>RB</span></div>
                 <div class="legend-item"><div class="legend-color" style="background: #6c757d;"></div><span>Einzelwagen</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: #333;"></div><span>—— Hin</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: repeating-linear-gradient(90deg, #333 0, #333 3px, transparent 3px, transparent 6px);"></div><span>┄┄ Rück</span></div>
             </div>
         </div>
     </div>
@@ -416,7 +412,6 @@
                 }
                 this.renderTables();
                 this.updateDisplay();
-                this.showDirection('hin');
 
                 document.querySelectorAll('input, select').forEach(el => {
                     el.addEventListener('change', () => {
@@ -424,15 +419,6 @@
                         this.saveData();
                     });
                 });
-            },
-
-            showDirection(dir) {
-                this.currentDirection = dir;
-                document.getElementById('canvasHin').style.display = dir === 'hin' ? 'block' : 'none';
-                document.getElementById('canvasRueck').style.display = dir === 'rueck' ? 'block' : 'none';
-                document.getElementById('tabBtnHin').classList.toggle('active', dir === 'hin');
-                document.getElementById('tabBtnRueck').classList.toggle('active', dir === 'rueck');
-                document.getElementById('canvasTitle').textContent = dir === 'hin' ? 'Gleis 1: Hin-Richtung' : 'Gleis 2: Rück-Richtung';
             },
 
             renderTables() {
@@ -480,8 +466,7 @@
 
             updateDisplay() {
                 this.readTables();
-                this.drawFahrplan('canvasHin', stations.hin, this.dataHin);
-                this.drawFahrplan('canvasRueck', stations.rueck, this.dataRueck);
+                this.drawFahrplan();
                 this.renderCombinedTable();
             },
 
@@ -531,28 +516,34 @@
                 return rows;
             },
 
-            drawFahrplan(canvasId, stationList, data) {
-                const canvas = document.getElementById(canvasId);
+            drawFahrplan() {
+                const canvas = document.getElementById('canvasFahrplan');
                 const ctx = canvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
+                const stationList = stations.hin;
 
-                canvas.width *= dpr;
-                canvas.height *= dpr;
+                const baseW = parseInt(canvas.getAttribute('width'), 10);
+                const baseH = parseInt(canvas.getAttribute('height'), 10);
+                canvas.width = baseW * dpr;
+                canvas.height = baseH * dpr;
                 ctx.scale(dpr, dpr);
 
                 const padding = 80;
-                const width = (canvas.width / dpr) - padding - 30;
-                const height = (canvas.height / dpr) - padding - 30;
+                const width = baseW - padding - 30;
+                const height = baseH - padding - 30;
 
                 ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+                ctx.fillRect(0, 0, baseW, baseH);
 
-                const startMin = this.timeToMin(document.getElementById('startTime').value);
-                const endMin = this.timeToMin(document.getElementById('endTime').value);
+                const startTime = document.getElementById('startTime').value;
+                const endTime = document.getElementById('endTime').value;
+                const startMin = this.timeToMin(startTime);
+                const endMin = this.timeToMin(endTime);
                 const totalMin = endMin - startMin;
 
                 if (totalMin <= 0) return;
 
+                // ZEIT auf Y-Achse (vertikal)
                 ctx.strokeStyle = '#ffc500';
                 ctx.lineWidth = 3;
                 for (let i = 0; i <= totalMin; i += 30) {
@@ -573,6 +564,7 @@
                     ctx.stroke();
                 }
 
+                // Zeit-Labels (links)
                 ctx.fillStyle = '#333';
                 ctx.font = 'bold 11px Arial';
                 ctx.textAlign = 'right';
@@ -585,6 +577,7 @@
                     ctx.fillText(timeStr, padding - 10, y + 4);
                 }
 
+                // STATIONEN auf X-Achse (oben)
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 1;
                 ctx.font = 'bold 9px Arial';
@@ -592,10 +585,12 @@
 
                 stationList.forEach((st, i) => {
                     const x = padding + (i / Math.max(1, stationList.length - 1)) * width;
+
                     ctx.beginPath();
                     ctx.moveTo(x, padding);
                     ctx.lineTo(x, padding + height);
                     ctx.stroke();
+
                     ctx.save();
                     ctx.translate(x, padding - 15);
                     ctx.rotate(-Math.PI / 4);
@@ -604,12 +599,14 @@
                     ctx.restore();
                 });
 
-                data.forEach(train => {
+                // ZÜGE: Hin normal, Rück mit gespiegeltem Zeiten-Array (gleiche Stations-Achse)
+                const drawTrain = (train, dashed) => {
                     if (!train.times.some(t => t)) return;
 
                     const color = trainTypes[train.line]?.color || '#999';
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 2.5;
+                    ctx.setLineDash(dashed ? [6, 3] : []);
 
                     let points = [];
                     train.times.forEach((time, i) => {
@@ -629,13 +626,13 @@
                         }
                         ctx.stroke();
                     }
+                    ctx.setLineDash([]);
 
                     points.forEach(pt => {
                         ctx.fillStyle = color;
                         ctx.beginPath();
                         ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
                         ctx.fill();
-                        ctx.fillStyle = color;
                         ctx.font = 'bold 7px Arial';
                         ctx.textAlign = 'center';
                         ctx.fillText(pt.time, pt.x, pt.y - 5);
@@ -652,7 +649,10 @@
                         ctx.fillText(train.line, 0, 0);
                         ctx.restore();
                     }
-                });
+                };
+
+                this.dataHin.forEach(t => drawTrain(t, false));
+                this.dataRueck.forEach(t => drawTrain({ line: t.line, type: t.type, times: t.times.slice().reverse() }, true));
 
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
@@ -685,17 +685,12 @@
             async exportPDF() {
                 const { jsPDF } = window.jspdf;
                 try {
-                    const imgHin = document.getElementById('canvasHin').toDataURL('image/png');
-                    const imgRueck = document.getElementById('canvasRueck').toDataURL('image/png');
+                    const img = document.getElementById('canvasFahrplan').toDataURL('image/png');
 
                     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
                     pdf.setFontSize(16);
-                    pdf.text('Strecke 3: Waldenberg–Gbf (Nebenbahn 80 km/h)', 15, 15);
-                    pdf.addImage(imgHin, 'PNG', 15, 35, 150, 80);
-
-                    pdf.addPage();
-                    pdf.text('Strecke 3 Rückfahrt', 15, 15);
-                    pdf.addImage(imgRueck, 'PNG', 15, 35, 150, 80);
+                    pdf.text('Strecke 3: Waldenberg–Gbf (Nebenbahn 80 km/h, Hin & Rück)', 15, 15);
+                    pdf.addImage(img, 'PNG', 15, 25, 260, 175);
 
                     pdf.save('Strecke3-Fahrplan.pdf');
                     alert('✅ PDF: Strecke3-Fahrplan.pdf');

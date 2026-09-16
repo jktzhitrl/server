@@ -360,14 +360,8 @@
         </div>
 
         <div class="panel">
-            <div class="button-row">
-                <button id="tabBtnHin" onclick="app.showDirection('hin')">Hin-Richtung (Krug → Furth)</button>
-                <button id="tabBtnRueck" onclick="app.showDirection('rueck')">Rück-Richtung (Furth → Krug)</button>
-            </div>
-
-            <h2 id="canvasTitle">Gleis 1: Hin-Richtung (Krug → Furth)</h2>
-            <canvas id="canvasHin" width="900" height="600" style="border: 2px solid #333;"></canvas>
-            <canvas id="canvasRueck" width="900" height="600" style="border: 2px solid #333; display: none;"></canvas>
+            <h2>Bildfahrplan: Krug ↔ Furth (Hin &amp; Rück in einem Diagramm)</h2>
+            <canvas id="canvasFahrplan" width="900" height="700" style="border: 2px solid #333;"></canvas>
 
             <div class="legend">
                 <div class="legend-item">
@@ -385,6 +379,14 @@
                 <div class="legend-item">
                     <div class="legend-color" style="background: #6c757d;"></div>
                     <span>Güter</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #333;"></div>
+                    <span>—— Hin</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: repeating-linear-gradient(90deg, #333 0, #333 3px, transparent 3px, transparent 6px);"></div>
+                    <span>┄┄ Rück</span>
                 </div>
             </div>
         </div>
@@ -480,7 +482,6 @@
                 }
                 this.renderTables();
                 this.updateDisplay();
-                this.showDirection('hin');
 
                 document.querySelectorAll('input, select').forEach(el => {
                     el.addEventListener('change', () => {
@@ -488,17 +489,6 @@
                         this.saveData();
                     });
                 });
-            },
-
-            showDirection(dir) {
-                this.currentDirection = dir;
-                document.getElementById('canvasHin').style.display = dir === 'hin' ? 'block' : 'none';
-                document.getElementById('canvasRueck').style.display = dir === 'rueck' ? 'block' : 'none';
-                document.getElementById('tabBtnHin').classList.toggle('active', dir === 'hin');
-                document.getElementById('tabBtnRueck').classList.toggle('active', dir === 'rueck');
-                document.getElementById('canvasTitle').textContent = dir === 'hin'
-                    ? 'Gleis 1: Hin-Richtung (Krug → Furth)'
-                    : 'Gleis 2: Rück-Richtung (Furth → Krug)';
             },
 
             renderTables() {
@@ -551,8 +541,7 @@
 
             updateDisplay() {
                 this.readTables();
-                this.drawFahrplan('canvasHin', stations.hin, this.dataHin);
-                this.drawFahrplan('canvasRueck', stations.rueck, this.dataRueck);
+                this.drawFahrplan();
                 this.renderCombinedTable();
             },
 
@@ -619,21 +608,24 @@
                 return rows;
             },
 
-            drawFahrplan(canvasId, stationList, data) {
-                const canvas = document.getElementById(canvasId);
+            drawFahrplan() {
+                const canvas = document.getElementById('canvasFahrplan');
                 const ctx = canvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
+                const stationList = stations.hin;
 
-                canvas.width *= dpr;
-                canvas.height *= dpr;
+                const baseW = parseInt(canvas.getAttribute('width'), 10);
+                const baseH = parseInt(canvas.getAttribute('height'), 10);
+                canvas.width = baseW * dpr;
+                canvas.height = baseH * dpr;
                 ctx.scale(dpr, dpr);
 
                 const padding = 80;
-                const width = (canvas.width / dpr) - padding - 30;
-                const height = (canvas.height / dpr) - padding - 30;
+                const width = baseW - padding - 30;
+                const height = baseH - padding - 30;
 
                 ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+                ctx.fillRect(0, 0, baseW, baseH);
 
                 const startTime = document.getElementById('startTime').value;
                 const endTime = document.getElementById('endTime').value;
@@ -686,13 +678,11 @@
                 stationList.forEach((st, i) => {
                     const x = padding + (i / Math.max(1, stationList.length - 1)) * width;
 
-                    // Vertikale Linie
                     ctx.beginPath();
                     ctx.moveTo(x, padding);
                     ctx.lineTo(x, padding + height);
                     ctx.stroke();
 
-                    // Stationsname oben (rotiert)
                     ctx.save();
                     ctx.translate(x, padding - 15);
                     ctx.rotate(-Math.PI / 4);
@@ -701,21 +691,20 @@
                     ctx.restore();
                 });
 
-                // ZÜGE
-                data.forEach(train => {
+                // ZÜGE: Hin normal, Rück mit gespiegeltem Zeiten-Array (gleiche Stations-Achse)
+                const drawTrain = (train, dashed) => {
                     if (!train.times.some(t => t)) return;
 
                     const color = trainTypes[train.line]?.color || '#999';
                     ctx.strokeStyle = color;
                     ctx.lineWidth = 2.5;
+                    ctx.setLineDash(dashed ? [6, 3] : []);
 
                     let points = [];
                     train.times.forEach((time, i) => {
                         if (!time) return;
-
                         const min = this.timeToMin(time);
                         if (min < startMin || min > endMin) return;
-
                         const x = padding + (i / Math.max(1, stationList.length - 1)) * width;
                         const y = padding + ((min - startMin) / totalMin) * height;
                         points.push({ x, y, time });
@@ -729,14 +718,13 @@
                         }
                         ctx.stroke();
                     }
+                    ctx.setLineDash([]);
 
                     points.forEach(pt => {
                         ctx.fillStyle = color;
                         ctx.beginPath();
                         ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
                         ctx.fill();
-
-                        ctx.fillStyle = color;
                         ctx.font = 'bold 7px Arial';
                         ctx.textAlign = 'center';
                         ctx.fillText(pt.time, pt.x, pt.y - 5);
@@ -753,7 +741,10 @@
                         ctx.fillText(train.line, 0, 0);
                         ctx.restore();
                     }
-                });
+                };
+
+                this.dataHin.forEach(t => drawTrain(t, false));
+                this.dataRueck.forEach(t => drawTrain({ line: t.line, type: t.type, times: t.times.slice().reverse() }, true));
 
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
@@ -800,29 +791,17 @@
                 const { jsPDF } = window.jspdf;
 
                 try {
-                    // Canvas zu Bild
-                    const canvasHin = document.getElementById('canvasHin');
-                    const canvasRueck = document.getElementById('canvasRueck');
-
-                    const imgHin = canvasHin.toDataURL('image/png');
-                    const imgRueck = canvasRueck.toDataURL('image/png');
+                    const canvas = document.getElementById('canvasFahrplan');
+                    const img = canvas.toDataURL('image/png');
 
                     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-                    // Titel
                     pdf.setFontSize(16);
-                    pdf.text('Bildfahrplan Strecke 1: Krug–Furth', 15, 15);
+                    pdf.text('Bildfahrplan Strecke 1: Krug–Furth (Hin & Rück)', 15, 15);
                     pdf.setFontSize(10);
                     pdf.text(`Zeitfenster: ${document.getElementById('startTime').value} - ${document.getElementById('endTime').value}`, 15, 25);
 
-                    // Hin-Bild
-                    pdf.addImage(imgHin, 'PNG', 15, 35, 150, 80);
-
-                    // Neue Seite für Rückfahrt
-                    pdf.addPage();
-                    pdf.setFontSize(16);
-                    pdf.text('Bildfahrplan Strecke 1: Furth–Krug (Rückfahrt)', 15, 15);
-                    pdf.addImage(imgRueck, 'PNG', 15, 35, 150, 80);
+                    pdf.addImage(img, 'PNG', 15, 35, 260, 180);
 
                     pdf.save('Strecke1-Fahrplan.pdf');
                     alert('✅ PDF exportiert: Strecke1-Fahrplan.pdf');
