@@ -90,6 +90,18 @@
             font-size: 9px;
         }
 
+        #tableCombined td {
+            background: #f7fbff;
+            font-weight: 600;
+            color: #0052a3;
+        }
+
+        #tableCombined td:nth-child(3) {
+            color: #666;
+            font-weight: 400;
+            font-size: 8px;
+        }
+
         input[type="text"], input[type="time"], input[type="number"] {
             width: 100%;
             border: 1px solid #bbb;
@@ -212,7 +224,7 @@
                     <label style="flex: 0; font-size: 9px;">Von:</label>
                     <input type="time" id="startTime" value="09:00" style="flex: 0.8; min-width: 60px;">
                     <label style="flex: 0; font-size: 9px;">Bis:</label>
-                    <input type="time" id="endTime" value="12:00" style="flex: 0.8; min-width: 60px;">
+                    <input type="time" id="endTime" value="11:00" style="flex: 0.8; min-width: 60px;">
                 </div>
 
                 <div class="button-row">
@@ -222,7 +234,17 @@
                 </div>
             </div>
 
-            <h2>Hin-Richtung (Krug → Furth)</h2>
+            <h2>📋 Gesamtübersicht – alle Fahrten &amp; Gegentakte (chronologisch)</h2>
+            <div class="table-wrapper">
+                <table id="tableCombined">
+                    <thead>
+                        <tr id="combinedHead"></tr>
+                    </thead>
+                    <tbody id="combinedData"></tbody>
+                </table>
+            </div>
+
+            <h2 style="margin-top: 12px;">Hin-Richtung (Krug → Furth)</h2>
 
             <div class="table-wrapper">
                 <table id="tableHin">
@@ -446,6 +468,46 @@
                 this.readTables();
                 this.drawFahrplan('canvasHin', stations.hin, this.dataHin);
                 this.drawFahrplan('canvasRueck', stations.rueck, this.dataRueck);
+                this.renderCombinedTable();
+            },
+
+            renderCombinedTable() {
+                const refStations = stations.hin;
+
+                // Kopfzeile aufbauen
+                const head = document.getElementById('combinedHead');
+                head.innerHTML = '<th>Linie</th><th>Typ</th><th>Richtung</th>' +
+                    refStations.map(s => `<th>${s.name}</th>`).join('');
+
+                // Hin-Züge: Zeiten bereits in refStations-Reihenfolge
+                const hinRows = this.dataHin.map(t => ({
+                    line: t.line, type: t.type, dir: '→ Hin',
+                    times: t.times
+                }));
+
+                // Rück-Züge: Zeiten-Array umkehren, damit Spalten zu refStations passen
+                const rueckRows = this.dataRueck.map(t => ({
+                    line: t.line, type: t.type, dir: '← Rück',
+                    times: t.times.slice().reverse()
+                }));
+
+                // Zusammenführen und nach erster gültiger Zeit sortieren
+                const combined = [...hinRows, ...rueckRows].filter(t => t.times.some(x => x));
+                combined.sort((a, b) => {
+                    const ta = a.times.find(x => x) || '99:99';
+                    const tb = b.times.find(x => x) || '99:99';
+                    return this.timeToMin(ta) - this.timeToMin(tb);
+                });
+
+                const tbody = document.getElementById('combinedData');
+                tbody.innerHTML = combined.map(t => `
+                    <tr>
+                        <td>${t.line}</td>
+                        <td>${t.type}</td>
+                        <td>${t.dir}</td>
+                        ${t.times.map(time => `<td>${time || ''}</td>`).join('')}
+                    </tr>
+                `).join('');
             },
 
             readTables() {
