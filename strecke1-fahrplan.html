@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildfahrplan Strecke 1 - Mitteltrasse Los 5</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 10px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 15px;
+            overflow: auto;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #222;
+            grid-column: 1 / -1;
+        }
+
+        h2 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #444;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+
+        th {
+            background: #f0f0f0;
+            font-weight: 600;
+        }
+
+        td {
+            background: white;
+        }
+
+        input[type="text"], input[type="time"] {
+            width: 100%;
+            border: 1px solid #bbb;
+            padding: 4px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        input[type="text"]:focus, input[type="time"]:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 3px rgba(0,102,204,0.3);
+        }
+
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #0052a3;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .button-group button {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            background: white;
+            display: block;
+            margin: 10px 0;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            font-size: 11px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 3px;
+            height: 20px;
+            border-radius: 2px;
+        }
+
+        .time-range {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .time-range input {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .add-row-btn {
+            background: #28a745;
+        }
+
+        .add-row-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Bildfahrplan Strecke 1: Krug – Obersosa – Furth</h1>
+
+        <!-- Eingabepanel -->
+        <div class="panel">
+            <h2>Hin-Richtung (Krug → Furth)</h2>
+
+            <div class="time-range">
+                <label>Von:</label>
+                <input type="time" id="startTime" value="06:00">
+                <label>Bis:</label>
+                <input type="time" id="endTime" value="08:00">
+                <button onclick="app.updateDisplay()">Aktualisieren</button>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="tableHin">
+                    <thead>
+                        <tr>
+                            <th>Linie</th>
+                            <th>Typ</th>
+                            <th>Krug</th>
+                            <th>Waldenberg</th>
+                            <th>Hyxel</th>
+                            <th>Obersosa</th>
+                            <th>Feldheim</th>
+                            <th>Lossow</th>
+                            <th>Furth</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hinData"></tbody>
+                </table>
+            </div>
+
+            <button class="add-row-btn" onclick="app.addRowHin()">+ Zug hinzufügen (Hin)</button>
+            <button onclick="app.saveData()">💾 Speichern</button>
+
+            <h2 style="margin-top: 20px;">Rück-Richtung (Furth → Krug)</h2>
+
+            <div class="table-wrapper">
+                <table id="tableRueck">
+                    <thead>
+                        <tr>
+                            <th>Linie</th>
+                            <th>Typ</th>
+                            <th>Furth</th>
+                            <th>Lossow</th>
+                            <th>Feldheim</th>
+                            <th>Obersosa</th>
+                            <th>Hyxel</th>
+                            <th>Waldenberg</th>
+                            <th>Krug</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rueckData"></tbody>
+                </table>
+            </div>
+
+            <button class="add-row-btn" onclick="app.addRowRueck()">+ Zug hinzufügen (Rück)</button>
+        </div>
+
+        <!-- Bildfahrplan-Panel -->
+        <div class="panel">
+            <h2>Gleis 1: Hin-Richtung (Krug → Furth)</h2>
+            <canvas id="canvasHin" width="500" height="400"></canvas>
+
+            <h2 style="margin-top: 20px;">Gleis 2: Rück-Richtung (Furth → Krug)</h2>
+            <canvas id="canvasRueck" width="500" height="400"></canvas>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e63946;"></div>
+                    <span>IC (Fernzug)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #06a77d;"></div>
+                    <span>RE (Regionalexpress)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #1d72b8;"></div>
+                    <span>RB (Regionalbahn)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Strecke 1 Stationen mit Kilometern
+        const stations = {
+            hin: [
+                { name: 'Krug', km: 34.5 },
+                { name: 'Waldenberg', km: 36.5 },
+                { name: 'Hyxel', km: 49.0 },
+                { name: 'Obersosa', km: 63.5 },
+                { name: 'Feldheim', km: 75.5 },
+                { name: 'Lossow', km: 88.0 },
+                { name: 'Furth', km: 117.5 }
+            ],
+            rueck: [
+                { name: 'Furth', km: 117.5 },
+                { name: 'Lossow', km: 88.0 },
+                { name: 'Feldheim', km: 75.5 },
+                { name: 'Obersosa', km: 63.5 },
+                { name: 'Hyxel', km: 49.0 },
+                { name: 'Waldenberg', km: 36.5 },
+                { name: 'Krug', km: 34.5 }
+            ]
+        };
+
+        // Zugtypen
+        const trainTypes = {
+            'IC 1': { color: '#e63946', style: 'solid' },
+            'IC 2': { color: '#e63946', style: 'solid' },
+            'RE A': { color: '#06a77d', style: 'solid' },
+            'RE B': { color: '#06a77d', style: 'solid' },
+            'REAB': { color: '#06a77d', style: 'solid' },
+            'RB E': { color: '#1d72b8', style: 'solid' },
+            'RB G': { color: '#1d72b8', style: 'solid' },
+            'RB N': { color: '#1d72b8', style: 'solid' },
+            'Güter': { color: '#6c757d', style: 'dashed' }
+        };
+
+        const app = {
+            dataHin: [],
+            dataRueck: [],
+
+            init() {
+                this.loadData();
+                this.initializeTables();
+                this.updateDisplay();
+
+                // Auto-Update bei Eingabe
+                document.querySelectorAll('input').forEach(input => {
+                    input.addEventListener('change', () => {
+                        this.updateDisplay();
+                        this.saveData();
+                    });
+                });
+            },
+
+            initializeTables() {
+                const sampleDataHin = [
+                    { line: 'RE A', type: 'RE', times: ['06:15', '06:18', '06:25', '06:40', '', '', ''] },
+                    { line: 'IC 1', type: 'IC', times: ['06:30', '', '', '06:50', '07:00', '07:10', '07:30'] },
+                    { line: 'REAB', type: 'RE', times: ['', '', '', '07:05', '07:15', '07:25', '07:45'] },
+                    { line: 'RE A', type: 'RE', times: ['07:30', '07:33', '07:40', '07:55', '', '', ''] },
+                ];
+
+                const sampleDataRueck = [
+                    { line: 'REAB', type: 'RE', times: ['07:00', '07:20', '07:30', '07:45', '', '', ''] },
+                    { line: 'IC 2', type: 'IC', times: ['07:15', '07:35', '07:45', '08:00', '', '', ''] },
+                    { line: 'RB G', type: 'RB', times: ['07:45', '', '', '08:05', '08:15', '08:20', '08:25'] },
+                ];
+
+                this.dataHin = sampleDataHin;
+                this.dataRueck = sampleDataRueck;
+                this.renderTables();
+            },
+
+            renderTables() {
+                this.renderTableDirection('hinData', this.dataHin, stations.hin);
+                this.renderTableDirection('rueckData', this.dataRueck, stations.rueck);
+            },
+
+            renderTableDirection(tableId, data, stationList) {
+                const tbody = document.getElementById(tableId);
+                tbody.innerHTML = '';
+
+                data.forEach((row, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><input type="text" value="${row.line}" onchange="app.updateDisplay()"></td>
+                        <td><select onchange="app.updateDisplay()">
+                            <option ${row.type === 'IC' ? 'selected' : ''}>IC</option>
+                            <option ${row.type === 'RE' ? 'selected' : ''}>RE</option>
+                            <option ${row.type === 'RB' ? 'selected' : ''}>RB</option>
+                        </select></td>
+                        ${stationList.map((_, i) => `
+                            <td><input type="time" value="${row.times[i] || ''}" onchange="app.updateDisplay()"></td>
+                        `).join('')}
+                        <td><button onclick="app.deleteRow('${tableId}', ${idx})" style="background: #dc3545;">×</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            },
+
+            addRowHin() {
+                this.dataHin.push({ line: 'Neue Linie', type: 'RE', times: Array(7).fill('') });
+                this.renderTables();
+            },
+
+            addRowRueck() {
+                this.dataRueck.push({ line: 'Neue Linie', type: 'RE', times: Array(7).fill('') });
+                this.renderTables();
+            },
+
+            deleteRow(tableId, idx) {
+                if (tableId === 'hinData') {
+                    this.dataHin.splice(idx, 1);
+                } else {
+                    this.dataRueck.splice(idx, 1);
+                }
+                this.renderTables();
+                this.updateDisplay();
+            },
+
+            updateDisplay() {
+                this.readTables();
+                this.drawFahrplan('canvasHin', stations.hin, this.dataHin);
+                this.drawFahrplan('canvasRueck', stations.rueck, this.dataRueck);
+            },
+
+            readTables() {
+                this.dataHin = this.readTableData('hinData', stations.hin.length);
+                this.dataRueck = this.readTableData('rueckData', stations.rueck.length);
+            },
+
+            readTableData(tableId, stationCount) {
+                const rows = [];
+                document.getElementById(tableId).querySelectorAll('tr').forEach(tr => {
+                    const cells = tr.querySelectorAll('input, select');
+                    if (cells.length > 0) {
+                        const times = [];
+                        for (let i = 2; i < cells.length; i++) {
+                            times.push(cells[i].value);
+                        }
+                        rows.push({
+                            line: cells[0].value,
+                            type: cells[1].value,
+                            times: times
+                        });
+                    }
+                });
+                return rows;
+            },
+
+            drawFahrplan(canvasId, stationList, data) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+
+                const padding = 60;
+                const width = canvas.width - padding * 2;
+                const height = canvas.height - padding * 2;
+
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Zeitbereich
+                const startTime = document.getElementById('startTime').value;
+                const endTime = document.getElementById('endTime').value;
+                const startMinutes = this.timeToMinutes(startTime);
+                const endMinutes = this.timeToMinutes(endTime);
+                const totalMinutes = endMinutes - startMinutes;
+
+                // X-Achse (Zeit)
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= totalMinutes; i += 15) {
+                    const x = padding + (i / totalMinutes) * width;
+                    ctx.beginPath();
+                    ctx.moveTo(x, padding);
+                    ctx.lineTo(x, canvas.height - padding);
+                    ctx.stroke();
+
+                    const minutes = startMinutes + i;
+                    const h = Math.floor(minutes / 60) % 24;
+                    const m = minutes % 60;
+                    ctx.fillStyle = '#666';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, x, canvas.height - 35);
+                }
+
+                // Y-Achse (Stationen)
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 1;
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 11px sans-serif';
+
+                stationList.forEach((station, idx) => {
+                    const y = padding + (idx / (stationList.length - 1)) * height;
+                    ctx.beginPath();
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(canvas.width - padding, y);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#333';
+                    ctx.fillText(station.name, padding - 10, y + 4);
+                });
+
+                // Züge zeichnen
+                data.forEach(trainRow => {
+                    if (!trainRow.times.some(t => t)) return; // Leere Zeilen überspringen
+
+                    const color = trainTypes[trainRow.line]?.color || '#999';
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = 0.8;
+
+                    let firstPoint = null;
+
+                    trainRow.times.forEach((time, idx) => {
+                        if (!time) return;
+
+                        const minutes = this.timeToMinutes(time);
+                        if (minutes < startMinutes || minutes > endMinutes) return;
+
+                        const x = padding + ((minutes - startMinutes) / totalMinutes) * width;
+                        const y = padding + (idx / (stationList.length - 1)) * height;
+
+                        if (firstPoint) {
+                            ctx.beginPath();
+                            ctx.moveTo(firstPoint.x, firstPoint.y);
+                            ctx.lineTo(x, y);
+                            ctx.stroke();
+                        }
+
+                        firstPoint = { x, y };
+
+                        // Punkt zeichnen
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
+                    ctx.globalAlpha = 1.0;
+                });
+            },
+
+            timeToMinutes(timeStr) {
+                const [h, m] = timeStr.split(':').map(Number);
+                return h * 60 + m;
+            },
+
+            saveData() {
+                localStorage.setItem('fahrplanHin', JSON.stringify(this.dataHin));
+                localStorage.setItem('fahrplanRueck', JSON.stringify(this.dataRueck));
+            },
+
+            loadData() {
+                const hin = localStorage.getItem('fahrplanHin');
+                const rueck = localStorage.getItem('fahrplanRueck');
+                if (hin) this.dataHin = JSON.parse(hin);
+                if (rueck) this.dataRueck = JSON.parse(rueck);
+            }
+        };
+
+        // Start
+        app.init();
+    </script>
+</body>
+</html>
