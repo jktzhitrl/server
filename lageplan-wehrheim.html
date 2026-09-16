@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lageplan Wehrheim – Mitteltrasse Los 5</title>
+</head>
+<body>
+<style>
+  :root {
+    --bg: #f5f3ed; --surface: #ffffff; --ink: #191b18; --ink-soft: #55594f;
+    --line: #d9d5c7; --accent: #a8201a; --accent-soft: #f2dad8; --accent-ink: #741512;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141613; --surface: #1c1f1b; --ink: #edece7; --ink-soft: #a2a699;
+      --line: #32352e; --accent: #e0574d; --accent-soft: #38221f; --accent-ink: #f3a49e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141613; --surface: #1c1f1b; --ink: #edece7; --ink-soft: #a2a699;
+    --line: #32352e; --accent: #e0574d; --accent-soft: #38221f; --accent-ink: #f3a49e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif;
+    margin: 0; padding-inline: 20px; padding-block: 28px 56px; line-height: 1.5;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink);
+    background: var(--accent-soft); display: inline-block; padding: 3px 9px;
+    border-radius: 3px; margin-bottom: 12px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 36px); margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 70ch; margin: 0 0 26px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .diagram-scroll { overflow-x: auto; }
+  svg.plan { width: 100%; height: auto; min-width: 760px; display: block; }
+  svg.plan text { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  h2 { font-size: 19px; margin: 0 0 4px; }
+  h3 { font-size: 13.5px; margin: 0 0 8px; }
+  .panel-note { color: var(--ink-soft); font-size: 13.5px; margin: 0 0 16px; max-width: 76ch; }
+  .rules {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px;
+    color: var(--ink-soft); border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px;
+  }
+  .rules span { display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    text-align: left; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10.5px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft);
+    padding: 0 10px 8px; border-bottom: 1px solid var(--line);
+  }
+  tbody td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--accent-ink); font-weight: 600; white-space: nowrap; }
+  .table-scroll { overflow-x: auto; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+  .legend { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; color: var(--ink-soft); }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .kreuzung {
+    background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+    border-radius: 8px; padding: 14px 16px; font-size: 13.5px; color: var(--ink); margin-top: 16px;
+  }
+  .kreuzung strong { color: var(--accent-ink); }
+  .kreuzung table { margin-top: 10px; }
+  footer.foot { margin-top: 26px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="wrap">
+  <span class="kicker">Los 5 · Sicherungstechnischer Lageplan · Ril 819.9001 / 819.9002</span>
+  <h1>Lageplan Wehrheim</h1>
+  <p class="sub">
+    Kreuzungsbahnhof auf der eingleisigen Nebenbahn Waldenberg – Gbf (80 km/h), km 7,0.
+    Westlicher von drei Kreuzungspunkten der Strecke: Das durchgehende Hauptgleis wird hier
+    auf zwei Gleise aufgeweitet, damit sich die Züge des 30-Minuten-Takts begegnen können.
+  </p>
+
+  <section class="panel">
+    <h2>Gleistopologie</h2>
+    <p class="panel-note">
+      Weichensymbol nach Ril 819.9002: Weichenanfang als senkrechter Strich, Schwärzung
+      (ferngestellte Weiche), Grenzzeichen am Weichenende. Alle Hauptsignale sind
+      <strong>Ks-Mehrabschnittssignale</strong> (Hp 0, Ks 1, Ks 2), „abgeklappt" in
+      Fahrtrichtung dargestellt, Schirm ausgefüllt = wärterbedient.
+    </p>
+
+    <div class="diagram-scroll">
+      <svg class="plan" viewBox="0 0 1100 345" role="img" aria-label="Sicherungstechnischer Lageplan des Kreuzungsbahnhofs Wehrheim: durchgehendes Hauptgleis 1 und Kreuzungsgleis 2, Weichen 1 und 2, zwei Außenbahnsteige mit Reisendenübergang, Einfahrsignale A und F, Ausfahrsignale N1, N2, P1 und P2.">
+
+        <!-- Betriebsstellenbezeichnung -->
+        <text x="550" y="20" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">Wehrheim</text>
+        <text x="550" y="37" text-anchor="middle" font-size="11" fill="var(--ink-soft)">(Whm) 33</text>
+
+        <!-- Gleise: Gleis 1 durchgehend, Gleis 2 Kreuzungsgleis -->
+        <g stroke="currentColor" fill="none" stroke-width="3">
+          <line x1="40" y1="110" x2="1060" y2="110"/>
+          <line x1="360" y1="210" x2="740" y2="210"/>
+        </g>
+
+        <!-- ===== Westkopf: Weiche 1 ===== -->
+        <g stroke="currentColor" stroke-width="2">
+          <line x1="150" y1="101" x2="150" y2="119"/>
+        </g>
+        <g fill="currentColor" stroke="none">
+          <polygon points="150,110 225,110 225,146"/>
+        </g>
+        <line x1="225" y1="146" x2="360" y2="210" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="2">
+          <line x1="237.4" y1="141.6" x2="242.6" y2="152.4"/>
+        </g>
+        <text x="187" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">1</text>
+
+        <!-- ===== Ostkopf: Weiche 2 ===== -->
+        <g stroke="currentColor" stroke-width="2">
+          <line x1="950" y1="101" x2="950" y2="119"/>
+        </g>
+        <g fill="currentColor" stroke="none">
+          <polygon points="950,110 875,110 875,146"/>
+        </g>
+        <line x1="875" y1="146" x2="740" y2="210" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="2">
+          <line x1="862.6" y1="141.6" x2="857.4" y2="152.4"/>
+        </g>
+        <text x="912" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">2</text>
+
+        <!-- Empfangsgebäude (allgemeines Gebäude nach 819.9002) -->
+        <rect x="350" y="58" width="60" height="30" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="380" y="78" text-anchor="middle" font-size="12" fill="currentColor">EG</text>
+
+        <!-- Bahnsteige (Außenbahnsteige) -->
+        <rect x="430" y="60" width="240" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="550" y="82" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 1</text>
+        <rect x="430" y="226" width="240" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="550" y="248" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 2</text>
+
+        <!-- Reisendenübergang -->
+        <line x1="700" y1="94" x2="700" y2="226" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="3,4"/>
+        <text x="710" y="172" font-size="10.5" fill="var(--ink-soft)">Reisendenübergang</text>
+
+        <!-- Gleisnummern in unterbrochener Gleislinie -->
+        <g fill="var(--surface)" stroke="none">
+          <rect x="468" y="100" width="24" height="20"/>
+          <rect x="468" y="200" width="24" height="20"/>
+        </g>
+        <g fill="currentColor" font-size="14" font-weight="600" text-anchor="middle">
+          <text x="480" y="116">1</text>
+          <text x="480" y="216">2</text>
+        </g>
+
+        <!-- Streckengleisbezeichnung (eingeklammert) -->
+        <g fill="var(--ink-soft)" font-size="12">
+          <text x="46" y="136">(1)</text>
+          <text x="1054" y="136" text-anchor="end">(1)</text>
+        </g>
+
+        <!-- ===== Signale ===== -->
+        <!-- A: Einfahrsignal von Waldenberg, in Kilometrierungsrichtung (rechts = unterhalb) -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="90" y1="120" x2="90" y2="134"/>
+          <line x1="90" y1="127" x2="122" y2="127"/>
+        </g>
+        <polygon points="110,121 100,127 110,133" fill="currentColor"/>
+        <text x="105" y="147" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+        <rect x="122" y="121" width="18" height="12" rx="6" fill="currentColor"/>
+        <polygon points="143,121 153,127 143,133" fill="currentColor"/>
+        <text x="157" y="131" font-size="11" font-weight="600" fill="currentColor">4</text>
+        <text x="82" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">A</text>
+
+        <!-- F: Einfahrsignal von Sandheide, entgegen Kilometrierung (rechts = oberhalb) -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="1010" y1="86" x2="1010" y2="100"/>
+          <line x1="1010" y1="93" x2="978" y2="93"/>
+        </g>
+        <polygon points="990,87 1000,93 990,99" fill="currentColor"/>
+        <text x="995" y="78" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+        <rect x="960" y="87" width="18" height="12" rx="6" fill="currentColor"/>
+        <polygon points="957,87 947,93 957,99" fill="currentColor"/>
+        <text x="943" y="97" text-anchor="end" font-size="11" font-weight="600" fill="currentColor">4</text>
+        <text x="1018" y="97" font-size="13" font-weight="600" fill="currentColor">F</text>
+
+        <!-- P1: Ausfahrsignal Gleis 1 Richtung Waldenberg -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="310" y1="86" x2="310" y2="100"/>
+          <line x1="310" y1="93" x2="294" y2="93"/>
+        </g>
+        <rect x="276" y="87" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="318" y="97" font-size="13" font-weight="600" fill="currentColor">P1</text>
+
+        <!-- P2: Ausfahrsignal Gleis 2 Richtung Waldenberg -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="420" y1="186" x2="420" y2="200"/>
+          <line x1="420" y1="193" x2="404" y2="193"/>
+        </g>
+        <rect x="386" y="187" width="18" height="12" rx="6" fill="currentColor"/>
+        <polygon points="383,187 373,193 383,199" fill="currentColor"/>
+        <text x="369" y="197" text-anchor="end" font-size="11" font-weight="600" fill="currentColor">4</text>
+        <text x="428" y="197" font-size="13" font-weight="600" fill="currentColor">P2</text>
+
+        <!-- N1: Ausfahrsignal Gleis 1 Richtung Sandheide -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="790" y1="120" x2="790" y2="134"/>
+          <line x1="790" y1="127" x2="806" y2="127"/>
+        </g>
+        <rect x="806" y="121" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="782" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
+
+        <!-- N2: Ausfahrsignal Gleis 2 Richtung Sandheide -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="690" y1="220" x2="690" y2="234"/>
+          <line x1="690" y1="227" x2="706" y2="227"/>
+        </g>
+        <rect x="706" y="221" width="18" height="12" rx="6" fill="currentColor"/>
+        <polygon points="727,221 737,227 727,233" fill="currentColor"/>
+        <text x="741" y="231" font-size="11" font-weight="600" fill="currentColor">4</text>
+        <text x="756" y="231" font-size="13" font-weight="600" fill="currentColor">N2</text>
+
+        <!-- Zugmeldestellen / Streckenrichtung -->
+        <g fill="var(--ink-soft)" font-size="12" font-style="italic">
+          <text x="40" y="300">← Waldenberg (km 0,0)</text>
+          <text x="1060" y="300" text-anchor="end">Sandheide (km 14,5) →</text>
+          <text x="1060" y="320" text-anchor="end">Nebenbahn · 80 km/h · eingleisig</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="rules">
+      <span>Sämtliche fernbediente Weichen mit Zungenprüfern.</span>
+      <span>Gleisnummern sind einstellig.</span>
+      <span>Eingleisige Strecke: Zugfolge im Zugleitbetrieb, Kreuzungen in Wehrheim, Sandheide und Wassergrund.</span>
+      <span>Weichen EW 1:9, Abzweiggeschwindigkeit 40 km/h → Zs 3 mit Kennzahl 4.</span>
+      <span>Zs 3v an den Einfahrsignalen A und F kündigt die 40 km/h der jeweiligen Ausfahrt aus Gleis 2 an.</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="two-col">
+      <div>
+        <h3>Weichenverzeichnis</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Verbindung</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">1</td><td class="mono">33W1</td><td>Gleis 1 → Gleis 2 (Westkopf, Aufweitung)</td></tr>
+              <tr><td class="mono">2</td><td class="mono">33W2</td><td>Gleis 2 → Gleis 1 (Ostkopf, Zusammenführung)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3>Signalverzeichnis</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Funktion</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">A</td><td class="mono">33A</td><td>Einfahrsignal von Waldenberg · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Einfahrt über Weiche 1 nach Gleis 2 und <strong>Zs 3v (4)</strong> als Voranzeige für N2</td></tr>
+              <tr><td class="mono">F</td><td class="mono">33F</td><td>Einfahrsignal von Sandheide · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Einfahrt über Weiche 2 nach Gleis 2 und <strong>Zs 3v (4)</strong> als Voranzeige für P2</td></tr>
+              <tr><td class="mono">N1</td><td class="mono">33N1</td><td>Ausfahrsignal Gleis 1 Richtung Sandheide</td></tr>
+              <tr><td class="mono">N2</td><td class="mono">33N2</td><td>Ausfahrsignal Gleis 2 Richtung Sandheide · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Ausfahrt über Weiche 2</td></tr>
+              <tr><td class="mono">P1</td><td class="mono">33P1</td><td>Ausfahrsignal Gleis 1 Richtung Waldenberg</td></tr>
+              <tr><td class="mono">P2</td><td class="mono">33P2</td><td>Ausfahrsignal Gleis 2 Richtung Waldenberg · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Ausfahrt über Weiche 1</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="kreuzung">
+      <strong>Nachweis der Kreuzung aus dem Fahrplan:</strong> Bei 34 Minuten Fahrzeit
+      Waldenberg–Gbf und 30-Minuten-Takt in beide Richtungen reicht eine einzelne
+      Kreuzungsstelle nicht aus – Wehrheim übernimmt zusammen mit Sandheide und
+      Wassergrund je einen Teil der Begegnungen. Wehrheim liegt bei km 7,0:
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Zug</th><th>Richtung</th><th>an Wehrheim</th><th>ab Wehrheim</th><th>Gleis</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">RB 64</td><td>Waldenberg → Gbf</td><td>09:43</td><td>09:45</td><td>1</td></tr>
+            <tr><td class="mono">RB 64</td><td>Gbf → Waldenberg</td><td>09:43</td><td>09:45</td><td>2</td></tr>
+            <tr><td class="mono">RB 64</td><td>Waldenberg → Gbf</td><td>10:13</td><td>10:15</td><td>1</td></tr>
+            <tr><td class="mono">RB 64</td><td>Gbf → Waldenberg</td><td>10:13</td><td>10:15</td><td>2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>Symbollegende (Ril 819.9002)</h3>
+    <div class="legend">
+      <div class="legend-item">
+        <svg width="62" height="22" viewBox="0 0 62 22" aria-hidden="true">
+          <line x1="0" y1="6" x2="62" y2="6" stroke="currentColor" stroke-width="2"/>
+          <line x1="8" y1="1" x2="8" y2="11" stroke="currentColor" stroke-width="1.5"/>
+          <polygon points="8,6 34,6 34,17" fill="currentColor"/>
+          <line x1="34" y1="17" x2="52" y2="20" stroke="currentColor" stroke-width="2"/>
+          <line x1="40" y1="14" x2="38" y2="21" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <span>Ferngestellte Weiche: Weichenanfang · Schwärzung · Grenzzeichen</span>
+      </div>
+      <div class="legend-item">
+        <svg width="44" height="18" viewBox="0 0 44 18" aria-hidden="true">
+          <line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2"/>
+          <line x1="4" y1="9" x2="20" y2="9" stroke="currentColor" stroke-width="2"/>
+          <rect x="20" y="3" width="18" height="12" rx="6" fill="currentColor"/>
+        </svg>
+        <span>Ks-Mehrabschnittssignal, wärterbedient (Hp 0, Ks 1, Ks 2)</span>
+      </div>
+      <div class="legend-item">
+        <svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true">
+          <rect x="2" y="3" width="26" height="14" fill="none" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span>Allgemeines Gebäude (Empfangsgebäude)</span>
+      </div>
+      <div class="legend-item">
+        <svg width="56" height="18" viewBox="0 0 56 18" aria-hidden="true">
+          <line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2"/>
+          <line x1="4" y1="9" x2="20" y2="9" stroke="currentColor" stroke-width="2"/>
+          <rect x="20" y="3" width="18" height="12" rx="6" fill="currentColor"/>
+          <polygon points="41,3 51,9 41,15" fill="currentColor"/>
+        </svg>
+        <span>Zs 3 Geschwindigkeitsanzeiger (Lichtsignal) über dem Signalschirm, Kennzahl daneben</span>
+      </div>
+      <div class="legend-item">
+        <svg width="56" height="18" viewBox="0 0 56 18" aria-hidden="true">
+          <line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2"/>
+          <line x1="4" y1="9" x2="36" y2="9" stroke="currentColor" stroke-width="2"/>
+          <polygon points="26,3 16,9 26,15" fill="currentColor"/>
+          <rect x="36" y="3" width="18" height="12" rx="6" fill="currentColor"/>
+        </svg>
+        <span>Zs 3v Geschwindigkeitsvoranzeiger (rückwärts gerichtetes Dreieck) vor dem Signalschirm</span>
+      </div>
+      <div class="legend-item">
+        <svg width="30" height="18" viewBox="0 0 30 18" aria-hidden="true">
+          <line x1="0" y1="9" x2="30" y2="9" stroke="currentColor" stroke-width="2"/>
+          <rect x="9" y="1" width="14" height="16" fill="var(--surface)"/>
+          <text x="16" y="14" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="monospace">1</text>
+        </svg>
+        <span>Gleisnummer in der unterbrochenen Gleislinie</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">LF 2 Jahresprojekt 2026 „Mitteltrasse" · 5. Teilabschnitt (Los 5) — Chemiezentrum</footer>
+</div>
+
+</body>
+</html>
