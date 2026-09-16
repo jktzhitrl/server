@@ -58,6 +58,11 @@
             padding-bottom: 5px;
         }
 
+        .eingabe-tab { max-width: 340px; }
+        .eingabe-tab td { text-align: left; }
+        .eingabe-tab td.zeit { text-align: center; font-family: monospace; font-size: 13px; }
+        .eingabe-tab tr.ab-row td { border-bottom: 2px solid #999; }
+        .eingabe-tab tr.leer td { color: #bbb; }
         .table-wrapper {
             overflow-x: auto;
             font-size: 10px;
@@ -310,6 +315,19 @@
                 </table>
             </div>
 
+            <h2 style="margin-top: 12px;">🖊️ Eingabemaske – ein Zug, an/ab untereinander</h2>
+            <p style="font-size: 10px; margin: 0 0 6px; color: #555;">
+                Gleiches Format wie die Eingabe im Fahrplanprogramm. Leere Zelle = kein Halt,
+                dort nichts eintragen.
+            </p>
+            <select id="zugSelect" onchange="app.renderEingabe()" style="font-size: 12px; margin-bottom: 6px;"></select>
+            <div class="table-wrapper">
+                <table id="tableEingabe" class="eingabe-tab">
+                    <thead><tr><th>Betriebsstelle</th><th id="eingabeZug"></th></tr></thead>
+                    <tbody id="eingabeData"></tbody>
+                </table>
+            </div>
+
             <h2 style="margin-top: 12px;">Hin-Richtung (Bernstein → Obersosa)</h2>
 
             <div class="table-wrapper">
@@ -530,7 +548,50 @@
                 this.drawFahrplan();
                 this.renderCombinedTable();
                 this.renderAnAbTable();
+                this.fillZugSelect();
+                this.renderEingabe();
             },
+            // --- Eingabemaske: Stationen untereinander, je an/ab (Format des Fahrplanprogramms) ---
+            allTrains() {
+                const a = [];
+                this.dataHin.forEach(r => { if (r.times.some(x => x)) a.push({ row: r, dir: '→', list: stations.hin }); });
+                this.dataRueck.forEach(r => { if (r.times.some(x => x)) a.push({ row: r, dir: '←', list: stations.rueck }); });
+                a.sort((x, y) => this.timeToMin(x.row.times.find(v => v)) - this.timeToMin(y.row.times.find(v => v)));
+                return a;
+            },
+
+            fillZugSelect() {
+                const sel = document.getElementById('zugSelect');
+                const cur = sel.value;
+                sel.innerHTML = this.allTrains().map((t, i) =>
+                    `<option value="${i}">${t.row.line} ${t.dir} ab ${t.row.times.find(v => v)}</option>`).join('');
+                if (cur !== '' && Number(cur) < sel.options.length) sel.value = cur;
+            },
+
+            renderEingabe() {
+                const all = this.allTrains();
+                const sel = document.getElementById('zugSelect');
+                const t = all[Number(sel.value) || 0];
+                if (!t) { document.getElementById('eingabeData').innerHTML = ''; return; }
+
+                const halt = this.haltezeit(t.row.type);
+                const idx = [];
+                t.list.forEach((_, i) => { if (t.row.times[i]) idx.push(i); });
+                const first = idx[0], last = idx[idx.length - 1];
+
+                document.getElementById('eingabeZug').textContent = t.row.line;
+
+                const out = [];
+                t.list.forEach((st, i) => {
+                    const v = t.row.times[i];
+                    const an = v ? (i === first ? '' : this.minToTime(this.timeToMin(v) - halt)) : '';
+                    const ab = v ? (i === last ? '' : v) : '';
+                    out.push(`<tr class="${v ? '' : 'leer'}"><td>${st.name} an</td><td class="zeit">${an}</td></tr>`);
+                    out.push(`<tr class="ab-row ${v ? '' : 'leer'}"><td>${st.name} ab</td><td class="zeit">${ab}</td></tr>`);
+                });
+                document.getElementById('eingabeData').innerHTML = out.join('');
+            },
+
 
             // Haltezeit je Zuggattung in Minuten
             haltezeit(type) {
