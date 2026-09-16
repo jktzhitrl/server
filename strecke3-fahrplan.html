@@ -353,6 +353,13 @@
                 <div class="legend-item"><div class="legend-color" style="background: #333;"></div><span>—— Hin</span></div>
                 <div class="legend-item"><div class="legend-color" style="background: repeating-linear-gradient(90deg, #333 0, #333 3px, transparent 3px, transparent 6px);"></div><span>┄┄ Rück</span></div>
             </div>
+
+            <div class="settings-box" style="margin-top: 12px; margin-bottom: 0;">
+                <p style="font-size: 10px; line-height: 1.5;">
+                    <strong>ℹ️ RB 66 „Furth–Sandheide–Krug":</strong> setzt sich hier nur bis Sandheide fort
+                    (endet dort). Kommt jenseits von Waldenberg von Krug – Fortsetzung Richtung Furth siehe Strecke 1 (Rück-Tabelle).
+                </p>
+            </div>
         </div>
     </div>
 
@@ -378,6 +385,7 @@
 
         const trainTypes = {
             'RB 64': { color: '#1d72b8' },
+            'RB 66': { color: '#c9184a' },
             'Üg': { color: '#6c757d' }
         };
 
@@ -387,6 +395,8 @@
                 { line: 'RB 64', type: 'RB', times: ['09:48', '09:53', '10:00', '', '10:04', '10:13'] },
                 { line: 'RB 64', type: 'RB', times: ['10:18', '10:23', '10:30', '', '10:34', '10:43'] },
                 { line: 'RB 64', type: 'RB', times: ['10:48', '10:53', '11:00', '', '11:04', '11:13'] },
+                { line: 'RB 66', type: 'RB', times: ['10:33', '10:38', '10:45', '', '', ''] },
+                { line: 'RB 66', type: 'RB', times: ['11:33', '11:38', '11:45', '', '', ''] },
                 { line: 'Üg 1', type: 'Güter', times: ['11:35', '', '', '', '', '11:58'] }
             ],
             rueck: [
