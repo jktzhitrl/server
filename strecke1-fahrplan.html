@@ -82,7 +82,7 @@
             background: white;
         }
 
-        input[type="text"], input[type="time"] {
+        input[type="text"], input[type="time"], input[type="number"] {
             width: 100%;
             border: 1px solid #bbb;
             padding: 4px;
@@ -90,7 +90,15 @@
             font-size: 11px;
         }
 
-        input[type="text"]:focus, input[type="time"]:focus {
+        select {
+            width: 100%;
+            border: 1px solid #bbb;
+            padding: 4px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        input[type="text"]:focus, input[type="time"]:focus, input[type="number"]:focus, select:focus {
             outline: none;
             border-color: #0066cc;
             box-shadow: 0 0 3px rgba(0,102,204,0.3);
@@ -115,11 +123,13 @@
             display: flex;
             gap: 5px;
             margin-bottom: 10px;
+            flex-wrap: wrap;
         }
 
         .button-group button {
             flex: 1;
             margin-top: 0;
+            min-width: 100px;
         }
 
         canvas {
@@ -127,6 +137,7 @@
             background: white;
             display: block;
             margin: 10px 0;
+            max-width: 100%;
         }
 
         .legend {
@@ -160,9 +171,13 @@
             flex-wrap: wrap;
         }
 
-        .time-range input {
+        .time-range input, .time-range label {
             flex: 1;
-            min-width: 80px;
+            min-width: 60px;
+        }
+
+        .time-range button {
+            margin-top: 0;
         }
 
         .add-row-btn {
@@ -172,6 +187,24 @@
         .add-row-btn:hover {
             background: #218838;
         }
+
+        .auto-calc-btn {
+            background: #17a2b8;
+            font-size: 10px;
+            padding: 4px 8px;
+        }
+
+        .auto-calc-btn:hover {
+            background: #138496;
+        }
+
+        .settings-box {
+            background: #f0f8ff;
+            border-left: 4px solid #0066cc;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -180,15 +213,26 @@
 
         <!-- Eingabepanel -->
         <div class="panel">
+            <div class="settings-box">
+                <h2 style="border: none; margin-bottom: 10px;">⚙️ Einstellungen</h2>
+
+                <div class="time-range">
+                    <label>Zeitfenster Von:</label>
+                    <input type="time" id="startTime" value="06:00">
+                    <label>Bis:</label>
+                    <input type="time" id="endTime" value="08:00">
+                </div>
+
+                <div class="time-range">
+                    <label>Wendezeit (Min):</label>
+                    <input type="number" id="turnTime" value="15" min="5" max="60" style="max-width: 80px;">
+                    <button onclick="app.updateDisplay()" style="flex: 0;">Aktualisieren</button>
+                </div>
+            </div>
+
             <h2>Hin-Richtung (Krug → Furth)</h2>
 
-            <div class="time-range">
-                <label>Von:</label>
-                <input type="time" id="startTime" value="06:00">
-                <label>Bis:</label>
-                <input type="time" id="endTime" value="08:00">
-                <button onclick="app.updateDisplay()">Aktualisieren</button>
-            </div>
+            <button class="add-row-btn" onclick="app.addRowWithAutoCalc('hin')">+ Zug mit Auto-Berechnung</button>
 
             <div class="table-wrapper">
                 <table id="tableHin">
@@ -196,23 +240,24 @@
                         <tr>
                             <th>Linie</th>
                             <th>Typ</th>
-                            <th>Krug</th>
+                            <th>Abfahrt<br>Krug</th>
                             <th>Waldenberg</th>
                             <th>Hyxel</th>
                             <th>Obersosa</th>
                             <th>Feldheim</th>
                             <th>Lossow</th>
-                            <th>Furth</th>
+                            <th>Ankunft<br>Furth</th>
                         </tr>
                     </thead>
                     <tbody id="hinData"></tbody>
                 </table>
             </div>
 
-            <button class="add-row-btn" onclick="app.addRowHin()">+ Zug hinzufügen (Hin)</button>
             <button onclick="app.saveData()">💾 Speichern</button>
 
             <h2 style="margin-top: 20px;">Rück-Richtung (Furth → Krug)</h2>
+
+            <button class="add-row-btn" onclick="app.addRowWithAutoCalc('rueck')">+ Zug mit Auto-Berechnung</button>
 
             <div class="table-wrapper">
                 <table id="tableRueck">
@@ -220,20 +265,18 @@
                         <tr>
                             <th>Linie</th>
                             <th>Typ</th>
-                            <th>Furth</th>
+                            <th>Abfahrt<br>Furth</th>
                             <th>Lossow</th>
                             <th>Feldheim</th>
                             <th>Obersosa</th>
                             <th>Hyxel</th>
                             <th>Waldenberg</th>
-                            <th>Krug</th>
+                            <th>Ankunft<br>Krug</th>
                         </tr>
                     </thead>
                     <tbody id="rueckData"></tbody>
                 </table>
             </div>
-
-            <button class="add-row-btn" onclick="app.addRowRueck()">+ Zug hinzufügen (Rück)</button>
         </div>
 
         <!-- Bildfahrplan-Panel -->
@@ -257,14 +300,18 @@
                     <div class="legend-color" style="background: #1d72b8;"></div>
                     <span>RB (Regionalbahn)</span>
                 </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #6c757d; opacity: 0.5;"></div>
+                    <span>Durchfahrt (kein Halt)</span>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Strecke 1 Stationen mit Kilometern
-        const stations = {
-            hin: [
+        // Strecke 1: Kilometer und Fahrtzeiten (120 km/h)
+        const streckenDaten = {
+            stationen: [
                 { name: 'Krug', km: 34.5 },
                 { name: 'Waldenberg', km: 36.5 },
                 { name: 'Hyxel', km: 49.0 },
@@ -273,15 +320,26 @@
                 { name: 'Lossow', km: 88.0 },
                 { name: 'Furth', km: 117.5 }
             ],
-            rueck: [
-                { name: 'Furth', km: 117.5 },
-                { name: 'Lossow', km: 88.0 },
-                { name: 'Feldheim', km: 75.5 },
-                { name: 'Obersosa', km: 63.5 },
-                { name: 'Hyxel', km: 49.0 },
-                { name: 'Waldenberg', km: 36.5 },
-                { name: 'Krug', km: 34.5 }
-            ]
+            geschwindigkeit: 120, // km/h
+            haltezeiten: {
+                'IC': 0,
+                'RE': 2,
+                'RB': 2
+            }
+        };
+
+        // Berechne relative Fahrtzeiten in Minuten (ab Krug)
+        const startKm = streckenDaten.stationen[0].km;
+        const fahrtzeiten = streckenDaten.stationen.map(st => {
+            const km = st.km - startKm;
+            const minuten = (km / streckenDaten.geschwindigkeit) * 60;
+            return { name: st.name, km: km, fahrzeit: minuten };
+        });
+
+        // Richtung für Tabellen
+        const stations = {
+            hin: fahrtzeiten,
+            rueck: [...fahrtzeiten].reverse()
         };
 
         // Zugtypen
@@ -303,7 +361,10 @@
 
             init() {
                 this.loadData();
-                this.initializeTables();
+                if (this.dataHin.length === 0) {
+                    this.initializeSampleData();
+                }
+                this.renderTables();
                 this.updateDisplay();
 
                 // Auto-Update bei Eingabe
@@ -315,23 +376,95 @@
                 });
             },
 
-            initializeTables() {
-                const sampleDataHin = [
-                    { line: 'RE A', type: 'RE', times: ['06:15', '06:18', '06:25', '06:40', '', '', ''] },
-                    { line: 'IC 1', type: 'IC', times: ['06:30', '', '', '06:50', '07:00', '07:10', '07:30'] },
-                    { line: 'REAB', type: 'RE', times: ['', '', '', '07:05', '07:15', '07:25', '07:45'] },
-                    { line: 'RE A', type: 'RE', times: ['07:30', '07:33', '07:40', '07:55', '', '', ''] },
+            initializeSampleData() {
+                this.dataHin = [
+                    { line: 'RE A', type: 'RE', startTime: '06:00', isDerived: false },
+                    { line: 'IC 1', type: 'IC', startTime: '06:30', isDerived: false },
                 ];
+                this.dataRueck = [];
+            },
 
-                const sampleDataRueck = [
-                    { line: 'REAB', type: 'RE', times: ['07:00', '07:20', '07:30', '07:45', '', '', ''] },
-                    { line: 'IC 2', type: 'IC', times: ['07:15', '07:35', '07:45', '08:00', '', '', ''] },
-                    { line: 'RB G', type: 'RB', times: ['07:45', '', '', '08:05', '08:15', '08:20', '08:25'] },
-                ];
+            // Berechne alle Ankünfte/Abfahrten für eine Zugfahrt
+            calculateTimes(line, type, startTime, direction = 'hin') {
+                const times = [];
+                let currentTime = this.timeToMinutes(startTime);
+                const stations = direction === 'hin' ? fahrtzeiten : [...fahrtzeiten].reverse();
 
-                this.dataHin = sampleDataHin;
-                this.dataRueck = sampleDataRueck;
+                stations.forEach((station, idx) => {
+                    const arrivalTime = idx === 0 ? currentTime : currentTime + station.fahrzeit - fahrtzeiten[idx - 1].fahrzeit;
+                    const haltetime = streckenDaten.haltezeiten[type] || 0;
+                    const departureTime = arrivalTime + haltetime;
+
+                    currentTime = departureTime;
+                    times.push(this.minutesToTime(arrivalTime));
+                });
+
+                return times;
+            },
+
+            // Auto-Calc: User gibt nur Abfahrtszeit in einer Richtung ein
+            addRowWithAutoCalc(direction) {
+                const dialog = this.showAutoCalcDialog(direction);
+            },
+
+            showAutoCalcDialog(direction) {
+                const lineName = prompt('Linie eingeben (z.B. RE A, IC 1):');
+                if (!lineName) return;
+
+                const typeStr = prompt('Typ (IC/RE/RB):');
+                if (!typeStr) return;
+
+                const startTimeStr = prompt('Abfahrtszeit eingeben (HH:MM):');
+                if (!startTimeStr) return;
+
+                // Berechne alle Ankünfte/Abfahrten automatisch
+                const times = this.calculateTimes(lineName, typeStr, startTimeStr, direction);
+
+                if (direction === 'hin') {
+                    this.dataHin.push({
+                        line: lineName,
+                        type: typeStr,
+                        times: times,
+                        isDerived: false
+                    });
+
+                    // Automatisch Gegentakt berechnen
+                    const turnTime = parseInt(document.getElementById('turnTime').value) || 15;
+                    const lastArrivalMin = this.timeToMinutes(times[times.length - 1]);
+                    const returnDeparture = lastArrivalMin + turnTime;
+                    const returnTimes = this.calculateTimes(lineName, typeStr, this.minutesToTime(returnDeparture), 'rueck');
+
+                    this.dataRueck.push({
+                        line: lineName,
+                        type: typeStr,
+                        times: returnTimes,
+                        isDerived: true
+                    });
+                } else {
+                    this.dataRueck.push({
+                        line: lineName,
+                        type: typeStr,
+                        times: times,
+                        isDerived: false
+                    });
+
+                    // Gegentakt berechnen
+                    const turnTime = parseInt(document.getElementById('turnTime').value) || 15;
+                    const lastArrivalMin = this.timeToMinutes(times[times.length - 1]);
+                    const returnDeparture = lastArrivalMin + turnTime;
+                    const returnTimes = this.calculateTimes(lineName, typeStr, this.minutesToTime(returnDeparture), 'hin');
+
+                    this.dataHin.push({
+                        line: lineName,
+                        type: typeStr,
+                        times: returnTimes,
+                        isDerived: true
+                    });
+                }
+
                 this.renderTables();
+                this.updateDisplay();
+                this.saveData();
             },
 
             renderTables() {
@@ -345,30 +478,24 @@
 
                 data.forEach((row, idx) => {
                     const tr = document.createElement('tr');
+                    const isDerived = row.isDerived ? ' (📌 Auto)' : '';
+
                     tr.innerHTML = `
-                        <td><input type="text" value="${row.line}" onchange="app.updateDisplay()"></td>
-                        <td><select onchange="app.updateDisplay()">
-                            <option ${row.type === 'IC' ? 'selected' : ''}>IC</option>
-                            <option ${row.type === 'RE' ? 'selected' : ''}>RE</option>
-                            <option ${row.type === 'RB' ? 'selected' : ''}>RB</option>
-                        </select></td>
+                        <td><input type="text" value="${row.line}" onchange="app.updateDisplay()" style="background: ${row.isDerived ? '#fff0f5' : '#fff'};"></td>
+                        <td>
+                            <select onchange="app.updateDisplay()" style="background: ${row.isDerived ? '#fff0f5' : '#fff'};">
+                                <option ${row.type === 'IC' ? 'selected' : ''}>IC</option>
+                                <option ${row.type === 'RE' ? 'selected' : ''}>RE</option>
+                                <option ${row.type === 'RB' ? 'selected' : ''}>RB</option>
+                            </select>
+                        </td>
                         ${stationList.map((_, i) => `
-                            <td><input type="time" value="${row.times[i] || ''}" onchange="app.updateDisplay()"></td>
+                            <td><input type="time" value="${row.times[i] || ''}" onchange="app.updateDisplay()" ${row.isDerived ? 'disabled' : ''}></td>
                         `).join('')}
-                        <td><button onclick="app.deleteRow('${tableId}', ${idx})" style="background: #dc3545;">×</button></td>
+                        <td><button onclick="app.deleteRow('${tableId}', ${idx})" style="background: #dc3545; padding: 4px;">×</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
-            },
-
-            addRowHin() {
-                this.dataHin.push({ line: 'Neue Linie', type: 'RE', times: Array(7).fill('') });
-                this.renderTables();
-            },
-
-            addRowRueck() {
-                this.dataRueck.push({ line: 'Neue Linie', type: 'RE', times: Array(7).fill('') });
-                this.renderTables();
             },
 
             deleteRow(tableId, idx) {
@@ -396,9 +523,9 @@
                 const rows = [];
                 document.getElementById(tableId).querySelectorAll('tr').forEach(tr => {
                     const cells = tr.querySelectorAll('input, select');
-                    if (cells.length > 0) {
+                    if (cells.length > 0 && cells[0].value) {
                         const times = [];
-                        for (let i = 2; i < cells.length; i++) {
+                        for (let i = 2; i < 2 + stationCount; i++) {
                             times.push(cells[i].value);
                         }
                         rows.push({
@@ -429,8 +556,10 @@
                 const endMinutes = this.timeToMinutes(endTime);
                 const totalMinutes = endMinutes - startMinutes;
 
+                if (totalMinutes <= 0) return;
+
                 // X-Achse (Zeit)
-                ctx.strokeStyle = '#999';
+                ctx.strokeStyle = '#ddd';
                 ctx.lineWidth = 1;
                 for (let i = 0; i <= totalMinutes; i += 15) {
                     const x = padding + (i / totalMinutes) * width;
@@ -449,7 +578,7 @@
                 }
 
                 // Y-Achse (Stationen)
-                ctx.strokeStyle = '#999';
+                ctx.strokeStyle = '#ddd';
                 ctx.lineWidth = 1;
                 ctx.textAlign = 'right';
                 ctx.font = 'bold 11px sans-serif';
@@ -467,12 +596,12 @@
 
                 // Züge zeichnen
                 data.forEach(trainRow => {
-                    if (!trainRow.times.some(t => t)) return; // Leere Zeilen überspringen
+                    if (!trainRow.times.some(t => t)) return;
 
                     const color = trainTypes[trainRow.line]?.color || '#999';
                     ctx.strokeStyle = color;
-                    ctx.lineWidth = 2;
-                    ctx.globalAlpha = 0.8;
+                    ctx.lineWidth = 2.5;
+                    ctx.globalAlpha = 0.85;
 
                     let firstPoint = null;
 
@@ -506,8 +635,15 @@
             },
 
             timeToMinutes(timeStr) {
+                if (!timeStr) return 0;
                 const [h, m] = timeStr.split(':').map(Number);
                 return h * 60 + m;
+            },
+
+            minutesToTime(minutes) {
+                const h = Math.floor(minutes / 60) % 24;
+                const m = minutes % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
             },
 
             saveData() {
