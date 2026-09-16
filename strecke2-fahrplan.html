@@ -278,10 +278,10 @@
 
         <div class="panel">
             <h2>Gleis 1: Hin-Richtung</h2>
-            <canvas id="canvasHin" width="520" height="400"></canvas>
+            <canvas id="canvasHin" width="900" height="500" style="border: 2px solid #333;"></canvas>
 
             <h2 style="margin-top: 12px;">Gleis 2: Rück-Richtung</h2>
-            <canvas id="canvasRueck" width="520" height="400"></canvas>
+            <canvas id="canvasRueck" width="900" height="500" style="border: 2px solid #333;"></canvas>
 
             <div class="legend">
                 <div class="legend-item"><div class="legend-color" style="background: #e63946;"></div><span>IC</span></div>
@@ -427,12 +427,18 @@
             drawFahrplan(canvasId, stationList, data) {
                 const canvas = document.getElementById(canvasId);
                 const ctx = canvas.getContext('2d');
-                const padding = 50;
-                const width = canvas.width - padding * 2;
-                const height = canvas.height - padding * 2;
+                const dpr = window.devicePixelRatio || 1;
+
+                canvas.width *= dpr;
+                canvas.height *= dpr;
+                ctx.scale(dpr, dpr);
+
+                const padding = 70;
+                const width = (canvas.width / dpr) - padding * 2;
+                const height = (canvas.height / dpr) - padding * 2;
 
                 ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
 
                 const startMin = this.timeToMin(document.getElementById('startTime').value);
                 const endMin = this.timeToMin(document.getElementById('endTime').value);
@@ -440,76 +446,112 @@
 
                 if (totalMin <= 0) return;
 
-                ctx.strokeStyle = '#e0e0e0';
-                ctx.lineWidth = 0.5;
-                for (let i = 0; i <= totalMin; i += 15) {
+                // Halbstunden (gelb)
+                ctx.strokeStyle = '#ffc500';
+                ctx.lineWidth = 3;
+                for (let i = 0; i <= totalMin; i += 30) {
                     const x = padding + (i / totalMin) * width;
                     ctx.beginPath();
                     ctx.moveTo(x, padding);
-                    ctx.lineTo(x, canvas.height - padding);
+                    ctx.lineTo(x, (canvas.height / dpr) - padding);
                     ctx.stroke();
+                }
 
+                // Viertelstunden
+                ctx.strokeStyle = '#e8e8e8';
+                ctx.lineWidth = 1;
+                for (let i = 15; i < totalMin; i += 30) {
+                    const x = padding + (i / totalMin) * width;
+                    ctx.beginPath();
+                    ctx.moveTo(x, padding);
+                    ctx.lineTo(x, (canvas.height / dpr) - padding);
+                    ctx.stroke();
+                }
+
+                // Zeit-Labels
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                for (let i = 0; i <= totalMin; i += 30) {
                     const min = startMin + i;
                     const h = Math.floor(min / 60) % 24;
                     const m = min % 60;
-                    ctx.fillStyle = '#666';
-                    ctx.font = 'bold 8px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`, x, canvas.height - 32);
+                    const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    const x = padding + (i / totalMin) * width;
+                    ctx.fillText(timeStr, x, padding - 10);
+                    ctx.fillText(timeStr, x, (canvas.height / dpr) - 18);
                 }
 
-                ctx.strokeStyle = '#ddd';
-                ctx.lineWidth = 0.5;
-                ctx.font = 'bold 9px sans-serif';
+                // Stationen
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.font = 'bold 10px Arial';
                 ctx.textAlign = 'right';
+                ctx.fillStyle = '#000';
 
                 stationList.forEach((st, i) => {
-                    const y = padding + (i / (stationList.length - 1)) * height;
+                    const y = padding + (i / Math.max(1, stationList.length - 1)) * height;
                     ctx.beginPath();
                     ctx.moveTo(padding, y);
-                    ctx.lineTo(canvas.width - padding, y);
+                    ctx.lineTo((canvas.width / dpr) - padding, y);
                     ctx.stroke();
-
-                    ctx.fillStyle = '#333';
-                    ctx.fillText(st.name, padding - 5, y + 3);
+                    ctx.fillText(st.name.padEnd(10), padding - 8, y + 4);
                 });
 
+                // Züge
                 data.forEach(train => {
                     if (!train.times.some(t => t)) return;
 
                     const color = trainTypes[train.line]?.color || '#999';
                     ctx.strokeStyle = color;
-                    ctx.lineWidth = 2;
-                    ctx.globalAlpha = 0.75;
+                    ctx.lineWidth = 2.5;
 
-                    let first = null;
-
+                    let points = [];
                     train.times.forEach((time, i) => {
                         if (!time) return;
-
                         const min = this.timeToMin(time);
                         if (min < startMin || min > endMin) return;
-
                         const x = padding + ((min - startMin) / totalMin) * width;
-                        const y = padding + (i / (stationList.length - 1)) * height;
-
-                        if (first) {
-                            ctx.beginPath();
-                            ctx.moveTo(first.x, first.y);
-                            ctx.lineTo(x, y);
-                            ctx.stroke();
-                        }
-
-                        first = { x, y };
-
-                        ctx.fillStyle = color;
-                        ctx.beginPath();
-                        ctx.arc(x, y, 2, 0, Math.PI * 2);
-                        ctx.fill();
+                        const y = padding + (i / Math.max(1, stationList.length - 1)) * height;
+                        points.push({ x, y, time });
                     });
 
-                    ctx.globalAlpha = 1.0;
+                    if (points.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(points[0].x, points[0].y);
+                        for (let i = 1; i < points.length; i++) {
+                            ctx.lineTo(points[i].x, points[i].y);
+                        }
+                        ctx.stroke();
+                    }
+
+                    points.forEach(pt => {
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = color;
+                        ctx.font = 'bold 8px Arial';
+                        ctx.textAlign = 'left';
+                        ctx.fillText(pt.time, pt.x + 4, pt.y - 1);
+                    });
+
+                    if (points.length > 0) {
+                        const mid = Math.floor(points.length / 2);
+                        ctx.fillStyle = color;
+                        ctx.font = 'bold 9px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.save();
+                        ctx.translate(points[mid].x - 8, points[mid].y);
+                        ctx.rotate(-Math.PI / 4);
+                        ctx.fillText(train.line, 0, 0);
+                        ctx.restore();
+                    }
                 });
+
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(padding, padding, width, height);
             },
 
             timeToMin(t) {
