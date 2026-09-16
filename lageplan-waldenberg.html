@@ -27,7 +27,7 @@
     font-family: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif;
     margin: 0; padding-inline: 20px; padding-block: 28px 56px; line-height: 1.5;
   }
-  .wrap { max-width: 1160px; margin: 0 auto; }
+  .wrap { max-width: 1300px; margin: 0 auto; }
   .kicker {
     font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px;
     letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink);
@@ -38,7 +38,7 @@
   .sub { color: var(--ink-soft); font-size: 15px; max-width: 74ch; margin: 0 0 26px; }
   .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
   .diagram-scroll { overflow-x: auto; }
-  svg.plan { width: 100%; height: auto; min-width: 820px; display: block; }
+  svg.plan { width: 100%; height: auto; min-width: 920px; display: block; }
   svg.plan text { font-family: "IBM Plex Mono", ui-monospace, monospace; }
   h2 { font-size: 19px; margin: 0 0 4px; }
   h3 { font-size: 13.5px; margin: 0 0 8px; }
@@ -77,10 +77,11 @@
   <h1>Lageplan Waldenberg</h1>
   <p class="sub">
     Abzweigbahnhof: die zweigleisige Hauptbahn aus Richtung Krug (120 km/h) läuft am
-    Ostkopf <strong>durchgehend geradeaus</strong> weiter nach Hyxel/Furth. Zusätzlich
-    zweigt hier die eingleisige Nebenbahn nach Wehrheim – Sandheide – Gbf (80 km/h) über
-    ein eigenes Bahnsteiggleis 3 ab. Der Bahnübergang km 0,8 liegt auf der Nebenbahn kurz
-    hinter dem Abzweig.
+    Ostkopf <strong>durchgehend geradeaus</strong> weiter nach Hyxel/Furth. Die Bahnsteige 1
+    und 2 liegen außen an den Streckengleisen, verbunden über einen Reisendenübergang.
+    Getrennt davon liegt mittig ein eigenständiges Bahnsteiggleis 3 (Schleife aus Gleis 1),
+    und weiter östlich zweigt über eine eigene Weiche die eingleisige Nebenbahn nach
+    Wehrheim – Sandheide – Gbf (80 km/h) ab.
   </p>
 
   <section class="panel">
@@ -89,22 +90,23 @@
       Weichensymbol nach Ril 819.9002: Weichenanfang als senkrechter Strich, Schwärzung
       (ferngestellte Weiche), Grenzzeichen am Weichenende. Signale „abgeklappt" in
       Fahrtrichtung, Schirm ausgefüllt = wärterbedient. Alle Hauptsignale sind
-      <strong>Ks-Mehrabschnittssignale</strong> (Signalbegriffe Hp 0, Ks 1, Ks 2). Die
-      Schutzweiche 4 sichert als <strong>Flankenschutz</strong> Gleis 1 gegen aus Gleis 3
-      auflaufende Fahrzeuge und liegt in Grundstellung stets in Schutzlage (Sperrgleis).
+      <strong>Ks-Mehrabschnittssignale</strong> (Kombinationssignale, Signalbegriffe Hp 0,
+      Ks 1, Ks 2) und tragen ihre Kennzeichnung am Schirm. Die Schutzweiche 6 sichert als
+      <strong>Flankenschutz</strong> Gleis 1/2 gegen aus der Nebenbahn auflaufende
+      Fahrzeuge und liegt in Grundstellung stets in Schutzlage (Sperrgleis).
     </p>
 
     <div class="diagram-scroll">
-      <svg class="plan" viewBox="0 0 1160 460" role="img" aria-label="Sicherungstechnischer Lageplan der Betriebsstelle Waldenberg: zwei durchgehende Hauptgleise 1 und 2 aus Richtung Krug nach Hyxel, Überleitverbinder mit den Weichen 1 und 2 am Westkopf, Abzweigweiche 3 aus Gleis 1 zum Bahnsteiggleis 3 der eingleisigen Nebenbahn nach Wehrheim, Schutzweiche 4 als Flankenschutz, Einfahrsignale A und F, Ausfahrsignal N1, Nebenbahnsignale Nn und Fn, Bahnübergang km 0,8 mit Überwachungssignal.">
+      <svg class="plan" viewBox="0 0 1580 480" role="img" aria-label="Sicherungstechnischer Lageplan der Betriebsstelle Waldenberg: zwei durchgehende Hauptgleise 1 und 2 aus Richtung Krug nach Hyxel, Überleitverbinder mit den Weichen 1 und 2 am Westkopf, Außenbahnsteige 1 und 2 mit Reisendenübergang, eigenständiges Bahnsteiggleis 3 als Schleife aus Gleis 1 mit den Weichen 3 und 4, weiter östlich Abzweigweiche 5 aus Gleis 1 zur eingleisigen Nebenbahn nach Wehrheim mit Schutzweiche 6 als Flankenschutz, Einfahrsignale A und F, Ausfahrsignale N1 und N3, Nebenbahnsignale Nn und Fn.">
 
         <!-- Betriebsstellenbezeichnung -->
-        <text x="520" y="26" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">Waldenberg</text>
-        <text x="520" y="43" text-anchor="middle" font-size="11" fill="var(--ink-soft)">(Wbg) 31</text>
+        <text x="790" y="26" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">Waldenberg</text>
+        <text x="790" y="43" text-anchor="middle" font-size="11" fill="var(--ink-soft)">(Wbg) 31</text>
 
         <!-- Gleis 1 und Gleis 2: beide durchgehend Krug -> Hyxel -->
         <g stroke="currentColor" fill="none" stroke-width="3">
-          <line x1="40" y1="110" x2="1080" y2="110"/>
-          <line x1="40" y1="210" x2="1080" y2="210"/>
+          <line x1="40" y1="110" x2="1500" y2="110"/>
+          <line x1="40" y1="210" x2="1500" y2="210"/>
         </g>
 
         <!-- ===== Westkopf: Überleitverbinder Weichen 1 / 2 (unverändert) ===== -->
@@ -126,66 +128,75 @@
           <text x="323" y="192">2</text>
         </g>
 
-        <!-- Mittelbahnsteig (Hauptbahn) -->
-        <rect x="400" y="138" width="240" height="44" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
-        <text x="520" y="165" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Mittelbahnsteig</text>
+        <!-- Bahnsteig 1 (außen, nördlich Gleis 1) und Bahnsteig 2 (außen, südlich Gleis 2) -->
+        <rect x="430" y="58" width="240" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="550" y="80" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 1</text>
+        <rect x="430" y="228" width="240" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="550" y="250" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 2</text>
+        <line x1="700" y1="92" x2="700" y2="228" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="3,4"/>
+        <text x="710" y="164" font-size="10.5" fill="var(--ink-soft)">Reisendenübergang</text>
 
         <!-- Gleisnummern Hauptbahn in unterbrochener Gleislinie -->
         <g fill="var(--surface)" stroke="none">
-          <rect x="508" y="100" width="24" height="20"/>
-          <rect x="508" y="200" width="24" height="20"/>
+          <rect x="468" y="100" width="24" height="20"/>
+          <rect x="468" y="200" width="24" height="20"/>
         </g>
         <g fill="currentColor" font-size="14" font-weight="600" text-anchor="middle">
-          <text x="520" y="116">1</text>
-          <text x="520" y="216">2</text>
+          <text x="480" y="116">1</text>
+          <text x="480" y="216">2</text>
         </g>
 
         <!-- Streckengleisbezeichnung (eingeklammert), West und Ost -->
         <g fill="var(--ink-soft)" font-size="12">
           <text x="46" y="102">(1)</text>
           <text x="46" y="228">(2)</text>
-          <text x="1094" y="102" text-anchor="end">(1)</text>
-          <text x="1094" y="228" text-anchor="end">(2)</text>
+          <text x="1490" y="102" text-anchor="end">(1)</text>
+          <text x="1490" y="228" text-anchor="end">(2)</text>
         </g>
 
-        <!-- ===== Abzweig zur Nebenbahn: Weiche 3 aus Gleis 1 ===== -->
+        <!-- ===== Bahnsteiggleis 3: eigenständige Schleife aus Gleis 1, Weichen 3 (West) und 4 (Ost) ===== -->
         <g stroke="currentColor" stroke-width="2">
-          <line x1="680" y1="101" x2="680" y2="119"/>
+          <line x1="820" y1="101" x2="820" y2="119"/>
         </g>
         <g fill="currentColor" stroke="none">
-          <polygon points="680,110 755,110 755,146"/>
+          <polygon points="820,110 895,110 895,146"/>
         </g>
-        <line x1="755" y1="146" x2="860" y2="300" stroke="currentColor" stroke-width="3"/>
+        <line x1="895" y1="146" x2="960" y2="295" stroke="currentColor" stroke-width="3"/>
         <g stroke="currentColor" stroke-width="2">
-          <line x1="767.4" y1="141.6" x2="772.6" y2="152.4"/>
+          <line x1="907.4" y1="141.6" x2="912.6" y2="152.4"/>
         </g>
-        <text x="717" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">3</text>
+        <text x="857" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">3</text>
 
-        <!-- Gleis 3: Nebenbahnsteiggleis, aus dem Abzweig kommend -->
         <g stroke="currentColor" fill="none" stroke-width="3">
-          <line x1="860" y1="300" x2="1120" y2="300"/>
+          <line x1="960" y1="295" x2="1080" y2="295"/>
         </g>
         <g fill="var(--surface)" stroke="none">
-          <rect x="924" y="290" width="24" height="20"/>
+          <rect x="1010" y="283" width="24" height="20"/>
         </g>
-        <text x="936" y="306" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">3</text>
+        <text x="1022" y="299" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">3</text>
 
-        <!-- Flankenschutz: Schutzweiche 4 in Gleis 3, Grundstellung = Schutzlage (Sperrgleis) -->
+        <rect x="980" y="311" width="100" height="28" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="1030" y="329" text-anchor="middle" fill="var(--ink-soft)" font-size="10.5">Bahnsteig 3</text>
+
         <g stroke="currentColor" stroke-width="2">
-          <line x1="882" y1="291" x2="882" y2="309"/>
+          <line x1="1170" y1="101" x2="1170" y2="119"/>
         </g>
         <g fill="currentColor" stroke="none">
-          <polygon points="882,300 855,300 855,278"/>
+          <polygon points="1170,110 1095,110 1095,146"/>
         </g>
-        <line x1="855" y1="278" x2="835" y2="258" stroke="currentColor" stroke-width="2.5"/>
-        <line x1="828" y1="251" x2="842" y2="265" stroke="currentColor" stroke-width="2.5"/>
-        <line x1="842" y1="251" x2="828" y2="265" stroke="currentColor" stroke-width="2.5"/>
-        <text x="795" y="233" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">4</text>
-        <text x="882" y="325" text-anchor="middle" font-size="10.5" fill="var(--accent-ink)">Flankenschutz</text>
+        <line x1="1095" y1="146" x2="1080" y2="295" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="2">
+          <line x1="1082.6" y1="141.6" x2="1077.4" y2="152.4"/>
+        </g>
+        <text x="1133" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">4</text>
 
-        <!-- Bahnsteig 3 (Seitenbahnsteig Nebenbahn) -->
-        <rect x="965" y="312" width="150" height="30" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
-        <text x="1040" y="332" text-anchor="middle" fill="var(--ink-soft)" font-size="11.5">Bahnsteig 3</text>
+        <!-- N3: Ausfahrsignal Gleis 3 zurück auf Gleis 1, Richtung Hyxel -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="1090" y1="276" x2="1090" y2="290"/>
+          <line x1="1090" y1="283" x2="1106" y2="283"/>
+        </g>
+        <rect x="1106" y="277" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="1082" y="293" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N3</text>
 
         <!-- ===== Signale Hauptbahn ===== -->
         <!-- A: Einfahrsignal West, Gleis 1 -->
@@ -204,62 +215,69 @@
         <rect x="96" y="187" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="138" y="197" font-size="13" font-weight="600" fill="currentColor">P2</text>
 
-        <!-- N1: Ausfahrsignal Gleis 1 vor der Abzweigweiche, Richtung Hyxel ODER Nebenbahn -->
+        <!-- N1: Ausfahrsignal Gleis 1 vor der Nebenbahn-Abzweigweiche 5, mit Zs 3 (6) -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="630" y1="120" x2="630" y2="134"/>
-          <line x1="630" y1="127" x2="646" y2="127"/>
+          <line x1="1230" y1="120" x2="1230" y2="134"/>
+          <line x1="1230" y1="127" x2="1246" y2="127"/>
         </g>
-        <rect x="646" y="121" width="18" height="12" rx="6" fill="currentColor"/>
-        <polygon points="667,121 677,127 667,133" fill="currentColor"/>
-        <text x="681" y="131" font-size="11" font-weight="600" fill="currentColor">4</text>
-        <text x="622" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
+        <rect x="1246" y="121" width="18" height="12" rx="6" fill="currentColor"/>
+        <polygon points="1267,121 1277,127 1267,133" fill="currentColor"/>
+        <text x="1281" y="131" font-size="11" font-weight="600" fill="currentColor">6</text>
+        <text x="1222" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
 
         <!-- F: Einfahrsignal Ost, Gleis 2, von Hyxel -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="1020" y1="186" x2="1020" y2="200"/>
-          <line x1="1020" y1="193" x2="1004" y2="193"/>
+          <line x1="1450" y1="186" x2="1450" y2="200"/>
+          <line x1="1450" y1="193" x2="1434" y2="193"/>
         </g>
-        <rect x="986" y="187" width="18" height="12" rx="6" fill="currentColor"/>
-        <text x="1028" y="197" font-size="13" font-weight="600" fill="currentColor">F</text>
+        <rect x="1416" y="187" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="1458" y="197" font-size="13" font-weight="600" fill="currentColor">F</text>
 
-        <!-- ===== Signale Nebenbahn (Gleis 3) ===== -->
-        <!-- Nn: Ausfahrsignal Gleis 3, Richtung Wehrheim -->
-        <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="960" y1="281" x2="960" y2="295"/>
-          <line x1="960" y1="288" x2="976" y2="288"/>
+        <!-- ===== Abzweig zur Nebenbahn: Weiche 5 aus Gleis 1, weiter östlich als das Bahnsteiggleis 3 ===== -->
+        <g stroke="currentColor" stroke-width="2">
+          <line x1="1330" y1="101" x2="1330" y2="119"/>
         </g>
-        <rect x="976" y="282" width="18" height="12" rx="6" fill="currentColor"/>
-        <text x="952" y="278" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Nn</text>
+        <g fill="currentColor" stroke="none">
+          <polygon points="1330,110 1405,110 1405,146"/>
+        </g>
+        <line x1="1405" y1="146" x2="1500" y2="340" stroke="currentColor" stroke-width="3"/>
+        <line x1="1500" y1="340" x2="1550" y2="410" stroke="currentColor" stroke-width="3"/>
+        <g stroke="currentColor" stroke-width="2">
+          <line x1="1417.4" y1="141.6" x2="1422.6" y2="152.4"/>
+        </g>
+        <text x="1367" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">5</text>
 
-        <!-- Fn: Einfahrsignal Gleis 3, von Wehrheim -->
-        <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="1130" y1="305" x2="1130" y2="319"/>
-          <line x1="1130" y1="312" x2="1114" y2="312"/>
+        <!-- Schutzweiche 6: Flankenschutz für Gleis 1/2 gegen die Nebenbahn, Grundstellung Schutzlage -->
+        <g fill="currentColor" stroke="none">
+          <polygon points="1457,253 1427,253 1427,230"/>
         </g>
-        <rect x="1096" y="306" width="18" height="12" rx="6" fill="currentColor"/>
-        <text x="1138" y="316" font-size="13" font-weight="600" fill="currentColor">Fn</text>
+        <line x1="1427" y1="230" x2="1405" y2="210" stroke="currentColor" stroke-width="2.5"/>
+        <line x1="1398" y1="203" x2="1412" y2="217" stroke="currentColor" stroke-width="2.5"/>
+        <line x1="1412" y1="203" x2="1398" y2="217" stroke="currentColor" stroke-width="2.5"/>
+        <text x="1368" y="193" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">6</text>
+        <text x="1457" y="278" text-anchor="middle" font-size="10.5" fill="var(--accent-ink)">Flankenschutz</text>
 
-        <!-- Bahnübergang km 0,8 auf der Nebenbahn, hinter dem Bahnsteig 3 -->
-        <g stroke="var(--accent)" stroke-width="2.5" fill="none">
-          <line x1="1050" y1="255" x2="1085" y2="345"/>
-          <line x1="1068" y1="255" x2="1103" y2="345"/>
-        </g>
-        <g fill="var(--accent-ink)" font-size="10.5" text-anchor="middle">
-          <text x="1096" y="360" font-weight="600">BÜ 0,8</text>
-          <text x="1096" y="373">Hs, ÜS</text>
-        </g>
+        <!-- Nn: Ausfahrsignal Nebenbahn, Richtung Wehrheim -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="1045" y1="281" x2="1045" y2="295"/>
-          <line x1="1045" y1="288" x2="1033" y2="288"/>
-          <rect x="1021" y="282" width="12" height="12" fill="var(--surface)"/>
+          <line x1="1481" y1="291" x2="1481" y2="305"/>
+          <line x1="1481" y1="298" x2="1497" y2="298"/>
         </g>
-        <text x="1027" y="271" text-anchor="middle" font-size="10.5" fill="currentColor">ÜS 1</text>
+        <rect x="1497" y="292" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="1473" y="308" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">Nn</text>
+
+        <!-- Fn: Einfahrsignal Nebenbahn, von Wehrheim -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="1530" y1="366" x2="1530" y2="380"/>
+          <line x1="1530" y1="373" x2="1514" y2="373"/>
+        </g>
+        <rect x="1496" y="367" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="1538" y="383" font-size="13" font-weight="600" fill="currentColor">Fn</text>
 
         <!-- Zugmeldestellen / Streckenrichtungen -->
         <g fill="var(--ink-soft)" font-size="12" font-style="italic">
-          <text x="40" y="430">← Krug · Hauptbahn 120 km/h · zweigleisig</text>
-          <text x="1120" y="430" text-anchor="end">Hyxel (km 49,0) →</text>
-          <text x="1120" y="450" text-anchor="end">Nebenbahn Wehrheim–Sandheide–Gbf · 80 km/h · eingleisig →</text>
+          <text x="40" y="440">← Krug · Hauptbahn 120 km/h · zweigleisig</text>
+          <text x="1500" y="440" text-anchor="end">Hyxel (km 49,0) →</text>
+          <text x="1560" y="460" text-anchor="end">Nebenbahn Wehrheim–Sandheide–Gbf · 80 km/h · eingleisig →</text>
         </g>
       </svg>
     </div>
@@ -268,8 +286,9 @@
       <span>Sämtliche fernbediente Weichen mit Zungenprüfern.</span>
       <span>Gleisnummern sind einstellig.</span>
       <span>Nebenbahn eingleisig; Kreuzungsmöglichkeiten in Wehrheim, Sandheide und Wassergrund.</span>
-      <span>Weiche 3 (Abzweig) EW 1:9, Abzweiggeschwindigkeit 40 km/h → Zs 3 mit Kennzahl 4 an N1.</span>
-      <span>Schutzweiche 4: Flankenschutz für Gleis 1, Grundstellung Schutzlage, keine Reisezugfunktion.</span>
+      <span>Weichen 3/4 (Bahnsteiggleis 3, Schleife aus Gleis 1) EW 1:9, 40 km/h.</span>
+      <span>Weiche 5 (Abzweig zur Nebenbahn) EW 1:9, Abzweiggeschwindigkeit 40 km/h → Zs 3 mit Kennzahl 6 an N1.</span>
+      <span>Schutzweiche 6: Flankenschutz für Gleis 1/2, Grundstellung Schutzlage, keine Reisezugfunktion.</span>
     </div>
   </section>
 
@@ -283,27 +302,28 @@
             <tbody>
               <tr><td class="mono">1</td><td class="mono">31W1</td><td>Gleis 1 → Verbindungsgleis (Westkopf, Überleitverbinder)</td></tr>
               <tr><td class="mono">2</td><td class="mono">31W2</td><td>Verbindungsgleis → Gleis 2 (Westkopf, Überleitverbinder)</td></tr>
-              <tr><td class="mono">3</td><td class="mono">31W3</td><td>Gleis 1 → Gleis 3 (Ostkopf, Abzweig zur Nebenbahn)</td></tr>
-              <tr><td class="mono">4</td><td class="mono">31W4</td><td>Schutzweiche Gleis 3, Flankenschutz für Gleis 1 (Grundstellung: Schutzlage)</td></tr>
+              <tr><td class="mono">3</td><td class="mono">31W3</td><td>Gleis 1 → Bahnsteiggleis 3 (Westanschluss der Schleife)</td></tr>
+              <tr><td class="mono">4</td><td class="mono">31W4</td><td>Bahnsteiggleis 3 → Gleis 1 (Ostanschluss der Schleife)</td></tr>
+              <tr><td class="mono">5</td><td class="mono">31W5</td><td>Gleis 1 → Nebenbahn (Ostkopf, Abzweig Richtung Wehrheim)</td></tr>
+              <tr><td class="mono">6</td><td class="mono">31W6</td><td>Schutzweiche Nebenbahn, Flankenschutz für Gleis 1/2 (Grundstellung: Schutzlage)</td></tr>
             </tbody>
           </table>
         </div>
       </div>
       <div>
-        <h3>Signal- und BÜ-Verzeichnis</h3>
+        <h3>Signalverzeichnis</h3>
         <div class="table-scroll">
           <table>
             <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Funktion</th></tr></thead>
             <tbody>
-              <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Krug · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 1, Richtung Hyxel oder über Weiche 3 zur Nebenbahn · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Abzweigfahrt</td></tr>
-              <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 2, von Hyxel · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Krug · Ks-Mehrabschnittssignal (Kombinationssignal)</td></tr>
               <tr><td class="mono">P2</td><td class="mono">31P2</td><td>Ausfahrsignal Gleis 2, Richtung Krug · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">Nn</td><td class="mono">31Nn</td><td>Ausfahrsignal Gleis 3, Richtung Wehrheim · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">Fn</td><td class="mono">31Fn</td><td>Einfahrsignal Gleis 3, von Wehrheim · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">N3</td><td class="mono">31N3</td><td>Ausfahrsignal Bahnsteiggleis 3, zurück auf Gleis 1 Richtung Hyxel · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 1, Richtung Hyxel oder über Weiche 5 zur Nebenbahn · Ks-Mehrabschnittssignal mit <strong>Zs 3 (6)</strong> für die Abzweigfahrt</td></tr>
+              <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 2, von Hyxel · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">Nn</td><td class="mono">31Nn</td><td>Ausfahrsignal Nebenbahn, Richtung Wehrheim · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">Fn</td><td class="mono">31Fn</td><td>Einfahrsignal Nebenbahn, von Wehrheim · Ks-Mehrabschnittssignal</td></tr>
               <tr><td class="mono">—</td><td class="mono">—</td><td>Gesonderte Vorsignale entfallen: Vorsignalisierung über den Ks-2-Begriff der Mehrabschnittssignale</td></tr>
-              <tr><td class="mono">BÜ 0,8</td><td class="mono">31U08</td><td>Bahnübergang km 0,8 (Nebenbahn), Halbschrankenanlage, Überwachungsart ÜS</td></tr>
-              <tr><td class="mono">ÜS 1</td><td class="mono">31ÜS1</td><td>Überwachungssignal für BÜ 0,8, Fahrtrichtung Nebenbahn-Ausfahrt</td></tr>
             </tbody>
           </table>
         </div>
@@ -311,13 +331,12 @@
     </div>
 
     <div class="caveat">
-      <strong>Flankenschutz:</strong> Schutzweiche 4 liegt in Grundstellung stets in
-      Schutzlage (auf ein kurzes Sperrgleis) und sichert Gleis 1 gegen ein aus Gleis 3
-      auflaufendes Fahrzeug. Sie wird nur für Rangierfahrten zwischen Gleis 1 und Gleis 3
-      umgestellt und führt keinen Reisezugverkehr. Die Symbolik der Bahnübergangs-
-      Sicherungsanlage ist weiterhin vereinfacht als Straßenkreuzung mit ÜS dargestellt;
-      die maßgeblichen Detailsymbole aus Ril 819.9002 Abschnitt 21 bzw. Ril-Familie 815
-      stehen noch aus.
+      <strong>Flankenschutz:</strong> Schutzweiche 6 liegt in Grundstellung stets in
+      Schutzlage (auf ein kurzes Sperrgleis) und sichert Gleis 1/2 gegen ein aus der
+      Nebenbahn auflaufendes Fahrzeug. Sie wird nur für Fahrten über Weiche 5 umgestellt
+      und führt keinen eigenen Reisezugverkehr. Der Bahnübergang km 0,8 liegt außerhalb
+      des dargestellten Ausschnitts auf freier Strecke der Nebenbahn und ist hier nicht
+      Bestandteil des Bahnhofs-Lageplans.
     </div>
   </section>
 
@@ -340,15 +359,7 @@
           <line x1="4" y1="9" x2="20" y2="9" stroke="currentColor" stroke-width="2"/>
           <rect x="20" y="3" width="18" height="12" rx="6" fill="currentColor"/>
         </svg>
-        <span>Ks-Mehrabschnittssignal, wärterbedient (Hp 0, Ks 1, Ks 2)</span>
-      </div>
-      <div class="legend-item">
-        <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true">
-          <line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2"/>
-          <line x1="4" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="2"/>
-          <rect x="16" y="3" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <span>Überwachungssignal (ÜS) zum Bahnübergang</span>
+        <span>Ks-Mehrabschnittssignal (Kombinationssignal), wärterbedient (Hp 0, Ks 1, Ks 2)</span>
       </div>
       <div class="legend-item">
         <svg width="40" height="20" viewBox="0 0 40 20" aria-hidden="true">
