@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lageplan Waldenberg – Mitteltrasse Los 5</title>
+<title>Lageplan Sandheide – Mitteltrasse Los 5</title>
 </head>
 <body>
 <style>
@@ -62,11 +62,12 @@
   @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
   .legend { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; color: var(--ink-soft); }
   .legend-item { display: flex; align-items: center; gap: 8px; }
-  .caveat {
+  .kreuzung {
     background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
-    border-radius: 8px; padding: 12px 14px; font-size: 13px; color: var(--ink); margin-top: 14px;
+    border-radius: 8px; padding: 14px 16px; font-size: 13.5px; color: var(--ink); margin-top: 16px;
   }
-  .caveat strong { color: var(--accent-ink); }
+  .kreuzung strong { color: var(--accent-ink); }
+  .kreuzung table { margin-top: 10px; }
   footer.foot { margin-top: 26px; font-size: 12px; color: var(--ink-soft); text-align: center; }
 </style>
 
@@ -74,93 +75,93 @@
 
 <div class="wrap">
   <span class="kicker">Los 5 · Sicherungstechnischer Lageplan · Ril 819.9001 / 819.9002</span>
-  <h1>Lageplan Waldenberg</h1>
+  <h1>Lageplan Sandheide</h1>
   <p class="sub">
-    Übergangsbetriebsstelle von der zweigleisigen Hauptbahn aus Richtung Krug (120 km/h)
-    auf die eingleisige Nebenbahn Waldenberg – Gbf (80 km/h), km 0,0. Am Ostkopf werden
-    beide Streckengleise auf das durchgehende Hauptgleis zusammengeführt; im Einfahrbereich
-    liegt der technisch gesicherte Bahnübergang km 0,8.
+    Kreuzungsbahnhof auf der eingleisigen Nebenbahn Waldenberg – Gbf (80 km/h), km 14,5.
+    Einziger Kreuzungspunkt der Strecke: Das durchgehende Hauptgleis wird hier auf zwei
+    Gleise aufgeweitet, damit sich die Züge des 30-Minuten-Takts begegnen können.
   </p>
 
   <section class="panel">
     <h2>Gleistopologie</h2>
     <p class="panel-note">
       Weichensymbol nach Ril 819.9002: Weichenanfang als senkrechter Strich, Schwärzung
-      (ferngestellte Weiche), Grenzzeichen am Weichenende. Signale „abgeklappt" in
-      Fahrtrichtung, Schirm ausgefüllt = wärterbedient. Alle Hauptsignale sind
-      <strong>Ks-Mehrabschnittssignale</strong> (Signalbegriffe Hp 0, Ks 1, Ks 2) – sie
-      übernehmen zugleich die Vorsignalisierung des folgenden Signals, gesonderte
-      Vorsignale entfallen.
+      (ferngestellte Weiche), Grenzzeichen am Weichenende. Alle Hauptsignale sind
+      <strong>Ks-Mehrabschnittssignale</strong> (Hp 0, Ks 1, Ks 2), „abgeklappt" in
+      Fahrtrichtung dargestellt, Schirm ausgefüllt = wärterbedient.
     </p>
 
     <div class="diagram-scroll">
-      <svg class="plan" viewBox="0 0 1100 345" role="img" aria-label="Sicherungstechnischer Lageplan der Betriebsstelle Waldenberg: zwei Hauptgleise aus Richtung Krug, Überleitverbinder mit den Weichen 1 und 2 am Westkopf, Zusammenführung auf ein Streckengleis über Weiche 3 am Ostkopf, Bahnsteig, Einfahrsignale A und F, Ausfahrsignale N1, N2 und P2, Bahnübergang km 0,8 mit Überwachungssignal.">
+      <svg class="plan" viewBox="0 0 1100 345" role="img" aria-label="Sicherungstechnischer Lageplan des Kreuzungsbahnhofs Sandheide: durchgehendes Hauptgleis 1 und Kreuzungsgleis 2, Weichen 1 und 2, zwei Außenbahnsteige mit Reisendenübergang, Einfahrsignale A und F, Ausfahrsignale N1, N2, P1 und P2.">
 
         <!-- Betriebsstellenbezeichnung -->
-        <text x="480" y="26" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">Waldenberg</text>
-        <text x="480" y="43" text-anchor="middle" font-size="11" fill="var(--ink-soft)">(Wbg) 31</text>
+        <text x="550" y="20" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">Sandheide</text>
+        <text x="550" y="37" text-anchor="middle" font-size="11" fill="var(--ink-soft)">(Sdh) 32</text>
 
-        <!-- Gleise: Gleis 1 durchgehend, Gleis 2 endet an der Zusammenführung -->
+        <!-- Gleise: Gleis 1 durchgehend, Gleis 2 Kreuzungsgleis -->
         <g stroke="currentColor" fill="none" stroke-width="3">
           <line x1="40" y1="110" x2="1060" y2="110"/>
-          <line x1="40" y1="210" x2="670" y2="210"/>
+          <line x1="360" y1="210" x2="740" y2="210"/>
         </g>
 
-        <!-- ===== Westkopf: Überleitverbinder Weichen 1 / 2 ===== -->
+        <!-- ===== Westkopf: Weiche 1 ===== -->
         <g stroke="currentColor" stroke-width="2">
           <line x1="150" y1="101" x2="150" y2="119"/>
-          <line x1="360" y1="201" x2="360" y2="219"/>
         </g>
         <g fill="currentColor" stroke="none">
           <polygon points="150,110 225,110 225,146"/>
-          <polygon points="360,210 285,210 285,174"/>
         </g>
-        <line x1="225" y1="146" x2="285" y2="174" stroke="currentColor" stroke-width="3"/>
+        <line x1="225" y1="146" x2="360" y2="210" stroke="currentColor" stroke-width="3"/>
         <g stroke="currentColor" stroke-width="2">
-          <line x1="240.5" y1="146.6" x2="235.5" y2="157.4"/>
-          <line x1="274.5" y1="162.6" x2="269.5" y2="173.4"/>
+          <line x1="237.4" y1="141.6" x2="242.6" y2="152.4"/>
         </g>
-        <g fill="currentColor" font-size="13" font-weight="600" text-anchor="middle">
-          <text x="187" y="140">1</text>
-          <text x="323" y="192">2</text>
-        </g>
+        <text x="187" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">1</text>
 
-        <!-- ===== Ostkopf: Zusammenführung Weiche 3 ===== -->
+        <!-- ===== Ostkopf: Weiche 2 ===== -->
         <g stroke="currentColor" stroke-width="2">
-          <line x1="880" y1="101" x2="880" y2="119"/>
+          <line x1="950" y1="101" x2="950" y2="119"/>
         </g>
         <g fill="currentColor" stroke="none">
-          <polygon points="880,110 805,110 805,146"/>
+          <polygon points="950,110 875,110 875,146"/>
         </g>
-        <line x1="805" y1="146" x2="670" y2="210" stroke="currentColor" stroke-width="3"/>
+        <line x1="875" y1="146" x2="740" y2="210" stroke="currentColor" stroke-width="3"/>
         <g stroke="currentColor" stroke-width="2">
-          <line x1="787.4" y1="158.4" x2="792.6" y2="147.6"/>
+          <line x1="862.6" y1="141.6" x2="857.4" y2="152.4"/>
         </g>
-        <text x="842" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">3</text>
+        <text x="912" y="140" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">2</text>
 
-        <!-- Bahnsteig -->
-        <rect x="400" y="138" width="240" height="44" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
-        <text x="520" y="165" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Mittelbahnsteig</text>
+        <!-- Empfangsgebäude (allgemeines Gebäude nach 819.9002) -->
+        <rect x="350" y="58" width="60" height="30" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="380" y="78" text-anchor="middle" font-size="12" fill="currentColor">EG</text>
+
+        <!-- Bahnsteige (Außenbahnsteige) -->
+        <rect x="430" y="60" width="240" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="550" y="82" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 1</text>
+        <rect x="430" y="226" width="240" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="550" y="248" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 2</text>
+
+        <!-- Reisendenübergang -->
+        <line x1="700" y1="94" x2="700" y2="226" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="3,4"/>
+        <text x="710" y="172" font-size="10.5" fill="var(--ink-soft)">Reisendenübergang</text>
 
         <!-- Gleisnummern in unterbrochener Gleislinie -->
         <g fill="var(--surface)" stroke="none">
-          <rect x="508" y="100" width="24" height="20"/>
-          <rect x="508" y="200" width="24" height="20"/>
+          <rect x="468" y="100" width="24" height="20"/>
+          <rect x="468" y="200" width="24" height="20"/>
         </g>
         <g fill="currentColor" font-size="14" font-weight="600" text-anchor="middle">
-          <text x="520" y="116">1</text>
-          <text x="520" y="216">2</text>
+          <text x="480" y="116">1</text>
+          <text x="480" y="216">2</text>
         </g>
 
         <!-- Streckengleisbezeichnung (eingeklammert) -->
         <g fill="var(--ink-soft)" font-size="12">
-          <text x="46" y="102">(1)</text>
-          <text x="46" y="228">(2)</text>
+          <text x="46" y="136">(1)</text>
           <text x="1054" y="136" text-anchor="end">(1)</text>
         </g>
 
         <!-- ===== Signale ===== -->
-        <!-- A: Einfahrsignal West, Gleis 1 -->
+        <!-- A: Einfahrsignal von Waldenberg, in Kilometrierungsrichtung (rechts = unterhalb) -->
         <g stroke="currentColor" stroke-width="2" fill="none">
           <line x1="90" y1="120" x2="90" y2="134"/>
           <line x1="90" y1="127" x2="106" y2="127"/>
@@ -168,61 +169,51 @@
         <rect x="106" y="121" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="82" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">A</text>
 
-        <!-- P2: Ausfahrsignal West, Gleis 2 -->
+        <!-- F: Einfahrsignal von Gbf, entgegen Kilometrierung (rechts = oberhalb) -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="130" y1="186" x2="130" y2="200"/>
-          <line x1="130" y1="193" x2="114" y2="193"/>
+          <line x1="1010" y1="86" x2="1010" y2="100"/>
+          <line x1="1010" y1="93" x2="994" y2="93"/>
         </g>
-        <rect x="96" y="187" width="18" height="12" rx="6" fill="currentColor"/>
-        <text x="138" y="197" font-size="13" font-weight="600" fill="currentColor">P2</text>
+        <rect x="976" y="87" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="1018" y="97" font-size="13" font-weight="600" fill="currentColor">F</text>
 
-        <!-- N2: Ausfahrsignal Ost, Gleis 2 -->
+        <!-- P1: Ausfahrsignal Gleis 1 Richtung Waldenberg -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="620" y1="220" x2="620" y2="234"/>
-          <line x1="620" y1="227" x2="636" y2="227"/>
+          <line x1="310" y1="86" x2="310" y2="100"/>
+          <line x1="310" y1="93" x2="294" y2="93"/>
         </g>
-        <rect x="636" y="221" width="18" height="12" rx="6" fill="currentColor"/>
-        <text x="612" y="231" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N2</text>
+        <rect x="276" y="87" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="318" y="97" font-size="13" font-weight="600" fill="currentColor">P1</text>
 
-        <!-- N1: Ausfahrsignal Ost, Gleis 1 -->
+        <!-- P2: Ausfahrsignal Gleis 2 Richtung Waldenberg -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="900" y1="120" x2="900" y2="134"/>
-          <line x1="900" y1="127" x2="916" y2="127"/>
+          <line x1="420" y1="186" x2="420" y2="200"/>
+          <line x1="420" y1="193" x2="404" y2="193"/>
         </g>
-        <rect x="916" y="121" width="18" height="12" rx="6" fill="currentColor"/>
-        <text x="892" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
+        <rect x="386" y="187" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="428" y="197" font-size="13" font-weight="600" fill="currentColor">P2</text>
 
-        <!-- ÜS 1: Überwachungssignal zum Bahnübergang -->
+        <!-- N1: Ausfahrsignal Gleis 1 Richtung Gbf -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="945" y1="120" x2="945" y2="134"/>
-          <line x1="945" y1="127" x2="957" y2="127"/>
-          <rect x="957" y="121" width="12" height="12" fill="var(--surface)"/>
+          <line x1="790" y1="120" x2="790" y2="134"/>
+          <line x1="790" y1="127" x2="806" y2="127"/>
         </g>
-        <text x="951" y="152" text-anchor="middle" font-size="11" fill="currentColor">ÜS 1</text>
+        <rect x="806" y="121" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="782" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
 
-        <!-- F: Einfahrsignal Ost, Gleis 1 (aus Richtung Sandheide) -->
+        <!-- N2: Ausfahrsignal Gleis 2 Richtung Gbf -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="1050" y1="86" x2="1050" y2="100"/>
-          <line x1="1050" y1="93" x2="1034" y2="93"/>
+          <line x1="640" y1="220" x2="640" y2="234"/>
+          <line x1="640" y1="227" x2="656" y2="227"/>
         </g>
-        <rect x="1016" y="87" width="18" height="12" rx="6" fill="currentColor"/>
-        <text x="1058" y="97" font-size="13" font-weight="600" fill="currentColor">F</text>
-
-        <!-- Bahnübergang km 0,8 -->
-        <g stroke="var(--accent)" stroke-width="2.5" fill="none">
-          <line x1="960" y1="55" x2="1005" y2="165"/>
-          <line x1="980" y1="55" x2="1025" y2="165"/>
-        </g>
-        <g fill="var(--accent-ink)" font-size="11" text-anchor="middle">
-          <text x="1015" y="185" font-weight="600">BÜ 0,8</text>
-          <text x="1015" y="199">Hs, ÜS</text>
-        </g>
+        <rect x="656" y="221" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="632" y="231" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N2</text>
 
         <!-- Zugmeldestellen / Streckenrichtung -->
         <g fill="var(--ink-soft)" font-size="12" font-style="italic">
-          <text x="40" y="300">← Krug · Hauptbahn 120 km/h · zweigleisig</text>
-          <text x="1060" y="300" text-anchor="end">Sandheide (km 14,5) →</text>
-          <text x="1060" y="320" text-anchor="end">Nebenbahn Waldenberg–Gbf · 80 km/h · eingleisig</text>
+          <text x="40" y="300">← Waldenberg (km 0,0)</text>
+          <text x="1060" y="300" text-anchor="end">Gbf (km 29,5) →</text>
+          <text x="1060" y="320" text-anchor="end">Nebenbahn · 80 km/h · eingleisig</text>
         </g>
       </svg>
     </div>
@@ -230,7 +221,7 @@
     <div class="rules">
       <span>Sämtliche fernbediente Weichen mit Zungenprüfern.</span>
       <span>Gleisnummern sind einstellig.</span>
-      <span>Nebenbahn Waldenberg–Gbf eingleisig; Kreuzungsmöglichkeit in Sandheide (km 14,5).</span>
+      <span>Eingleisige Strecke: Zugfolge im Zugleitbetrieb, Kreuzungen nur in Sandheide.</span>
     </div>
   </section>
 
@@ -242,38 +233,46 @@
           <table>
             <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Verbindung</th></tr></thead>
             <tbody>
-              <tr><td class="mono">1</td><td class="mono">31W1</td><td>Gleis 1 → Verbindungsgleis (Westkopf)</td></tr>
-              <tr><td class="mono">2</td><td class="mono">31W2</td><td>Verbindungsgleis → Gleis 2 (Westkopf)</td></tr>
-              <tr><td class="mono">3</td><td class="mono">31W3</td><td>Zusammenführung Gleis 2 → Gleis 1 (Ostkopf, Beginn Nebenbahn)</td></tr>
+              <tr><td class="mono">1</td><td class="mono">32W1</td><td>Gleis 1 → Gleis 2 (Westkopf, Aufweitung)</td></tr>
+              <tr><td class="mono">2</td><td class="mono">32W2</td><td>Gleis 2 → Gleis 1 (Ostkopf, Zusammenführung)</td></tr>
             </tbody>
           </table>
         </div>
       </div>
       <div>
-        <h3>Signal- und BÜ-Verzeichnis</h3>
+        <h3>Signalverzeichnis</h3>
         <div class="table-scroll">
           <table>
             <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Funktion</th></tr></thead>
             <tbody>
-              <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Krug · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 1, von Sandheide · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 1 Richtung Sandheide · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">N2</td><td class="mono">31N2</td><td>Ausfahrsignal Gleis 2 Richtung Sandheide · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">P2</td><td class="mono">31P2</td><td>Ausfahrsignal Gleis 2 Richtung Krug · Ks-Mehrabschnittssignal</td></tr>
-              <tr><td class="mono">—</td><td class="mono">—</td><td>Gesonderte Vorsignale entfallen: Vorsignalisierung über den Ks-2-Begriff der Mehrabschnittssignale</td></tr>
-              <tr><td class="mono">BÜ 0,8</td><td class="mono">31U08</td><td>Bahnübergang km 0,8, Halbschrankenanlage, Überwachungsart ÜS</td></tr>
-              <tr><td class="mono">ÜS 1</td><td class="mono">31ÜS1</td><td>Überwachungssignal für BÜ 0,8, Fahrtrichtung Kilometrierung</td></tr>
+              <tr><td class="mono">A</td><td class="mono">32A</td><td>Einfahrsignal von Waldenberg · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">F</td><td class="mono">32F</td><td>Einfahrsignal von Gbf · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">N1</td><td class="mono">32N1</td><td>Ausfahrsignal Gleis 1 Richtung Gbf</td></tr>
+              <tr><td class="mono">N2</td><td class="mono">32N2</td><td>Ausfahrsignal Gleis 2 Richtung Gbf</td></tr>
+              <tr><td class="mono">P1</td><td class="mono">32P1</td><td>Ausfahrsignal Gleis 1 Richtung Waldenberg</td></tr>
+              <tr><td class="mono">P2</td><td class="mono">32P2</td><td>Ausfahrsignal Gleis 2 Richtung Waldenberg</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <div class="caveat">
-      <strong>Offener Punkt:</strong> Die Symbolik der Bahnübergangs-Sicherungsanlage
-      (Schrankenantriebe, Andreaskreuz, Einschaltkontakte) ist hier vereinfacht als
-      Straßenkreuzung mit ÜS dargestellt. Die maßgeblichen Symbole stehen in Ril 819.9002
-      Abschnitt 21 bzw. Ril-Familie 815 — die muss ich noch einarbeiten.
+    <div class="kreuzung">
+      <strong>Nachweis der Kreuzung aus dem Fahrplan:</strong> Bei rund 25 Minuten Fahrzeit
+      zwischen Waldenberg und Gbf und 30-Minuten-Takt in beide Richtungen braucht die
+      eingleisige Strecke genau einen Kreuzungspunkt etwa in Streckenmitte. Sandheide liegt
+      bei km 14,5 von 29,5 km – die Züge treffen sich hier:
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Zug</th><th>Richtung</th><th>an Sandheide</th><th>Gleis</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">RB 64</td><td>Waldenberg → Gbf</td><td>09:30</td><td>1</td></tr>
+            <tr><td class="mono">RB 64</td><td>Gbf → Waldenberg</td><td>09:32</td><td>2</td></tr>
+            <tr><td class="mono">RB 64</td><td>Waldenberg → Gbf</td><td>10:00</td><td>1</td></tr>
+            <tr><td class="mono">RB 64</td><td>Gbf → Waldenberg</td><td>10:02</td><td>2</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -299,12 +298,10 @@
         <span>Ks-Mehrabschnittssignal, wärterbedient (Hp 0, Ks 1, Ks 2)</span>
       </div>
       <div class="legend-item">
-        <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true">
-          <line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2"/>
-          <line x1="4" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="2"/>
-          <rect x="16" y="3" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"/>
+        <svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true">
+          <rect x="2" y="3" width="26" height="14" fill="none" stroke="currentColor" stroke-width="2"/>
         </svg>
-        <span>Überwachungssignal (ÜS) zum Bahnübergang</span>
+        <span>Allgemeines Gebäude (Empfangsgebäude)</span>
       </div>
       <div class="legend-item">
         <svg width="30" height="18" viewBox="0 0 30 18" aria-hidden="true">
