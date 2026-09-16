@@ -102,12 +102,50 @@
             font-size: 8px;
         }
 
+        /* Sticky erste Spalten (Linie/Typ/Richtung) beim horizontalen Scrollen */
+        #tableCombined th:nth-child(1), #tableCombined td:nth-child(1),
+        #tableHin th:nth-child(1), #tableHin td:nth-child(1),
+        #tableRueck th:nth-child(1), #tableRueck td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            width: 46px;
+            min-width: 46px;
+            box-shadow: 2px 0 3px rgba(0,0,0,0.08);
+        }
+
+        #tableCombined th:nth-child(2), #tableCombined td:nth-child(2),
+        #tableHin th:nth-child(2), #tableHin td:nth-child(2),
+        #tableRueck th:nth-child(2), #tableRueck td:nth-child(2) {
+            position: sticky;
+            left: 46px;
+            width: 34px;
+            min-width: 34px;
+        }
+
+        #tableCombined th:nth-child(3), #tableCombined td:nth-child(3) {
+            position: sticky;
+            left: 80px;
+            width: 40px;
+            min-width: 40px;
+            box-shadow: 2px 0 3px rgba(0,0,0,0.08);
+        }
+
+        th:nth-child(1), th:nth-child(2), th:nth-child(3) { z-index: 3; }
+        td:nth-child(1), td:nth-child(2), td:nth-child(3) { z-index: 1; }
+
+        /* Zeilenfarbe nach Zugtyp */
+        #tableCombined tbody tr.zt-re td, #tableHin tbody tr.zt-re td, #tableRueck tbody tr.zt-re td { background: #e5f6ee; }
+        #tableCombined tbody tr.zt-ic td, #tableHin tbody tr.zt-ic td, #tableRueck tbody tr.zt-ic td { background: #fbe6e8; }
+        #tableCombined tbody tr.zt-rb td, #tableHin tbody tr.zt-rb td, #tableRueck tbody tr.zt-rb td { background: #e5eefb; }
+        #tableCombined tbody tr.zt-gueter td, #tableHin tbody tr.zt-gueter td, #tableRueck tbody tr.zt-gueter td { background: #ebebeb; }
+
         input[type="text"], input[type="time"], input[type="number"] {
             width: 100%;
             border: 1px solid #bbb;
             padding: 2px;
             border-radius: 2px;
             font-size: 9px;
+            background: transparent;
         }
 
         select {
@@ -116,6 +154,7 @@
             padding: 2px;
             border-radius: 2px;
             font-size: 9px;
+            background: transparent;
         }
 
         input:focus, select:focus {
@@ -369,15 +408,20 @@
                 this.renderTableDirection('rueckData', this.dataRueck, stations.rueck);
             },
 
+            typeClass(type) {
+                return { IC: 'zt-ic', RE: 'zt-re', RB: 'zt-rb', 'Güter': 'zt-gueter' }[type] || '';
+            },
+
             renderTableDirection(tableId, data, stationList) {
                 const tbody = document.getElementById(tableId);
                 tbody.innerHTML = '';
 
                 data.forEach((row, idx) => {
                     const tr = document.createElement('tr');
+                    tr.className = this.typeClass(row.type);
                     tr.innerHTML = `
                         <td><input type="text" value="${row.line}" onchange="app.updateDisplay()"></td>
-                        <td><select onchange="app.updateDisplay()">
+                        <td><select onchange="app.updateDisplay(); this.closest('tr').className = app.typeClass(this.value);">
                             <option ${row.type === 'RB' ? 'selected' : ''}>RB</option>
                             <option ${row.type === 'Güter' ? 'selected' : ''}>Güter</option>
                         </select></td>
@@ -426,7 +470,7 @@
                 });
 
                 document.getElementById('combinedData').innerHTML = combined.map(t => `
-                    <tr>
+                    <tr class="${this.typeClass(t.type)}">
                         <td>${t.line}</td>
                         <td>${t.type}</td>
                         <td>${t.dir}</td>
