@@ -82,7 +82,10 @@
     <p class="panel-note">
       Weichensymbol nach Ril 819.9002: Weichenanfang als senkrechter Strich, Schwärzung
       (ferngestellte Weiche), Grenzzeichen am Weichenende. Signale „abgeklappt" in
-      Fahrtrichtung, Schirm ausgefüllt = wärterbedient.
+      Fahrtrichtung, Schirm ausgefüllt = wärterbedient. Alle Hauptsignale sind
+      <strong>Ks-Mehrabschnittssignale</strong> (Signalbegriffe Hp 0, Ks 1, Ks 2) – sie
+      übernehmen zugleich die Vorsignalisierung des folgenden Signals, gesonderte
+      Vorsignale entfallen.
     </p>
 
     <div class="diagram-scroll">
@@ -169,7 +172,7 @@
           <line x1="90" y1="120" x2="90" y2="134"/>
           <line x1="90" y1="127" x2="106" y2="127"/>
         </g>
-        <path d="M106,121 A6,6 0 0 1 106,133 Z" fill="currentColor"/>
+        <rect x="106" y="121" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="82" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">A</text>
 
         <!-- P2: Ausfahrsignal West, Gleis 2, entgegen Kilometrierung (rechts = oberhalb) -->
@@ -177,7 +180,7 @@
           <line x1="130" y1="186" x2="130" y2="200"/>
           <line x1="130" y1="193" x2="114" y2="193"/>
         </g>
-        <path d="M114,187 A6,6 0 0 0 114,199 Z" fill="currentColor"/>
+        <rect x="96" y="187" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="138" y="197" font-size="13" font-weight="600" fill="currentColor">P2</text>
 
         <!-- N1: Ausfahrsignal Ost, Gleis 1 -->
@@ -185,7 +188,7 @@
           <line x1="985" y1="120" x2="985" y2="134"/>
           <line x1="985" y1="127" x2="1001" y2="127"/>
         </g>
-        <path d="M1001,121 A6,6 0 0 1 1001,133 Z" fill="currentColor"/>
+        <rect x="1001" y="121" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="977" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
 
         <!-- F: Einfahrsignal Ost, Gleis 2 -->
@@ -193,7 +196,7 @@
           <line x1="1020" y1="186" x2="1020" y2="200"/>
           <line x1="1020" y1="193" x2="1004" y2="193"/>
         </g>
-        <path d="M1004,187 A6,6 0 0 0 1004,199 Z" fill="currentColor"/>
+        <rect x="986" y="187" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="1028" y="197" font-size="13" font-weight="600" fill="currentColor">F</text>
 
         <!-- Zugmeldestellen / Streckenrichtung -->
@@ -232,12 +235,11 @@
           <table>
             <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Funktion</th></tr></thead>
             <tbody>
-              <tr><td class="mono">A</td><td class="mono">21A</td><td>Einfahrsignal Gleis 1, von Krug</td></tr>
-              <tr><td class="mono">F</td><td class="mono">21F</td><td>Einfahrsignal Gleis 2, von Obersosa</td></tr>
-              <tr><td class="mono">N1</td><td class="mono">21N1</td><td>Ausfahrsignal Gleis 1 Richtung Obersosa</td></tr>
-              <tr><td class="mono">P2</td><td class="mono">21P2</td><td>Ausfahrsignal Gleis 2 Richtung Krug</td></tr>
-              <tr><td class="mono">Va</td><td class="mono">21Va</td><td>Vorsignal zu A (außerhalb des Planausschnitts)</td></tr>
-              <tr><td class="mono">Vf</td><td class="mono">21Vf</td><td>Vorsignal zu F (außerhalb des Planausschnitts)</td></tr>
+              <tr><td class="mono">A</td><td class="mono">21A</td><td>Einfahrsignal Gleis 1, von Krug · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">F</td><td class="mono">21F</td><td>Einfahrsignal Gleis 2, von Obersosa · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">N1</td><td class="mono">21N1</td><td>Ausfahrsignal Gleis 1 Richtung Obersosa · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">P2</td><td class="mono">21P2</td><td>Ausfahrsignal Gleis 2 Richtung Krug · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">—</td><td class="mono">—</td><td>Gesonderte Vorsignale entfallen: die Vorsignalisierung erfolgt über den Ks-2-Begriff der Mehrabschnittssignale</td></tr>
             </tbody>
           </table>
         </div>
@@ -259,12 +261,12 @@
         <span>Ferngestellte Weiche: Weichenanfang · Schwärzung · Grenzzeichen</span>
       </div>
       <div class="legend-item">
-        <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true">
+        <svg width="44" height="18" viewBox="0 0 44 18" aria-hidden="true">
           <line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2"/>
           <line x1="4" y1="9" x2="20" y2="9" stroke="currentColor" stroke-width="2"/>
-          <path d="M20,3 A6,6 0 0 1 20,15 Z" fill="currentColor"/>
+          <rect x="20" y="3" width="18" height="12" rx="6" fill="currentColor"/>
         </svg>
-        <span>Ks-Hauptsignal, wärterbedient (Schirm ausgefüllt)</span>
+        <span>Ks-Mehrabschnittssignal, wärterbedient (Hp 0, Ks 1, Ks 2)</span>
       </div>
       <div class="legend-item">
         <svg width="30" height="18" viewBox="0 0 30 18" aria-hidden="true">

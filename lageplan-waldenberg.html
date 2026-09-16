@@ -87,7 +87,10 @@
     <p class="panel-note">
       Weichensymbol nach Ril 819.9002: Weichenanfang als senkrechter Strich, Schwärzung
       (ferngestellte Weiche), Grenzzeichen am Weichenende. Signale „abgeklappt" in
-      Fahrtrichtung, Schirm ausgefüllt = wärterbedient.
+      Fahrtrichtung, Schirm ausgefüllt = wärterbedient. Alle Hauptsignale sind
+      <strong>Ks-Mehrabschnittssignale</strong> (Signalbegriffe Hp 0, Ks 1, Ks 2) – sie
+      übernehmen zugleich die Vorsignalisierung des folgenden Signals, gesonderte
+      Vorsignale entfallen.
     </p>
 
     <div class="diagram-scroll">
@@ -153,7 +156,7 @@
         <g fill="var(--ink-soft)" font-size="12">
           <text x="46" y="102">(1)</text>
           <text x="46" y="228">(2)</text>
-          <text x="1054" y="102" text-anchor="end">(1)</text>
+          <text x="1054" y="136" text-anchor="end">(1)</text>
         </g>
 
         <!-- ===== Signale ===== -->
@@ -162,7 +165,7 @@
           <line x1="90" y1="120" x2="90" y2="134"/>
           <line x1="90" y1="127" x2="106" y2="127"/>
         </g>
-        <path d="M106,121 A6,6 0 0 1 106,133 Z" fill="currentColor"/>
+        <rect x="106" y="121" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="82" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">A</text>
 
         <!-- P2: Ausfahrsignal West, Gleis 2 -->
@@ -170,7 +173,7 @@
           <line x1="130" y1="186" x2="130" y2="200"/>
           <line x1="130" y1="193" x2="114" y2="193"/>
         </g>
-        <path d="M114,187 A6,6 0 0 0 114,199 Z" fill="currentColor"/>
+        <rect x="96" y="187" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="138" y="197" font-size="13" font-weight="600" fill="currentColor">P2</text>
 
         <!-- N2: Ausfahrsignal Ost, Gleis 2 -->
@@ -178,7 +181,7 @@
           <line x1="620" y1="220" x2="620" y2="234"/>
           <line x1="620" y1="227" x2="636" y2="227"/>
         </g>
-        <path d="M636,221 A6,6 0 0 1 636,233 Z" fill="currentColor"/>
+        <rect x="636" y="221" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="612" y="231" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N2</text>
 
         <!-- N1: Ausfahrsignal Ost, Gleis 1 -->
@@ -186,7 +189,7 @@
           <line x1="900" y1="120" x2="900" y2="134"/>
           <line x1="900" y1="127" x2="916" y2="127"/>
         </g>
-        <path d="M916,121 A6,6 0 0 1 916,133 Z" fill="currentColor"/>
+        <rect x="916" y="121" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="892" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
 
         <!-- ÜS 1: Überwachungssignal zum Bahnübergang -->
@@ -199,11 +202,11 @@
 
         <!-- F: Einfahrsignal Ost, Gleis 1 (aus Richtung Sandheide) -->
         <g stroke="currentColor" stroke-width="2" fill="none">
-          <line x1="1030" y1="86" x2="1030" y2="100"/>
-          <line x1="1030" y1="93" x2="1014" y2="93"/>
+          <line x1="1050" y1="86" x2="1050" y2="100"/>
+          <line x1="1050" y1="93" x2="1034" y2="93"/>
         </g>
-        <path d="M1014,87 A6,6 0 0 0 1014,99 Z" fill="currentColor"/>
-        <text x="1038" y="97" font-size="13" font-weight="600" fill="currentColor">F</text>
+        <rect x="1016" y="87" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="1058" y="97" font-size="13" font-weight="600" fill="currentColor">F</text>
 
         <!-- Bahnübergang km 0,8 -->
         <g stroke="var(--accent)" stroke-width="2.5" fill="none">
@@ -251,12 +254,12 @@
           <table>
             <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Funktion</th></tr></thead>
             <tbody>
-              <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Krug</td></tr>
-              <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 1, von Sandheide</td></tr>
-              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 1 Richtung Sandheide</td></tr>
-              <tr><td class="mono">N2</td><td class="mono">31N2</td><td>Ausfahrsignal Gleis 2 Richtung Sandheide</td></tr>
-              <tr><td class="mono">P2</td><td class="mono">31P2</td><td>Ausfahrsignal Gleis 2 Richtung Krug</td></tr>
-              <tr><td class="mono">Va, Vf</td><td class="mono">31Va, 31Vf</td><td>Vorsignale zu A bzw. F (außerhalb des Planausschnitts)</td></tr>
+              <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Krug · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 1, von Sandheide · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 1 Richtung Sandheide · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">N2</td><td class="mono">31N2</td><td>Ausfahrsignal Gleis 2 Richtung Sandheide · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">P2</td><td class="mono">31P2</td><td>Ausfahrsignal Gleis 2 Richtung Krug · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">—</td><td class="mono">—</td><td>Gesonderte Vorsignale entfallen: Vorsignalisierung über den Ks-2-Begriff der Mehrabschnittssignale</td></tr>
               <tr><td class="mono">BÜ 0,8</td><td class="mono">31U08</td><td>Bahnübergang km 0,8, Halbschrankenanlage, Überwachungsart ÜS</td></tr>
               <tr><td class="mono">ÜS 1</td><td class="mono">31ÜS1</td><td>Überwachungssignal für BÜ 0,8, Fahrtrichtung Kilometrierung</td></tr>
             </tbody>
@@ -287,12 +290,12 @@
         <span>Ferngestellte Weiche: Weichenanfang · Schwärzung · Grenzzeichen</span>
       </div>
       <div class="legend-item">
-        <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true">
+        <svg width="44" height="18" viewBox="0 0 44 18" aria-hidden="true">
           <line x1="4" y1="2" x2="4" y2="16" stroke="currentColor" stroke-width="2"/>
           <line x1="4" y1="9" x2="20" y2="9" stroke="currentColor" stroke-width="2"/>
-          <path d="M20,3 A6,6 0 0 1 20,15 Z" fill="currentColor"/>
+          <rect x="20" y="3" width="18" height="12" rx="6" fill="currentColor"/>
         </svg>
-        <span>Ks-Hauptsignal, wärterbedient</span>
+        <span>Ks-Mehrabschnittssignal, wärterbedient (Hp 0, Ks 1, Ks 2)</span>
       </div>
       <div class="legend-item">
         <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true">
