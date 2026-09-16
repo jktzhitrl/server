@@ -293,6 +293,23 @@
                 </table>
             </div>
 
+            <h2 style="margin-top: 12px;">⏱️ An- und Abfahrtszeiten (zum Eintragen)</h2>
+            <p style="font-size: 10px; margin: 0 0 6px; color: #555;">
+                Fahrplanzeit = <strong>Abfahrt</strong>. Ankunft = Abfahrt − Haltezeit
+                (IC/RE 2 min, RB 1 min, Gz 3 min). Startbahnhof nur <em>ab</em>, Zielbahnhof nur <em>an</em>.
+            </p>
+            <div class="table-wrapper">
+                <table id="tableAnAb">
+                    <thead>
+                        <tr>
+                            <th>Zug</th><th>Typ</th><th>Ri.</th><th>Betriebsstelle</th>
+                            <th>km</th><th>an</th><th>ab</th><th>Halt</th>
+                        </tr>
+                    </thead>
+                    <tbody id="anAbData"></tbody>
+                </table>
+            </div>
+
             <h2 style="margin-top: 12px;">Hin-Richtung (Waldenberg → Gbf)</h2>
 
             <div class="table-wrapper">
@@ -478,6 +495,66 @@
                 this.readTables();
                 this.drawFahrplan();
                 this.renderCombinedTable();
+                this.renderAnAbTable();
+            },
+
+            // Haltezeit je Zuggattung in Minuten
+            haltezeit(type) {
+                return { IC: 2, RE: 2, RB: 1, 'Üg': 2, 'Güter': 3 }[type] || 1;
+            },
+
+            minToTime(m) {
+                m = ((m % 1440) + 1440) % 1440;
+                const h = Math.floor(m / 60), r = m % 60;
+                return String(h).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+            },
+
+            // Erzeugt je Zug die Halteliste mit Ankunfts- und Abfahrtszeit
+            stopList(row, stationList) {
+                const idx = [];
+                stationList.forEach((_, i) => { if (row.times[i]) idx.push(i); });
+                const halt = this.haltezeit(row.type);
+                return idx.map((i, j) => {
+                    const t = row.times[i];
+                    const first = (j === 0), last = (j === idx.length - 1);
+                    return {
+                        name: stationList[i].name,
+                        km: stationList[i].km,
+                        an: first ? '' : this.minToTime(this.timeToMin(t) - halt),
+                        ab: last ? '' : t,
+                        halt: (first || last) ? '' : halt + ' min'
+                    };
+                });
+            },
+
+            renderAnAbTable() {
+                const trains = [];
+                this.dataHin.forEach(t => trains.push({ row: t, dir: '→', list: stations.hin }));
+                this.dataRueck.forEach(t => trains.push({ row: t, dir: '←', list: stations.rueck }));
+
+                const withTimes = trains.filter(t => t.row.times.some(x => x));
+                withTimes.sort((a, b) => {
+                    const ta = a.row.times.find(x => x) || '99:99';
+                    const tb = b.row.times.find(x => x) || '99:99';
+                    return this.timeToMin(ta) - this.timeToMin(tb);
+                });
+
+                const tbody = document.getElementById('anAbData');
+                tbody.innerHTML = withTimes.map(t => {
+                    const cls = this.typeClass(t.row.type);
+                    return this.stopList(t.row, t.list).map(st => `
+                        <tr class="${cls}">
+                            <td>${t.row.line}</td>
+                            <td>${t.row.type}</td>
+                            <td>${t.dir}</td>
+                            <td style="text-align: left;">${st.name}</td>
+                            <td>${st.km.toFixed(1)}</td>
+                            <td><strong>${st.an}</strong></td>
+                            <td><strong>${st.ab}</strong></td>
+                            <td>${st.halt}</td>
+                        </tr>
+                    `).join('');
+                }).join('');
             },
 
             renderCombinedTable() {

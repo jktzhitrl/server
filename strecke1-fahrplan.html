@@ -293,6 +293,23 @@
                 </table>
             </div>
 
+            <h2 style="margin-top: 12px;">⏱️ An- und Abfahrtszeiten (zum Eintragen)</h2>
+            <p style="font-size: 10px; margin: 0 0 6px; color: #555;">
+                Fahrplanzeit = <strong>Abfahrt</strong>. Ankunft = Abfahrt − Haltezeit
+                (IC/RE 2 min, RB 1 min, Gz 3 min). Startbahnhof nur <em>ab</em>, Zielbahnhof nur <em>an</em>.
+            </p>
+            <div class="table-wrapper">
+                <table id="tableAnAb">
+                    <thead>
+                        <tr>
+                            <th>Zug</th><th>Typ</th><th>Ri.</th><th>Betriebsstelle</th>
+                            <th>km</th><th>an</th><th>ab</th><th>Halt</th>
+                        </tr>
+                    </thead>
+                    <tbody id="anAbData"></tbody>
+                </table>
+            </div>
+
             <h2 style="margin-top: 12px;">Hin-Richtung (Krug → Furth)</h2>
 
             <div class="table-wrapper">
@@ -464,14 +481,14 @@
         // Notion-Daten vollständig
         const notionData = {
             hin: [
-                { line: 'RE 71', type: 'RE', times: ['09:45', '', '', '', '', '09:53', '', '', '', '10:00', '', '', '', '', '', ''] },
-                { line: 'RE 71', type: 'RE', times: ['10:45', '', '', '', '', '10:53', '', '', '', '11:00', '', '', '', '', '', ''] },
-                { line: 'RE 70/71', type: 'RE', times: ['', '', '', '', '', '', '', '', '', '09:07', '09:13', '09:13', '', '09:19', '09:19', '09:35'] },
-                { line: 'RE 70/71', type: 'RE', times: ['', '', '', '', '', '', '', '', '', '10:07', '10:13', '10:13', '', '10:19', '10:19', '10:35'] },
-                { line: 'IC 11', type: 'IC', times: ['', '', '', '', '', '', '', '', '', '09:15', '', '', '', '', '09:43', '09:43'] },
-                { line: 'IC 11', type: 'IC', times: ['', '', '', '', '', '', '', '', '', '10:15', '', '', '', '', '10:43', '10:43'] },
-                { line: 'IC 13', type: 'IC', times: ['10:00', '', '', '', '', '', '', '', '', '09:45', '', '', '', '', '', ''] },
-                { line: 'IC 13', type: 'IC', times: ['11:00', '', '', '', '', '', '', '', '', '10:45', '', '', '', '', '', ''] },
+                { line: 'RE 71', type: 'RE', times: ['09:45', '', '09:49', '', '', '09:55', '', '', '', '10:05', '10:09', '', '', '10:18', '10:23', '10:41'] },
+                { line: 'RE 71', type: 'RE', times: ['10:45', '', '10:49', '', '', '10:55', '', '', '', '11:05', '11:09', '', '', '11:18', '11:23', '11:41'] },
+                { line: 'RE 70/71', type: 'RE', times: ['', '', '', '', '', '', '', '', '', '09:07', '09:11', '', '', '09:20', '09:25', '09:43'] },
+                { line: 'RE 70/71', type: 'RE', times: ['', '', '', '', '', '', '', '', '', '10:07', '10:11', '', '', '10:20', '10:25', '10:43'] },
+                { line: 'IC 11', type: 'IC', times: ['', '', '', '', '', '', '', '', '', '09:15', '', '', '', '', '', '09:43'] },
+                { line: 'IC 11', type: 'IC', times: ['', '', '', '', '', '', '', '', '', '10:15', '', '', '', '', '', '10:43'] },
+                { line: 'IC 13', type: 'IC', times: ['09:45', '', '', '', '', '', '', '', '', '10:00', '', '', '', '', '', ''] },
+                { line: 'IC 13', type: 'IC', times: ['10:45', '', '', '', '', '', '', '', '', '11:00', '', '', '', '', '', ''] },
                 { line: 'RB 61', type: 'RB', times: ['09:15', '09:16', '09:21', '09:25', '09:27', '09:29', '', '', '09:34', '09:39', '09:44', '09:49', '', '09:53', '09:57', '10:13'] },
                 { line: 'RB 61', type: 'RB', times: ['09:45', '09:46', '09:51', '09:55', '09:57', '09:59', '', '', '10:04', '10:09', '10:14', '10:19', '', '10:23', '10:27', '10:43'] },
                 { line: 'RB 61', type: 'RB', times: ['10:15', '10:16', '10:21', '10:25', '10:27', '10:29', '', '', '10:34', '10:39', '10:44', '10:49', '', '10:53', '10:57', '11:13'] },
@@ -481,17 +498,17 @@
                 { line: 'GZ 4', type: 'Güter', times: ['', '', '', '', '', '', '', '', '', '10:10', '', '', '10:28', '', '', ''] }
             ],
             rueck: [
-                { line: 'IC 11', type: 'IC', times: ['09:58', '09:58', '', '', '', '', '10:26', '', '', '', '', '', '', '', '', ''] },
-                { line: 'IC 11', type: 'IC', times: ['10:58', '10:58', '', '', '', '', '11:26', '', '', '', '', '', '', '', '', ''] },
+                { line: 'IC 11', type: 'IC', times: ['09:58', '', '', '', '', '', '10:26', '', '', '', '', '', '', '', '', ''] },
+                { line: 'IC 11', type: 'IC', times: ['10:58', '', '', '', '', '', '11:26', '', '', '', '', '', '', '', '', ''] },
                 { line: 'IC 13', type: 'IC', times: ['', '', '', '', '', '', '10:00', '', '', '', '', '', '', '', '', '10:15'] },
                 { line: 'IC 13', type: 'IC', times: ['', '', '', '', '', '', '11:00', '', '', '', '', '', '', '', '', '11:15'] },
                 { line: 'GZ 2', type: 'Güter', times: ['', '', '', '', '', '', '', '', '10:50', '', '', '', '', '', '', '11:25'] },
                 { line: 'GZ 3', type: 'Güter', times: ['', '', '', '', '', '', '', '', '', '10:07', '', '', '', '', '', '10:29'] },
                 { line: 'GZ 4', type: 'Güter', times: ['', '', '', '10:43', '', '', '11:01', '', '', '', '', '', '', '', '', ''] },
-                { line: 'RE 71', type: 'RE', times: ['09:57', '', '10:04', '', '', '', '', '10:10', '', '', '', '10:12', '', '', '', ''] },
-                { line: 'RE 71', type: 'RE', times: ['10:57', '', '11:04', '', '', '', '', '11:10', '', '', '', '11:12', '', '', '', ''] },
-                { line: 'RE 70/71', type: 'RE', times: ['09:22', '', '09:37', '', '', '', '', '09:44', '', '', '', '09:50', '', '', '', ''] },
-                { line: 'RE 70/71', type: 'RE', times: ['10:22', '', '10:37', '', '', '', '', '10:44', '', '', '', '10:50', '', '', '', ''] },
+                { line: 'RE 71', type: 'RE', times: ['09:57', '10:16', '10:21', '', '', '10:30', '10:34', '', '', '', '10:44', '', '', '10:50', '', '10:53'] },
+                { line: 'RE 71', type: 'RE', times: ['10:57', '11:16', '11:21', '', '', '11:30', '11:34', '', '', '', '11:44', '', '', '11:50', '', '11:53'] },
+                { line: 'RE 70/71', type: 'RE', times: ['09:22', '09:41', '09:46', '', '', '09:55', '09:58', '', '', '', '', '', '', '', '', ''] },
+                { line: 'RE 70/71', type: 'RE', times: ['10:22', '10:41', '10:46', '', '', '10:55', '10:58', '', '', '', '', '', '', '', '', ''] },
                 { line: 'RB 65', type: 'RB', times: ['', '', '', '', '', '', '09:15', '09:20', '', '', '09:25', '09:27', '09:29', '09:33', '09:38', '09:39'] },
                 { line: 'RB 65', type: 'RB', times: ['', '', '', '', '', '', '10:15', '10:20', '', '', '10:25', '10:27', '10:29', '10:33', '10:38', '10:39'] },
                 { line: 'RB 66', type: 'RB', times: ['09:30', '09:46', '09:50', '', '09:54', '09:59', '10:04', '10:09', '', '', '10:14', '10:16', '10:18', '10:22', '10:27', '10:28'] },
@@ -504,6 +521,9 @@
                 { line: 'RB 61', type: 'RB', times: ['10:45', '11:01', '11:05', '', '11:09', '11:14', '11:19', '11:24', '', '', '11:29', '11:31', '11:33', '11:37', '11:42', '11:43'] }
             ]
         };
+
+        // Fahrplanstand – bei Änderung der notionData hochzählen
+        const DATA_VERSION = '2026-09-16-re-lossow';
 
         const app = {
             dataHin: [],
@@ -580,6 +600,66 @@
                 this.readTables();
                 this.drawFahrplan();
                 this.renderCombinedTable();
+                this.renderAnAbTable();
+            },
+
+            // Haltezeit je Zuggattung in Minuten
+            haltezeit(type) {
+                return { IC: 2, RE: 2, RB: 1, 'Güter': 3 }[type] || 1;
+            },
+
+            minToTime(m) {
+                m = ((m % 1440) + 1440) % 1440;
+                const h = Math.floor(m / 60), r = m % 60;
+                return String(h).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+            },
+
+            // Erzeugt je Zug die Halteliste mit Ankunfts- und Abfahrtszeit
+            stopList(row, stationList) {
+                const idx = [];
+                stationList.forEach((_, i) => { if (row.times[i]) idx.push(i); });
+                const halt = this.haltezeit(row.type);
+                return idx.map((i, j) => {
+                    const t = row.times[i];
+                    const first = (j === 0), last = (j === idx.length - 1);
+                    return {
+                        name: stationList[i].name,
+                        km: stationList[i].km,
+                        an: first ? '' : this.minToTime(this.timeToMin(t) - halt),
+                        ab: last ? '' : t,
+                        halt: (first || last) ? '' : halt + ' min'
+                    };
+                });
+            },
+
+            renderAnAbTable() {
+                const trains = [];
+                this.dataHin.forEach(t => trains.push({ row: t, dir: '→', list: stations.hin }));
+                this.dataRueck.forEach(t => trains.push({ row: t, dir: '←', list: stations.rueck }));
+
+                const withTimes = trains.filter(t => t.row.times.some(x => x));
+                withTimes.sort((a, b) => {
+                    const ta = a.row.times.find(x => x) || '99:99';
+                    const tb = b.row.times.find(x => x) || '99:99';
+                    return this.timeToMin(ta) - this.timeToMin(tb);
+                });
+
+                const tbody = document.getElementById('anAbData');
+                tbody.innerHTML = withTimes.map(t => {
+                    const cls = this.typeClass(t.row.type);
+                    return this.stopList(t.row, t.list).map(st => `
+                        <tr class="${cls}">
+                            <td>${t.row.line}</td>
+                            <td>${t.row.type}</td>
+                            <td>${t.dir}</td>
+                            <td style="text-align: left;">${st.name}</td>
+                            <td>${st.km.toFixed(1)}</td>
+                            <td><strong>${st.an}</strong></td>
+                            <td><strong>${st.ab}</strong></td>
+                            <td>${st.halt}</td>
+                        </tr>
+                    `).join('');
+                }).join('');
             },
 
             renderCombinedTable() {
@@ -801,11 +881,18 @@
             },
 
             saveData() {
+                localStorage.setItem('strecke1Version', DATA_VERSION);
                 localStorage.setItem('strecke1Hin', JSON.stringify(this.dataHin));
                 localStorage.setItem('strecke1Rueck', JSON.stringify(this.dataRueck));
             },
 
             loadData() {
+                // Bei neuer Fahrplanversion die gespeicherten Daten verwerfen
+                if (localStorage.getItem('strecke1Version') !== DATA_VERSION) {
+                    localStorage.removeItem('strecke1Hin');
+                    localStorage.removeItem('strecke1Rueck');
+                    return;
+                }
                 const h = localStorage.getItem('strecke1Hin');
                 const r = localStorage.getItem('strecke1Rueck');
                 if (h) this.dataHin = JSON.parse(h);
