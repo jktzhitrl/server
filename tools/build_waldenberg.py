@@ -13,18 +13,18 @@ import waldenberg as w
 REPO = str(pathlib.Path(__file__).resolve().parent.parent) + "/"
 
 ARIA = ("Sicherungstechnischer Lageplan des Abzweigbahnhofs Waldenberg. Die zweigleisige "
-        "Hauptbahn (Strecke 1, Krug–Furth, km 37,5) läuft mit Gleis 1 und Gleis 2 durchgehend "
+        "Hauptbahn (Strecke 1, Krug–Furth, km 37,5) läuft mit Gleis 2 (oben) und Gleis 1 (Mitte) durchgehend "
         "gerade durch die Betriebsstelle. Gleis 3 ist Bahnsteiggleis der eingleisigen Nebenbahn "
         "und geht östlich in die Strecke 3 nach Wehrheim–Sandheide–Gbf über, deren Kilometrierung "
-        "hier bei km 0,0 beginnt. Gleis 4 liegt als Lade- und Ausweichgleis nördlich davon und ist "
+        "hier bei km 0,0 beginnt. Gleis 4 liegt als Lade- und Ausweichgleis südlich davon und ist "
         "über die Weichen 4 und 5 an beiden Enden an Gleis 3 angebunden. Am Westkopf verbinden die "
-        "Weichen 1 und 2 als Überleitverbinder Gleis 1 und Gleis 2, Weiche 3 führt von Gleis 2 auf "
-        "Gleis 3. Am Ostkopf verbinden die Weichen 6 und 7 Gleis 2 mit der Nebenbahn, die Weichen 8 "
-        "und 9 bilden einen zweiten Überleitverbinder zwischen Gleis 1 und Gleis 2. Bahnsteig 1 ist "
-        "Hausbahnsteig an Gleis 1 am Empfangsgebäude, Bahnsteig 2 Mittelbahnsteig zwischen Gleis 2 "
+        "Weichen 1 und 2 als Überleitverbinder Gleis 2 und Gleis 1, Weiche 3 führt von Gleis 1 auf "
+        "Gleis 3. Am Ostkopf verbinden die Weichen 6 und 7 Gleis 1 mit der Nebenbahn, die Weichen 8 "
+        "und 9 bilden einen zweiten Überleitverbinder zwischen Gleis 2 und Gleis 1. Bahnsteig 1 ist "
+        "Hausbahnsteig an Gleis 2 am Empfangsgebäude, Bahnsteig 2 Mittelbahnsteig zwischen Gleis 1 "
         "und Gleis 3, verbunden über eine Personenunterführung. Einfahrsignale A und AA von "
         "Zollfurt, F und FF von Burgwald sowie G von Wehrheim; Ausfahrsignale N1, N2, N3, N4, P2 "
-        "und P3 sowie Zwischensignal ZU4; N1 und P2 mit Gegengleisanzeiger für die "
+        "und P3 sowie Zwischensignal ZU4; N2 und P3 mit Gegengleisanzeiger für die "
         "Weiterfahrt auf dem Streckengleis der Gegenrichtung.")
 
 LAGEPLAN = """<!DOCTYPE html>
@@ -107,11 +107,11 @@ LAGEPLAN = """<!DOCTYPE html>
   <p class="sub">
     Waldenberg ist <strong>Abzweigbahnhof</strong> zweier Strecken: Die zweigleisige Hauptbahn
     <strong>Strecke 1</strong> (Krug–Furth) durchläuft die Betriebsstelle bei km 37,5 mit den
-    durchgehenden Hauptgleisen 1 und 2. Die eingleisige <strong>Strecke 3</strong> nach
+    durchgehenden Hauptgleisen 2 (oben) und 1 (Mitte). Die eingleisige <strong>Strecke 3</strong> nach
     Wehrheim – Sandheide – Gbf beginnt hier bei <strong>km 0,0</strong>; ihr Bahnsteiggleis ist
-    Gleis 3, das östlich des Bahnsteigs in die Nebenbahn übergeht. Weil Gleis 2 über die
+    Gleis 3, das östlich des Bahnsteigs in die Nebenbahn übergeht. Weil Gleis 1 über die
     Weichen 6 und 7 eine <strong>eigene Anbindung an die Nebenbahn</strong> hat, kann ein Zug
-    aus Gleis 2 auf die Nebenbahn ausfahren, während in Gleis 3 ein anderer wendet. Nördlich davon liegt
+    aus Gleis 1 auf die Nebenbahn ausfahren, während in Gleis 3 ein anderer wendet. Südlich davon liegt
     <strong>Gleis 4</strong> als Lade- und Ausweichgleis; es ist über die Weichen 4 und 5 an
     beiden Enden an Gleis 3 angebunden und dient unter anderem der Bereitstellung des
     Übergabezuges Üg 1. Beide Hauptgleise bleiben
@@ -140,14 +140,15 @@ LAGEPLAN = """<!DOCTYPE html>
     <div class="rules">
       <span>Sämtliche fernbediente Weichen mit Zungenprüfern.</span>
       <span>Gleisnummern sind einstellig.</span>
-      <span>Gleis 1 liegt südlich: bei Rechtsverkehr ist das Regelgleis in Richtung der Kilometrierung das in Fahrtrichtung rechte. Die Nummerierung zählt zugleich vom Hauptzugang aufsteigend.</span>
+      <span>Gleis 1 ist das südlichere Hauptgleis und geht in Streckengleis (1) über: bei Rechtsverkehr ist das Regelgleis in Richtung der Kilometrierung das in Fahrtrichtung rechte.</span>
+      <span>Gleis 2 liegt am Hausbahnsteig und geht in Streckengleis (2) über, das Regelgleis entgegen der Kilometrierung.</span>
       <span>Alle Weichen EW 1:9, Abzweiggeschwindigkeit 40 km/h.</span>
       <span>Hauptgleise 1 und 2 durchgehend gerade, Streckengeschwindigkeit 120 km/h.</span>
       <span>Strecke 3 (Nebenbahn) beginnt in Waldenberg bei km 0,0, eingleisig, 80 km/h.</span>
       <span>Regel- und Gegengleis sind Eigenschaften der freien Strecke; im Bahnhof gibt es nur Bahnhofsgleise.</span>
-      <span>Gegengleisanzeiger an P2 und N1: der Zug fährt nach der Ausfahrt auf dem Streckengleis der Gegenrichtung weiter.</span>
+      <span>Gegengleisanzeiger an N2 und P3: nur dort kann die Ausfahrt auf dem Streckengleis der Gegenrichtung weiterführen.</span>
       <span>AA und FF decken Einfahrten von Zügen, die auf der freien Strecke bereits auf dem Gegengleis ankommen.</span>
-      <span>Gleis 3 und die Anbindung Gleis 2 → Nebenbahn (Weichen 6/7) sind voneinander unabhängig befahrbar.</span>
+      <span>Gleis 3 und die Anbindung Gleis 1 → Nebenbahn (Weichen 6/7) sind voneinander unabhängig befahrbar.</span>
       <span>Gleis 4 ist Lade- und Ausweichgleis ohne Bahnsteig, an beiden Enden an Gleis 3 angebunden.</span>
     </div>
   </section>
@@ -162,9 +163,9 @@ LAGEPLAN = """<!DOCTYPE html>
         <thead><tr><th>Zug</th><th>Weg durch Waldenberg</th><th>Gleis</th></tr></thead>
         <tbody>
           <tr><td class="mono">IC 11/13/15<br>RE 70/71<br>GZ 2/3/4</td><td>Durchfahrt Hauptbahn ohne Halt, gerade über beide Hauptgleise</td><td class="mono">1 / 2</td></tr>
-          <tr><td class="mono">RE 71 · RB 61<br>RB 65</td><td>Halt an der Hauptbahn: Richtung Osten an Bahnsteig 1, Richtung Westen an Bahnsteig 2</td><td class="mono">1 / 2</td></tr>
+          <tr><td class="mono">RE 71 · RB 61<br>RB 65</td><td>Halt an der Hauptbahn: Richtung Osten in Gleis 1 an Bahnsteig 2, Richtung Westen in Gleis 2 an Bahnsteig 1</td><td class="mono">1 / 2</td></tr>
           <tr><td class="mono">RB 64</td><td><strong>Wendet in Waldenberg.</strong> Einfahrt von Wehrheim über Signal G, Halt an Bahnsteig 2, Ausfahrt über N3 zurück zur Nebenbahn – ohne die Hauptgleise zu berühren</td><td class="mono">3</td></tr>
-          <tr><td class="mono">RB 66</td><td><strong>Übergang Hauptbahn → Nebenbahn.</strong> Einfahrt von Krug über A, Überleitverbinder Weichen 1/2 auf Gleis 2, Halt an Bahnsteig 2, Ausfahrt über N2 (Zs 3) und die Weichen 6/7 auf die Nebenbahn – <strong>Gleis 3 bleibt dabei frei</strong></td><td class="mono">1 → 2</td></tr>
+          <tr><td class="mono">RB 66</td><td><strong>Übergang Hauptbahn → Nebenbahn.</strong> Einfahrt von Krug über A gerade nach Gleis 1, Halt an Bahnsteig 2, Ausfahrt über N1 (Zs 3) und die Weichen 6/7 auf die Nebenbahn – <strong>Gleis 3 bleibt dabei frei</strong></td><td class="mono">1</td></tr>
           <tr><td class="mono">Üg 1</td><td>Beginnt und endet in Waldenberg, bereitgestellt in <strong>Gleis 4</strong>. Ausfahrt über N4 und Weiche 5 auf Gleis 3 – die Fahrt berührt den Bahnsteigabschnitt von Gleis 3 nicht, die RB 64 kann dort gleichzeitig wenden</td><td class="mono">4</td></tr>
         </tbody>
       </table>
@@ -179,15 +180,15 @@ LAGEPLAN = """<!DOCTYPE html>
           <table>
             <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Verbindung</th></tr></thead>
             <tbody>
-              <tr><td class="mono">1</td><td class="mono">31W1</td><td>Gleis 1 → Verbindungsgleis (Westkopf, Überleitverbinder)</td></tr>
-              <tr><td class="mono">2</td><td class="mono">31W2</td><td>Verbindungsgleis → Gleis 2 (Westkopf, Überleitverbinder)</td></tr>
-              <tr><td class="mono">3</td><td class="mono">31W3</td><td>Gleis 2 → Gleis 3 (Westanbindung des Nebenbahngleises)</td></tr>
+              <tr><td class="mono">1</td><td class="mono">31W1</td><td>Gleis 2 → Verbindungsgleis (Westkopf, Überleitverbinder; Zungen westlich)</td></tr>
+              <tr><td class="mono">2</td><td class="mono">31W2</td><td>Verbindungsgleis → Gleis 1 (Westkopf, Überleitverbinder; Zungen östlich)</td></tr>
+              <tr><td class="mono">3</td><td class="mono">31W3</td><td>Gleis 1 → Gleis 3 (Westanbindung des Nebenbahngleises)</td></tr>
               <tr><td class="mono">4</td><td class="mono">31W4</td><td>Gleis 3 → Gleis 4 (Westanbindung des Lade- und Ausweichgleises)</td></tr>
               <tr><td class="mono">5</td><td class="mono">31W5</td><td>Gleis 3 → Gleis 4 (Ostanbindung, östlich des Bahnsteigs)</td></tr>
-              <tr><td class="mono">6</td><td class="mono">31W6</td><td>Gleis 2 → Verbindungsgleis zur Nebenbahn (Ostkopf)</td></tr>
+              <tr><td class="mono">6</td><td class="mono">31W6</td><td>Gleis 1 → Verbindungsgleis zur Nebenbahn (Ostkopf)</td></tr>
               <tr><td class="mono">7</td><td class="mono">31W7</td><td>Verbindungsgleis → Gleis 3 / Nebenbahn (Ostkopf)</td></tr>
-              <tr><td class="mono">8</td><td class="mono">31W8</td><td>Gleis 1 → Verbindungsgleis (Ostkopf, Überleitverbinder)</td></tr>
-              <tr><td class="mono">9</td><td class="mono">31W9</td><td>Verbindungsgleis → Gleis 2 (Ostkopf, Überleitverbinder)</td></tr>
+              <tr><td class="mono">8</td><td class="mono">31W8</td><td>Gleis 2 → Verbindungsgleis (Ostkopf, Überleitverbinder; Zungen westlich)</td></tr>
+              <tr><td class="mono">9</td><td class="mono">31W9</td><td>Verbindungsgleis → Gleis 1 (Ostkopf, Überleitverbinder; Zungen östlich)</td></tr>
             </tbody>
           </table>
         </div>
@@ -198,18 +199,18 @@ LAGEPLAN = """<!DOCTYPE html>
           <table>
             <thead><tr><th>Lageplan</th><th>Tabelle</th><th>Funktion</th></tr></thead>
             <tbody>
-              <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Zollfurt/Krug · mit <strong>Zs 3 (4)</strong> für die Einfahrt nach Gleis 3 über die Weichen 1/2/3</td></tr>
-              <tr><td class="mono">AA</td><td class="mono">31AA</td><td>Einfahrsignal für Züge, die von Zollfurt/Krug auf dem <strong>Gegengleis der freien Strecke</strong> – Streckengleis (2) – ankommen; Einfahrt in Gleis 2</td></tr>
-              <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 2, von Burgwald/Hyxel</td></tr>
-              <tr><td class="mono">FF</td><td class="mono">31FF</td><td>Einfahrsignal für Züge, die von Burgwald/Hyxel auf dem <strong>Gegengleis der freien Strecke</strong> – Streckengleis (1) – ankommen; Einfahrt in Gleis 1</td></tr>
-              <tr><td class="mono">G</td><td class="mono">31G</td><td>Einfahrsignal Nebenbahn, von Wehrheim (Strecke 3) · mit <strong>Zs 3 (4)</strong> für die Einfahrt nach Gleis 4 oder über Weiche 7 nach Gleis 2</td></tr>
-              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 1, Richtung Burgwald/Hyxel · am Ostende von Bahnsteig 1 · mit <strong>Gegengleisanzeiger</strong> und <strong>Zs 3 (4)</strong> für die Ausfahrt über die Weichen 8/9 und die Weiterfahrt auf Streckengleis (2), dem Gegengleis dieser Fahrtrichtung</td></tr>
-              <tr><td class="mono">N2</td><td class="mono">31N2</td><td>Ausfahrsignal Gleis 2, Richtung Nebenbahn · am Ostende von Bahnsteig 2 · mit <strong>Zs 3 (4)</strong> für die Fahrt über die Weichen 6/7</td></tr>
+              <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Zollfurt/Krug · mit <strong>Zs 3 (4)</strong> für die abzweigende Einfahrt über Weiche 3 nach Gleis 3</td></tr>
+              <tr><td class="mono">AA</td><td class="mono">31AA</td><td>Einfahrsignal für Züge, die von Zollfurt/Krug auf dem <strong>Gegengleis der freien Strecke</strong> – Streckengleis (2) – ankommen; Einfahrt gerade in Gleis 2 oder mit <strong>Zs 3 (4)</strong> über die Weichen 1/2 in Gleis 1</td></tr>
+              <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 2, von Burgwald/Hyxel · Fahrweg gerade und stumpf über Weiche 8, kein Zs 3</td></tr>
+              <tr><td class="mono">FF</td><td class="mono">31FF</td><td>Einfahrsignal für Züge, die von Burgwald/Hyxel auf dem <strong>Gegengleis der freien Strecke</strong> – Streckengleis (1) – ankommen; Einfahrt gerade in Gleis 1 oder mit <strong>Zs 3 (4)</strong> über die Weichen 9/8 in Gleis 2</td></tr>
+              <tr><td class="mono">G</td><td class="mono">31G</td><td>Einfahrsignal Nebenbahn, von Wehrheim (Strecke 3) · mit <strong>Zs 3 (4)</strong> für die Einfahrt über Weiche 5 nach Gleis 4 oder über die Weichen 7/6 nach Gleis 1</td></tr>
+              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 1, Richtung Burgwald/Hyxel <em>und</em> Richtung Nebenbahn · am Ostende von Bahnsteig 2 · gerade auf Streckengleis (1), das Regelgleis dieser Richtung · mit <strong>Zs 3 (4)</strong> für die abzweigende Ausfahrt über die Weichen 6/7 auf die Nebenbahn</td></tr>
+              <tr><td class="mono">N2</td><td class="mono">31N2</td><td>Ausfahrsignal Gleis 2, Richtung Burgwald/Hyxel · am Ostende von Bahnsteig 1 · mit <strong>Zs 3 (4)</strong> für die abzweigende Ausfahrt über die Weichen 8/9 auf Streckengleis (1) und mit <strong>Gegengleisanzeiger</strong> für die gerade Ausfahrt auf Streckengleis (2), dem Gegengleis dieser Fahrtrichtung</td></tr>
               <tr><td class="mono">N3</td><td class="mono">31N3</td><td>Ausfahrsignal Gleis 3, Richtung Wehrheim · am Ostende von Bahnsteig 2</td></tr>
               <tr><td class="mono">N4</td><td class="mono">31N4</td><td>Ausfahrsignal Gleis 4, Richtung Wehrheim · mit <strong>Zs 3 (4)</strong> für die Fahrt über Weiche 5 auf Gleis 3</td></tr>
               <tr><td class="mono">ZU4</td><td class="mono">31ZU4</td><td>Zwischensignal Gleis 4, Richtung Westen · für die Ausfahrt aus Gleis 4 über Weiche 4 auf Gleis 3 · mit <strong>Zs 3 (4)</strong></td></tr>
-              <tr><td class="mono">P2</td><td class="mono">31P2</td><td>Ausfahrsignal Gleis 2, Richtung Zollfurt/Krug · am Westende von Bahnsteig 2 · mit <strong>Gegengleisanzeiger</strong> und <strong>Zs 3 (4)</strong> für die Ausfahrt über die Weichen 2/1 und die Weiterfahrt auf Streckengleis (1), dem Gegengleis dieser Fahrtrichtung</td></tr>
-              <tr><td class="mono">P3</td><td class="mono">31P3</td><td>Ausfahrsignal Gleis 3, Richtung Zollfurt/Krug über die Weichen 3/2 · mit <strong>Zs 3 (4)</strong></td></tr>
+              <tr><td class="mono">P2</td><td class="mono">31P2</td><td>Ausfahrsignal Gleis 2, Richtung Zollfurt/Krug · am Westende von Bahnsteig 1 · einziger Fahrweg gerade und stumpf über Weiche 1 auf Streckengleis (2), das Regelgleis dieser Richtung – daher weder Zs 3 noch Gegengleisanzeiger</td></tr>
+              <tr><td class="mono">P3</td><td class="mono">31P3</td><td>Ausfahrsignal Gleis 3, Richtung Zollfurt/Krug · abzweigend über Weiche 3 · mit <strong>Zs 3 (4)</strong> und <strong>Gegengleisanzeiger</strong>: weiter über die Weichen 2/1 auf Streckengleis (2) oder gerade über Weiche 2 auf Streckengleis (1), das Gegengleis dieser Fahrtrichtung</td></tr>
               <tr><td class="mono">—</td><td class="mono">—</td><td>Gesonderte Vorsignale entfallen: Vorsignalisierung über den Ks-2-Begriff der Mehrabschnittssignale</td></tr>
             </tbody>
           </table>
@@ -222,14 +223,17 @@ LAGEPLAN = """<!DOCTYPE html>
       Bahnhofsgrenze vor der ersten Einfahrweiche. Die Ausfahrsignale N1, N2, N3, N4, P2 und P3 stehen
       am Ende des jeweiligen Bahnhofsgleises unmittelbar hinter dem Bahnsteig; die Ausfahrstraße
       läuft von dort über alle Bahnhofsweichen. Einen Zs 3 tragen nur die Signale, deren
-      Fahrstraße abzweigend über eine Weiche führt: A (Einfahrt nach Gleis 3), P3 (Ausfahrt über
-      die Weichen 3/2) sowie P2 und N1 für die Fahrt über den jeweiligen Überleitverbinder.
-      P2 und N1 tragen zusätzlich den <strong>Gegengleisanzeiger</strong>, weil der Zug dabei auf
-      das Streckengleis der Gegenrichtung übergeht. Regel- und Gegengleis beschreiben immer
+      Fahrstraße abzweigend über eine Weiche führen kann: A (Einfahrt nach Gleis 3), AA und FF
+      (Einfahrt über den jeweiligen Überleitverbinder), G (Einfahrt nach Gleis 4 oder Gleis 1),
+      N1 (Ausfahrt auf die Nebenbahn), N2 (Ausfahrt über die Weichen 8/9), N4 und ZU4 sowie P3.
+      F und P2 haben nur einen geraden, stumpf befahrenen Fahrweg und tragen deshalb keinen Zs 3.
+      Den <strong>Gegengleisanzeiger</strong> tragen N2 und P3: nur von diesen beiden Signalen aus
+      kann der Zug nach der Ausfahrt auf dem Streckengleis der Gegenrichtung weiterfahren.
+      Regel- und Gegengleis beschreiben immer
       nur die freie Strecke – innerhalb des Bahnhofs gibt es weder das eine noch das andere,
       sondern nur Bahnhofsgleise und die Fahrstraßen dorthin. Die Weichen 6 und 7 sind der Grund, warum das mit drei Gleisen aufgeht: Der Fahrplan
       verlangt um 10:34 eine Nebenbahn-Ausfahrt der RB 66, während die RB 64 von 10:22 bis 10:36
-      in Gleis 3 wendet. Über Gleis 2 und die Weichen 6/7 sind beide Fahrten unabhängig.
+      in Gleis 3 wendet. Über Gleis 1 und die Weichen 6/7 sind beide Fahrten unabhängig.
     </div>
   </section>
 
@@ -340,7 +344,7 @@ ZEICHNUNG = """<!DOCTYPE html>
 <g transform="translate(853.333,972)"><line x1="0" y1="8" x2="26" y2="8" stroke="#000" stroke-width="1.5" stroke-dasharray="3,3"/><text x="13" y="26" text-anchor="middle" font-size="9" fill="#000">km 0,0</text></g>
 <text x="915" y="992" font-size="9.5" fill="#000">Streckengrenze</text>
 </g>
-<text x="68" y="1094" font-size="10" fill="#000" font-family="IBM Plex Mono, monospace">Alle Weichen EW 1:9, 40 km/h · Gegengleisanzeiger an P2 und N1 · AA und FF für Ankunft auf dem Gegengleis · Gleis 4 = Lade- und Ausweichgleis</text>
+<text x="68" y="1094" font-size="10" fill="#000" font-family="IBM Plex Mono, monospace">Alle Weichen EW 1:9, 40 km/h · Gegengleisanzeiger an N2 und P3 · AA und FF für Ankunft auf dem Gegengleis · Gleis 4 = Lade- und Ausweichgleis</text>
 <g font-family="IBM Plex Mono, monospace">
 <rect x="1050" y="900" width="490" height="176" fill="none" stroke="#000" stroke-width="2"/>
 <line x1="1050" y1="944" x2="1540" y2="944" stroke="#000" stroke-width="1"/>

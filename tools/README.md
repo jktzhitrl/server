@@ -30,6 +30,11 @@ Pfad lässt sich über die Umgebungsvariable `CHROMIUM_PATH` setzen.
   mitziehen.
 * **Regel- und Gegengleis** beschreiben nur die freie Strecke. Im Bahnhof gibt es
   Bahnhofsgleise und Fahrstraßen – die Begriffe gehören dort nicht hin.
+* **Zs 3 und Gegengleisanzeiger hängen am Fahrweg, nicht am Signalnamen.** Ein Zs 3
+  steht nur dort, wo die Fahrstraße abzweigend über eine Weiche führen kann; ein
+  Gegengleisanzeiger nur dort, wo die Ausfahrt auf dem Streckengleis der
+  Gegenrichtung weitergehen kann. Wer Gleisnummern tauscht oder Weichenzungen
+  umdreht, muss beides neu aus der Geometrie herleiten.
 * Nach jeder Änderung das Ergebnis ansehen, bevor committet wird: Signale und
   Weichen liegen dicht beieinander, Überlappungen fallen nur im Bild auf.
 
