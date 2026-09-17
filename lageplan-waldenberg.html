@@ -104,7 +104,7 @@
     </p>
 
     <div class="diagram-scroll">
-      <svg class="plan" viewBox="0 0 1580 480" role="img" aria-label="Sicherungstechnischer Lageplan der Betriebsstelle Waldenberg: zwei durchgehende Hauptgleise 1 und 2 aus Richtung Krug nach Hyxel, Überleitverbinder mit den Weichen 1 und 2 am Westkopf, Außenbahnsteig 1 an Gleis 1, Zwischenbahnsteig 2 zwischen Gleis 2 und dem neuen Gleis 3 mit Reisendenübergang, dahinter Weiche 3 von Gleis 3 auf Gleis 2 und erst danach eine Doppelkreuzungsweiche 4 zwischen Gleis 1 und Gleis 2, weiter östlich Abzweigweiche 5 aus Gleis 2 zur eingleisigen Nebenbahn nach Wehrheim, Gleis 1 durchgehend nach Hyxel, Einfahrsignale A und F, Ausfahrsignale N1 und N3, Nebenbahnsignale Nn und Fn.">
+      <svg class="plan" viewBox="0 0 1580 480" role="img" aria-label="Sicherungstechnischer Lageplan der Betriebsstelle Waldenberg: zwei durchgehende Hauptgleise 1 und 2 aus Richtung Krug nach Hyxel, Überleitverbinder mit den Weichen 1 und 2 am Westkopf, Außenbahnsteig 1 an Gleis 1, Zwischenbahnsteig 2 zwischen Gleis 2 und dem neuen Gleis 3 mit Reisendenübergang, dahinter Weiche 3 von Gleis 3 auf Gleis 2 und erst danach eine Doppelkreuzungsweiche 4 zwischen Gleis 1 und Gleis 2, weiter östlich Abzweigweiche 5 aus Gleis 2 zur eingleisigen Nebenbahn nach Wehrheim, Gleis 1 durchgehend nach Hyxel, Einfahrsignale A und F, Zwischensignal ZR2 am Bahnsteigende von Gleis 2, Ausfahrsignale N2 und N3, Nebenbahnsignale Nn und Fn.">
 
         <!-- Betriebsstellenbezeichnung -->
         <text x="790" y="26" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">Waldenberg</text>
@@ -223,7 +223,15 @@
         <rect x="96" y="187" width="18" height="12" rx="6" fill="currentColor"/>
         <text x="138" y="197" font-size="13" font-weight="600" fill="currentColor">P2</text>
 
-        <!-- N1: Ausfahrsignal Gleis 2 vor der Nebenbahn-Abzweigweiche 5, mit Zs 3 (4) -->
+        <!-- ZR2: Zwischensignal Gleis 2 am Bahnsteigende, Richtung Doppelkreuzungsweiche -->
+        <g stroke="currentColor" stroke-width="2" fill="none">
+          <line x1="760" y1="186" x2="760" y2="200"/>
+          <line x1="760" y1="193" x2="776" y2="193"/>
+        </g>
+        <rect x="776" y="187" width="18" height="12" rx="6" fill="currentColor"/>
+        <text x="752" y="197" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">ZR2</text>
+
+        <!-- N2: Ausfahrsignal Gleis 2 vor der Nebenbahn-Abzweigweiche 5, mit Zs 3 (4) -->
         <g stroke="currentColor" stroke-width="2" fill="none">
           <line x1="1230" y1="186" x2="1230" y2="200"/>
           <line x1="1230" y1="193" x2="1246" y2="193"/>
@@ -231,7 +239,7 @@
         <rect x="1246" y="187" width="18" height="12" rx="6" fill="currentColor"/>
         <polygon points="1267,187 1277,193 1267,199" fill="currentColor"/>
         <text x="1281" y="197" font-size="11" font-weight="600" fill="currentColor">4</text>
-        <text x="1222" y="197" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
+        <text x="1222" y="197" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N2</text>
 
         <!-- F: Einfahrsignal Ost, Gleis 2, von Hyxel -->
         <g stroke="currentColor" stroke-width="2" fill="none">
@@ -287,7 +295,7 @@
       <span>Nebenbahn eingleisig; Kreuzungsmöglichkeiten in Wehrheim, Sandheide und Wassergrund.</span>
       <span>Weiche 3 (Gleis 3 → Gleis 2) EW 1:9, 40 km/h.</span>
       <span>Doppelkreuzungsweiche 4 verbindet Gleis 1 und Gleis 2 hinter den Bahnsteigen, EW 1:9, 40 km/h.</span>
-      <span>Weiche 5 (Gleis 2 → Nebenbahn) EW 1:9, Abzweiggeschwindigkeit 40 km/h → Zs 3 mit Kennzahl 4 an N1.</span>
+      <span>Weiche 5 (Gleis 2 → Nebenbahn) EW 1:9, Abzweiggeschwindigkeit 40 km/h → Zs 3 mit Kennzahl 4 an N2.</span>
     </div>
   </section>
 
@@ -317,7 +325,8 @@
               <tr><td class="mono">A</td><td class="mono">31A</td><td>Einfahrsignal Gleis 1, von Krug · Ks-Mehrabschnittssignal (Kombinationssignal)</td></tr>
               <tr><td class="mono">P2</td><td class="mono">31P2</td><td>Ausfahrsignal Gleis 2, Richtung Krug · Ks-Mehrabschnittssignal</td></tr>
               <tr><td class="mono">N3</td><td class="mono">31N3</td><td>Ausfahrsignal Gleis 3, über Weiche 3 auf Gleis 2 · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Abzweigfahrt</td></tr>
-              <tr><td class="mono">N1</td><td class="mono">31N1</td><td>Ausfahrsignal Gleis 2, Richtung Hyxel oder über Weiche 5 zur Nebenbahn · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Abzweigfahrt</td></tr>
+              <tr><td class="mono">ZR2</td><td class="mono">31ZR2</td><td>Zwischensignal Gleis 2 am Bahnsteigende, Richtung Doppelkreuzungsweiche · Ks-Mehrabschnittssignal</td></tr>
+              <tr><td class="mono">N2</td><td class="mono">31N2</td><td>Ausfahrsignal Gleis 2, Richtung Hyxel oder über Weiche 5 zur Nebenbahn · Ks-Mehrabschnittssignal mit <strong>Zs 3 (4)</strong> für die Abzweigfahrt</td></tr>
               <tr><td class="mono">F</td><td class="mono">31F</td><td>Einfahrsignal Gleis 2, von Hyxel · Ks-Mehrabschnittssignal</td></tr>
               <tr><td class="mono">Nn</td><td class="mono">31Nn</td><td>Ausfahrsignal Nebenbahn, Richtung Wehrheim · Ks-Mehrabschnittssignal</td></tr>
               <tr><td class="mono">Fn</td><td class="mono">31Fn</td><td>Einfahrsignal Nebenbahn, von Wehrheim · Ks-Mehrabschnittssignal</td></tr>
