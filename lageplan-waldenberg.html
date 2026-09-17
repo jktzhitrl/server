@@ -90,8 +90,10 @@
   <section class="panel">
     <h2>Gleistopologie</h2>
     <p class="panel-note">
-      Weichensymbol nach Ril 819.9002: Weichenanfang als senkrechter Strich, Schwärzung
-      (ferngestellte Weiche), Grenzzeichen am Weichenende. Signale „abgeklappt" in
+      Weichensymbol nach Ril 819.9002: Weichenanfang und Weichenmitte je als senkrechter
+      Strich, dazwischen das Stammgleis ungeteilt, ab Weichenmitte die Schwärzung
+      (ferngestellte Weiche) zum Zweiggleis, Grenzzeichen am Weichenende. Die Weichennummer
+      steht auf der Seite des Zweiggleises. Signale „abgeklappt" in
       Fahrtrichtung, Schirm ausgefüllt = wärterbedient. Alle Hauptsignale sind
       <strong>Ks-Mehrabschnittssignale</strong> (Kombinationssignale, Signalbegriffe Hp 0,
       Ks 1, Ks 2) und tragen ihre Kennzeichnung am Schirm. Weiche 3 führt von Gleis 3 auf
@@ -168,16 +170,17 @@
 
         <!-- ===== Weiche 3: einfache Weiche, verbindet Gleis 3 auf Gleis 2 ===== -->
         <g stroke="currentColor" stroke-width="2">
-          <line x1="780" y1="201" x2="780" y2="219"/>
+          <line x1="740" y1="201" x2="740" y2="219"/>
+          <line x1="800" y1="201" x2="800" y2="219"/>
         </g>
         <g fill="currentColor" stroke="none">
-          <polygon points="780,210 850,210 850,242"/>
+          <polygon points="800,210 870,210 870,242"/>
         </g>
-        <line x1="850" y1="242" x2="910" y2="280" stroke="currentColor" stroke-width="3"/>
+        <line x1="870" y1="242" x2="910" y2="280" stroke="currentColor" stroke-width="3"/>
         <g stroke="currentColor" stroke-width="2">
-          <line x1="887.4" y1="262.1" x2="892.6" y2="272.9"/>
+          <line x1="867.5" y1="236.5" x2="872.5" y2="247.5"/>
         </g>
-        <text x="815" y="196" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">3</text>
+        <text x="800" y="235" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">3</text>
 
         <!-- ===== Doppelkreuzungsweiche 4: verbindet Gleis 1 und Gleis 2, erst hinter Weiche 3 ===== -->
         <g stroke="currentColor" stroke-width="2">
@@ -237,17 +240,18 @@
 
         <!-- ===== Abzweig zur Nebenbahn: Weiche 5 aus Gleis 2, Gleis 1 bleibt durchgehend ===== -->
         <g stroke="currentColor" stroke-width="2">
-          <line x1="1330" y1="201" x2="1330" y2="219"/>
+          <line x1="1295" y1="201" x2="1295" y2="219"/>
+          <line x1="1350" y1="201" x2="1350" y2="219"/>
         </g>
         <g fill="currentColor" stroke="none">
-          <polygon points="1330,210 1405,210 1405,242"/>
+          <polygon points="1350,210 1420,210 1420,242"/>
         </g>
-        <line x1="1405" y1="242" x2="1500" y2="340" stroke="currentColor" stroke-width="3"/>
+        <line x1="1420" y1="242" x2="1500" y2="340" stroke="currentColor" stroke-width="3"/>
         <line x1="1500" y1="340" x2="1550" y2="410" stroke="currentColor" stroke-width="3"/>
         <g stroke="currentColor" stroke-width="2">
-          <line x1="1463" y1="302" x2="1470" y2="309"/>
+          <line x1="1417.5" y1="236.5" x2="1422.5" y2="247.5"/>
         </g>
-        <text x="1367" y="196" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">5</text>
+        <text x="1350" y="235" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">5</text>
 
         <!-- Nn: Ausfahrsignal Nebenbahn, Richtung Wehrheim -->
         <g stroke="currentColor" stroke-width="2" fill="none">
