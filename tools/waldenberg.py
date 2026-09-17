@@ -8,10 +8,11 @@ Abzweigbahnhof zweier Strecken:
   Strecke 1 (Krug-Furth, km 37,5), zweigleisig, 120 km/h
   Strecke 3 (Waldenberg-Gbf), eingleisig, 80 km/h, beginnt hier bei km 0,0
 
-  Gleis 1 (oben)  durchgehendes Hauptgleis Richtung Kilometrierung (Burgwald/Hyxel)
-  Gleis 2 (Mitte) durchgehendes Hauptgleis entgegen der Kilometrierung (Zollfurt/Krug)
-  Gleis 3         Bahnsteiggleis der Nebenbahn, geht oestlich in Strecke 3 ueber
-  Gleis 4         Lade- und Ausweichgleis, ueber W4 und W5 an Gleis 3 angebunden
+Von Sued nach Nord, also von unten nach oben im Plan:
+  Gleis 1  durchgehendes Hauptgleis Richtung Kilometrierung (Burgwald/Hyxel)
+  Gleis 2  durchgehendes Hauptgleis entgegen der Kilometrierung (Zollfurt/Krug)
+  Gleis 3  Bahnsteiggleis der Nebenbahn, geht oestlich in Strecke 3 ueber
+  Gleis 4  Lade- und Ausweichgleis, ueber W4 und W5 an Gleis 3 angebunden
 
   Westkopf: W1/W2 Ueberleitverbinder Gleis 1 <-> Gleis 2, W3 Gleis 2 -> Gleis 3
   Mitte:    W4 und W5 Anbindung Gleis 4
@@ -23,7 +24,11 @@ build_waldenberg.py mitziehen.
 """
 import math
 
-G1, G2, G3, G4 = 175, 275, 355, 435
+# Gleis 1 liegt unten: bei Rechtsverkehr ist das Regelgleis in Richtung der
+# Kilometrierung das in Fahrtrichtung rechte, bei nordorientiertem Plan also das
+# suedliche. Zugleich zaehlt die Nummerierung damit nach Ril 819.9001 Abschnitt
+# 2(3) vom Hauptzugang (Empfangsgebaeude im Sueden) aufsteigend nach Norden.
+G1, G2, G3, G4 = 370, 270, 190, 110
 X0, X1 = 40, 1860
 KEIL = 32          # Hoehe der Schwaerzung am Weichenende
 TICK = 9           # halbe Hoehe von Weichenanfang / Weichenmitte
@@ -140,62 +145,61 @@ def build(c, soft, surface):
 
     # ---- Gleis 4: Lade- und Ausweichgleis, an beiden Enden an Gleis 3 angebunden ----
     A(f'<line x1="878" y1="{G4}" x2="1152" y2="{G4}" stroke="{c}" fill="none" stroke-width="3"/>')
-    A(f'<text x="880" y="{G4+35}" font-size="10.5" fill="{soft}">Lade- und Ausweichgleis</text>')
+    A(f'<text x="880" y="{G4-22}" font-size="10.5" fill="{soft}">Lade- und Ausweichgleis</text>')
 
     # ---- Westkopf: W1/W2 Ueberleitverbinder ----
-    A(weiche(165, 207, 265, G1, KEIL, 1, c, soft))
-    A(weiche(440, 398, 340, G2, -KEIL, 2, c, soft))
-    A(f'<line x1="265" y1="{G1+KEIL}" x2="340" y2="{G2-KEIL}" stroke="{c}" stroke-width="3"/>')
-    A(gz_auf(265, G1 + KEIL, 340, G2 - KEIL, 0.26, c))
-    A(gz_auf(265, G1 + KEIL, 340, G2 - KEIL, 0.74, c))
+    A(weiche(165, 207, 265, G1, -KEIL, 1, c, soft))
+    A(weiche(440, 398, 340, G2, KEIL, 2, c, soft))
+    A(f'<line x1="265" y1="{G1-KEIL}" x2="340" y2="{G2+KEIL}" stroke="{c}" stroke-width="3"/>')
+    A(gz_auf(265, G1 - KEIL, 340, G2 + KEIL, 0.26, c))
+    A(gz_auf(265, G1 - KEIL, 340, G2 + KEIL, 0.74, c))
 
     # ---- Westkopf: W3 Gleis 2 -> Gleis 3 ----
-    A(weiche(470, 512, 570, G2, KEIL, 3, c, soft))
-    A(f'<line x1="570" y1="{G2+KEIL}" x2="658" y2="{G3}" stroke="{c}" stroke-width="3"/>')
-    A(gz_auf(570, G2 + KEIL, 658, G3, 0.55, c))
+    A(weiche(470, 512, 570, G2, -KEIL, 3, c, soft))
+    A(f'<line x1="570" y1="{G2-KEIL}" x2="658" y2="{G3}" stroke="{c}" stroke-width="3"/>')
+    A(gz_auf(570, G2 - KEIL, 658, G3, 0.55, c))
 
     # ---- W4: Westanbindung Gleis 3 -> Gleis 4 ----
-    A(weiche(690, 732, 790, G3, KEIL, 4, c, soft))
-    A(f'<line x1="790" y1="{G3+KEIL}" x2="878" y2="{G4}" stroke="{c}" stroke-width="3"/>')
-    A(gz_auf(790, G3 + KEIL, 878, G4, 0.35, c))
+    A(weiche(690, 732, 790, G3, -KEIL, 4, c, soft))
+    A(f'<line x1="790" y1="{G3-KEIL}" x2="878" y2="{G4}" stroke="{c}" stroke-width="3"/>')
+    A(gz_auf(790, G3 - KEIL, 878, G4, 0.35, c))
 
-    # ---- Ostkopf: W4/W5 Anbindung Gleis 2 -> Nebenbahn, oestlich des Bahnsteigs.
-    # Damit faehrt ein Zug aus Gleis 2 auf die Nebenbahn aus, waehrend in Gleis 3
-    # ein anderer Zug am Bahnsteig steht und wendet.
-    # W5: Ostanbindung Gleis 3 -> Gleis 4, Zungen oestlich, damit die Ausfahrt aus
-    # Gleis 4 den Bahnsteigabschnitt von Gleis 3 nicht beruehrt
-    A(weiche(1340, 1298, 1240, G3, KEIL, 5, c, soft))
-    A(f'<line x1="1240" y1="{G3+KEIL}" x2="1152" y2="{G4}" stroke="{c}" stroke-width="3"/>')
-    A(gz_auf(1240, G3 + KEIL, 1152, G4, 0.35, c))
+    # ---- W5: Ostanbindung Gleis 3 -> Gleis 4, Zungen oestlich, damit die Ausfahrt
+    # aus Gleis 4 den Bahnsteigabschnitt von Gleis 3 nicht beruehrt ----
+    A(weiche(1340, 1298, 1240, G3, -KEIL, 5, c, soft))
+    A(f'<line x1="1240" y1="{G3-KEIL}" x2="1152" y2="{G4}" stroke="{c}" stroke-width="3"/>')
+    A(gz_auf(1240, G3 - KEIL, 1152, G4, 0.35, c))
 
-    # W6/W7: Anbindung Gleis 2 -> Nebenbahn, oestlich des Bahnsteigs
-    A(weiche(1210, 1252, 1310, G2, KEIL, 6, c, soft))
-    A(weiche(1460, 1418, 1360, G3, -KEIL, 7, c, soft))
-    A(f'<line x1="1310" y1="{G2+KEIL}" x2="1360" y2="{G3-KEIL}" stroke="{c}" stroke-width="3"/>')
-    A(gz_auf(1310, G2 + KEIL, 1360, G3 - KEIL, 0.22, c))
-    A(gz_auf(1310, G2 + KEIL, 1360, G3 - KEIL, 0.78, c))
+    # ---- W6/W7: Anbindung Gleis 2 -> Nebenbahn, oestlich des Bahnsteigs. Damit faehrt
+    # ein Zug aus Gleis 2 auf die Nebenbahn aus, waehrend in Gleis 3 ein anderer
+    # Zug am Bahnsteig steht und wendet ----
+    A(weiche(1210, 1252, 1310, G2, -KEIL, 6, c, soft))
+    A(weiche(1460, 1418, 1360, G3, KEIL, 7, c, soft))
+    A(f'<line x1="1310" y1="{G2-KEIL}" x2="1360" y2="{G3+KEIL}" stroke="{c}" stroke-width="3"/>')
+    A(gz_auf(1310, G2 - KEIL, 1360, G3 + KEIL, 0.22, c))
+    A(gz_auf(1310, G2 - KEIL, 1360, G3 + KEIL, 0.78, c))
 
     # ---- Ostkopf: W8/W9 Ueberleitverbinder Gleis 1 <-> Gleis 2 ----
-    A(weiche(1430, 1472, 1530, G1, KEIL, 8, c, soft))
-    A(weiche(1705, 1663, 1605, G2, -KEIL, 9, c, soft))
-    A(f'<line x1="1530" y1="{G1+KEIL}" x2="1605" y2="{G2-KEIL}" stroke="{c}" stroke-width="3"/>')
-    A(gz_auf(1530, G1 + KEIL, 1605, G2 - KEIL, 0.26, c))
-    A(gz_auf(1530, G1 + KEIL, 1605, G2 - KEIL, 0.74, c))
+    A(weiche(1430, 1472, 1530, G1, -KEIL, 8, c, soft))
+    A(weiche(1705, 1663, 1605, G2, KEIL, 9, c, soft))
+    A(f'<line x1="1530" y1="{G1-KEIL}" x2="1605" y2="{G2+KEIL}" stroke="{c}" stroke-width="3"/>')
+    A(gz_auf(1530, G1 - KEIL, 1605, G2 + KEIL, 0.26, c))
+    A(gz_auf(1530, G1 - KEIL, 1605, G2 + KEIL, 0.74, c))
 
-    # ---- Empfangsgebaeude und Bahnsteige ----
-    A(f'<rect x="800" y="58" width="150" height="40" fill="none" stroke="{c}" stroke-width="2"/>')
-    A(f'<text x="875" y="83" text-anchor="middle" font-size="11" fill="{c}">Empfangsgebäude</text>')
-    A(f'<text x="962" y="83" font-size="10.5" fill="{soft}">Hauptzugang</text>')
-
-    A(f'<rect x="820" y="120" width="245" height="34" fill="none" stroke="{soft}" '
+    # ---- Bahnsteige und Empfangsgebaeude (Hauptzugang im Sueden) ----
+    A(f'<rect x="820" y="213" width="245" height="34" fill="none" stroke="{soft}" '
       f'stroke-width="1.5" stroke-dasharray="5,4"/>')
-    A(f'<text x="942" y="142" text-anchor="middle" fill="{soft}" font-size="12">Bahnsteig 1 (Hausbahnsteig)</text>')
-    A(f'<rect x="820" y="295" width="245" height="34" fill="none" stroke="{soft}" '
+    A(f'<text x="942" y="235" text-anchor="middle" fill="{soft}" font-size="12">Bahnsteig 2 (Mittelbahnsteig)</text>')
+    A(f'<rect x="820" y="391" width="245" height="34" fill="none" stroke="{soft}" '
       f'stroke-width="1.5" stroke-dasharray="5,4"/>')
-    A(f'<text x="942" y="317" text-anchor="middle" fill="{soft}" font-size="12">Bahnsteig 2 (Mittelbahnsteig)</text>')
+    A(f'<text x="942" y="413" text-anchor="middle" fill="{soft}" font-size="12">Bahnsteig 1 (Hausbahnsteig)</text>')
 
-    A(f'<line x1="1010" y1="120" x2="1010" y2="329" stroke="{soft}" stroke-width="1.5" stroke-dasharray="3,4"/>')
-    A(f'<text x="1020" y="238" font-size="10.5" fill="{soft}">Personenunterführung</text>')
+    A(f'<rect x="800" y="443" width="150" height="40" fill="none" stroke="{c}" stroke-width="2"/>')
+    A(f'<text x="875" y="468" text-anchor="middle" font-size="11" fill="{c}">Empfangsgebäude</text>')
+    A(f'<text x="962" y="468" font-size="10.5" fill="{soft}">Hauptzugang</text>')
+
+    A(f'<line x1="1010" y1="213" x2="1010" y2="425" stroke="{soft}" stroke-width="1.5" stroke-dasharray="3,4"/>')
+    A(f'<text x="1020" y="322" font-size="10.5" fill="{soft}">Personenunterführung</text>')
 
     # ---- Gleisnummern in unterbrochener Gleislinie ----
     for y, n in ((G1, 1), (G2, 2), (G3, 3)):
@@ -204,22 +208,23 @@ def build(c, soft, surface):
 
     # ---- Streckengleisbezeichnungen ----
     A(f'<g fill="{soft}" font-size="12">'
-      f'<text x="46" y="{G1-10}">(1)</text>'
-      f'<text x="46" y="{G2+22}">(2)</text>'
-      f'<text x="{X1-6}" y="{G1-10}" text-anchor="end">(1)</text>'
-      f'<text x="{X1-6}" y="{G2+22}" text-anchor="end">(2)</text></g>')
+      f'<text x="46" y="{G1+22}">(1)</text>'
+      f'<text x="46" y="{G2-10}">(2)</text>'
+      f'<text x="{X1-6}" y="{G1+22}" text-anchor="end">(1)</text>'
+      f'<text x="{X1-6}" y="{G2-10}" text-anchor="end">(2)</text></g>')
 
-    # ---- Signale ----
+    # ---- Signale. Die Hauptbahnsignale liegen im freien Band zwischen Gleis 2
+    # und Gleis 1, die Nebenbahnsignale ueber Gleis 3 bzw. unter Gleis 4. ----
     # A: Einfahrsignal Gleis 1 von Zollfurt/Krug, Zs 3 (4) fuer Einfahrt nach Gleis 3
-    A(signal(95, G1, True, 'e', 'A', c, zs3='4'))
+    A(signal(95, G1, False, 'e', 'A', c, zs3='4'))
     # AA: Einfahrsignal Gleis 2 von Zollfurt/Krug fuer Fahrten auf dem Gegengleis
-    A(signal(130, G2, False, 'e', 'AA', c))
+    A(signal(130, G2, True, 'e', 'AA', c))
     # P2: Ausfahrsignal Gleis 2 Richtung Zollfurt/Krug, am Westende Bahnsteig 2.
     # Fahrweg wahlweise gerade auf Streckengleis (2) oder ueber W2/W1 auf Gleis 1
     # = Gegengleisfahrt -> Gegengleisanzeiger und Zs 3 (4)
-    A(signal(690, G2, False, 'w', 'P2', c, zs3='4', gga=True))
+    A(signal(690, G2, True, 'w', 'P2', c, zs3='4', gga=True))
     # P3: Ausfahrsignal Gleis 3 Richtung Zollfurt/Krug ueber W3/W2 -> abzweigend, Zs 3 (4)
-    A(signal(850, G3, True, 'w', 'P3', c, zs3='4'))
+    A(signal(850, G3, False, 'w', 'P3', c, zs3='4'))
     # N1: Ausfahrsignal Gleis 1 Richtung Burgwald/Hyxel, am Ostende Bahnsteig 1.
     # Fahrweg wahlweise gerade auf Streckengleis (1) oder ueber W6/W7 auf Gleis 2
     # = Gegengleisfahrt -> Gegengleisanzeiger und Zs 3 (4)
@@ -227,25 +232,25 @@ def build(c, soft, surface):
     # N2: Ausfahrsignal Gleis 2 Richtung Osten, am Ostende Bahnsteig 2.
     # Fahrweg ueber W4/W5 auf die Nebenbahn (abzweigend, Zs 3) oder gerade
     # auf Streckengleis (2) Richtung Burgwald = Gegengleisfahrt
-    A(signal(1080, G2, False, 'e', 'N2', c, zs3='4'))
+    A(signal(1080, G2, True, 'e', 'N2', c, zs3='4'))
     # N3: Ausfahrsignal Gleis 3 Richtung Wehrheim (Nebenbahn), am Ostende Bahnsteig 2
-    A(signal(1080, G3, True, 'e', 'N3', c))
+    A(signal(1080, G3, False, 'e', 'N3', c))
     # N4: Ausfahrsignal Ladegleis Richtung Wehrheim, abzweigend ueber W4 -> Zs 3 (4)
     A(signal(1090, G4, True, 'e', 'N4', c, zs3='4'))
     # ZU4: Zwischensignal Gleis 4 Richtung Westen, abzweigend ueber W4 -> Zs 3 (4)
     A(signal(975, G4, True, 'w', 'ZU4', c, zs3='4'))
     # F: Einfahrsignal Gleis 2 von Burgwald/Hyxel
-    A(signal(1810, G2, False, 'w', 'F', c))
+    A(signal(1810, G2, True, 'w', 'F', c))
     # FF: Einfahrsignal Gleis 1 von Burgwald/Hyxel fuer Fahrten auf dem Gegengleis
-    A(signal(1770, G1, True, 'w', 'FF', c))
+    A(signal(1770, G1, False, 'w', 'FF', c))
     # G: Einfahrsignal von Wehrheim (Nebenbahn); Zs 3 (4) fuer die Einfahrt nach
     # Gleis 4 oder ueber W6 nach Gleis 2
-    A(signal(1760, G3, True, 'w', 'G', c, zs3='4'))
+    A(signal(1760, G3, False, 'w', 'G', c, zs3='4'))
 
     # ---- Streckenwechsel Strecke 1 / Strecke 3 ----
     A(f'<line x1="1560" y1="{G3-22}" x2="1560" y2="{G3+22}" stroke="{soft}" '
       f'stroke-width="1.5" stroke-dasharray="4,3"/>')
-    A(f'<text x="1568" y="{G3-26}" font-size="10.5" fill="{soft}">Strecke 3 · km 0,0</text>')
+    A(f'<text x="1568" y="{G3+34}" font-size="10.5" fill="{soft}">Strecke 3 · km 0,0</text>')
 
     # ---- Richtungshinweise ----
     A(f'<g fill="{soft}" font-size="12" font-style="italic">'

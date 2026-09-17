@@ -16,7 +16,7 @@ ARIA = ("Sicherungstechnischer Lageplan des Abzweigbahnhofs Waldenberg. Die zwei
         "Hauptbahn (Strecke 1, Krug–Furth, km 37,5) läuft mit Gleis 1 und Gleis 2 durchgehend "
         "gerade durch die Betriebsstelle. Gleis 3 ist Bahnsteiggleis der eingleisigen Nebenbahn "
         "und geht östlich in die Strecke 3 nach Wehrheim–Sandheide–Gbf über, deren Kilometrierung "
-        "hier bei km 0,0 beginnt. Gleis 4 liegt als Lade- und Ausweichgleis südlich davon und ist "
+        "hier bei km 0,0 beginnt. Gleis 4 liegt als Lade- und Ausweichgleis nördlich davon und ist "
         "über die Weichen 4 und 5 an beiden Enden an Gleis 3 angebunden. Am Westkopf verbinden die "
         "Weichen 1 und 2 als Überleitverbinder Gleis 1 und Gleis 2, Weiche 3 führt von Gleis 2 auf "
         "Gleis 3. Am Ostkopf verbinden die Weichen 6 und 7 Gleis 2 mit der Nebenbahn, die Weichen 8 "
@@ -111,7 +111,7 @@ LAGEPLAN = """<!DOCTYPE html>
     Wehrheim – Sandheide – Gbf beginnt hier bei <strong>km 0,0</strong>; ihr Bahnsteiggleis ist
     Gleis 3, das östlich des Bahnsteigs in die Nebenbahn übergeht. Weil Gleis 2 über die
     Weichen 6 und 7 eine <strong>eigene Anbindung an die Nebenbahn</strong> hat, kann ein Zug
-    aus Gleis 2 auf die Nebenbahn ausfahren, während in Gleis 3 ein anderer wendet. Südlich davon liegt
+    aus Gleis 2 auf die Nebenbahn ausfahren, während in Gleis 3 ein anderer wendet. Nördlich davon liegt
     <strong>Gleis 4</strong> als Lade- und Ausweichgleis; es ist über die Weichen 4 und 5 an
     beiden Enden an Gleis 3 angebunden und dient unter anderem der Bereitstellung des
     Übergabezuges Üg 1. Beide Hauptgleise bleiben
@@ -140,6 +140,7 @@ LAGEPLAN = """<!DOCTYPE html>
     <div class="rules">
       <span>Sämtliche fernbediente Weichen mit Zungenprüfern.</span>
       <span>Gleisnummern sind einstellig.</span>
+      <span>Gleis 1 liegt südlich: bei Rechtsverkehr ist das Regelgleis in Richtung der Kilometrierung das in Fahrtrichtung rechte. Die Nummerierung zählt zugleich vom Hauptzugang aufsteigend.</span>
       <span>Alle Weichen EW 1:9, Abzweiggeschwindigkeit 40 km/h.</span>
       <span>Hauptgleise 1 und 2 durchgehend gerade, Streckengeschwindigkeit 120 km/h.</span>
       <span>Strecke 3 (Nebenbahn) beginnt in Waldenberg bei km 0,0, eingleisig, 80 km/h.</span>
