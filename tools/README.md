@@ -35,6 +35,12 @@ Pfad lässt sich über die Umgebungsvariable `CHROMIUM_PATH` setzen.
   Gegengleisanzeiger nur dort, wo die Ausfahrt auf dem Streckengleis der
   Gegenrichtung weitergehen kann. Wer Gleisnummern tauscht oder Weichenzungen
   umdreht, muss beides neu aus der Geometrie herleiten.
+* **Die Fahrleitung selbst wird im sicherungstechnischen Lageplan nicht gezeichnet.**
+  Schaltabschnittsgrenzen sind nach Ril 819.9002 ausdrücklich ohne Darstellung.
+  Gekennzeichnet wird nur, welches Gleis *nicht* elektrifiziert ist – Raute auf der
+  Gleislinie, Strich auf der nicht elektrifizierten Seite (`ohne_fahrleitung()`).
+  Die Streckendaten inklusive Elektrifizierung stehen in den Streckenangaben an den
+  Blatträndern.
 * Nach jeder Änderung das Ergebnis ansehen, bevor committet wird: Signale und
   Weichen liegen dicht beieinander, Überlappungen fallen nur im Bild auf.
 

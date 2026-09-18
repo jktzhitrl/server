@@ -25,7 +25,9 @@ ARIA = ("Sicherungstechnischer Lageplan des Abzweigbahnhofs Waldenberg. Die zwei
         "und Gleis 3, verbunden über eine Personenunterführung. Einfahrsignale A und AA von "
         "Zollfurt, F und FF von Burgwald sowie G von Wehrheim; Ausfahrsignale N1, N2, N3, N4, P2 "
         "und P3 sowie Zwischensignal ZU4; N2 und P3 mit Gegengleisanzeiger für die "
-        "Weiterfahrt auf dem Streckengleis der Gegenrichtung.")
+        "Weiterfahrt auf dem Streckengleis der Gegenrichtung. Beide Strecken sind mit "
+        "15 kV 16,7 Hz elektrifiziert; Gleis 4 ist nicht elektrifiziert und an beiden "
+        "Verbindungsrampen mit dem Symbol für nicht elektrifiziertes Gleis gekennzeichnet.")
 
 LAGEPLAN = """<!DOCTYPE html>
 <html lang="de">
@@ -150,6 +152,9 @@ LAGEPLAN = """<!DOCTYPE html>
       <span>AA und FF decken Einfahrten von Zügen, die auf der freien Strecke bereits auf dem Gegengleis ankommen.</span>
       <span>Gleis 3 und die Anbindung Gleis 1 → Nebenbahn (Weichen 6/7) sind voneinander unabhängig befahrbar.</span>
       <span>Gleis 4 ist Lade- und Ausweichgleis ohne Bahnsteig, an beiden Enden an Gleis 3 angebunden.</span>
+      <span>Beide Strecken elektrifiziert 15 kV 16,7 Hz. Die Fahrleitung selbst wird im sicherungstechnischen Lageplan nicht dargestellt; Schaltabschnittsgrenzen bleiben nach Ril 819.9002 ohne Darstellung.</span>
+      <span>Gleis 4 ohne Fahrleitung: unter Fahrdraht darf nicht be- und entladen werden. Gekennzeichnet mit dem Symbol „nicht elektrifiziertes Gleis“ – der Strich steht auf der nicht elektrifizierten Seite.</span>
+      <span>Gleis 4 ist Nebengleis und deshalb mit dünnerer Gleislinie gezeichnet (Ril 819.9002 Abschnitt 12).</span>
     </div>
   </section>
 
@@ -216,6 +221,23 @@ LAGEPLAN = """<!DOCTYPE html>
           </table>
         </div>
       </div>
+    </div>
+
+    <div class="caveat">
+      <strong>Elektrifizierung:</strong> Die Hauptbahn Krug–Furth ist Bestandsstrecke und damit
+      nach Vorgabe elektrifiziert. Die Nebenbahn Waldenberg–Gbf bekommt ebenfalls Fahrleitung:
+      Der gesamte Güterverkehr zum Güterbahnhof sowie die Anschließer Großraffinerie und
+      Getreidesilo liegen an dieser Strecke, und die Reisezüge gehen durchgehend von der
+      Hauptbahn auf die Nebenbahn über. Ohne Fahrleitung bräuchte jeder dieser Züge in
+      Waldenberg einen Traktionswechsel – also ein zusätzliches Gleis zum Umsetzen,
+      Rangierpersonal und Standzeit, und das täglich mehrfach. Die Fahrleitung über 29,5 km
+      ist dagegen einmalige Investition ohne laufenden Betriebsaufwand.
+      <strong>Gleis 4 bleibt bewusst ohne Fahrleitung</strong>, weil unter Fahrdraht nicht be-
+      und entladen werden darf; der Übergabezug Üg 1 wird dort mit Diesel bedient. Als
+      Überholungsgleis für elektrische Züge steht Gleis 4 damit nicht zur Verfügung – dafür
+      gibt es Gleis 3. Im sicherungstechnischen Lageplan wird die Fahrleitung selbst nicht
+      gezeichnet; dargestellt wird nach Ril 819.9002 Abschnitt 12 nur, welches Gleis
+      <em>nicht</em> elektrifiziert ist.
     </div>
 
     <div class="caveat">
@@ -292,6 +314,14 @@ LAGEPLAN = """<!DOCTYPE html>
         </svg>
         <span>Gebäude (Empfangsgebäude)</span>
       </div>
+      <div class="legend-item">
+        <svg width="46" height="22" viewBox="0 0 46 22" aria-hidden="true">
+          <line x1="0" y1="11" x2="46" y2="11" stroke="currentColor" stroke-width="2"/>
+          <polygon points="14,11 22,3 30,11 22,19" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="30" y1="1" x2="30" y2="21" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <span>Nicht elektrifiziertes Gleis – der nicht elektrifizierte Bereich liegt auf der Seite des Striches</span>
+      </div>
     </div>
   </section>
 
@@ -326,25 +356,28 @@ ZEICHNUNG = """<!DOCTYPE html>
 </g>
 <g font-family="IBM Plex Mono, monospace">
 <rect x="60" y="900" width="940" height="176" fill="none" stroke="#000" stroke-width="1.5"/>
-<g transform="translate(66,974)"><line x1="0" y1="8" x2="52" y2="8" stroke="#000" stroke-width="1.5"/><line x1="5" y1="3" x2="5" y2="13" stroke="#000" stroke-width="1.2"/><line x1="18" y1="3" x2="18" y2="13" stroke="#000" stroke-width="1.2"/><polygon points="18,8 36,8 36,17" fill="#000"/></g>
-<text x="138" y="992" font-size="10" fill="#000">Weiche fern</text>
-<line x1="216.667" y1="900" x2="216.667" y2="1076" stroke="#000" stroke-width="1"/>
-<g transform="translate(226.667,979)"><line x1="2" y1="1" x2="2" y2="15" stroke="#000" stroke-width="1.5"/><line x1="2" y1="8" x2="14" y2="8" stroke="#000" stroke-width="1.5"/><rect x="14" y="2" width="16" height="11" rx="5.5" fill="#000"/></g>
-<text x="294.667" y="992" font-size="10" fill="#000">Ks-Signal</text>
-<line x1="373.333" y1="900" x2="373.333" y2="1076" stroke="#000" stroke-width="1"/>
-<g transform="translate(383.333,979)"><rect x="2" y="2" width="24" height="13" fill="none" stroke="#000" stroke-width="1.5"/></g>
-<text x="451.333" y="992" font-size="10" fill="#000">Gebäude</text>
-<line x1="530" y1="900" x2="530" y2="1076" stroke="#000" stroke-width="1"/>
-<g transform="translate(540,979)"><line x1="2" y1="1" x2="2" y2="15" stroke="#000" stroke-width="1.5"/><line x1="2" y1="8" x2="14" y2="8" stroke="#000" stroke-width="1.5"/><rect x="14" y="2" width="16" height="11" rx="5.5" fill="#000"/><polygon points="33,2 42,8 33,14" fill="#000"/></g>
-<text x="608" y="992" font-size="10" fill="#000">Zs 3</text>
-<line x1="686.667" y1="900" x2="686.667" y2="1076" stroke="#000" stroke-width="1"/>
-<g transform="translate(696.667,979)"><line x1="0" y1="8" x2="26" y2="8" stroke="#000" stroke-width="1.5"/><rect x="8" y="1" width="12" height="14" fill="#fff" stroke="#000" stroke-width="1"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="600" fill="#000">1</text></g>
-<text x="764.667" y="992" font-size="10" fill="#000">Gleisnr.</text>
-<line x1="843.333" y1="900" x2="843.333" y2="1076" stroke="#000" stroke-width="1"/>
-<g transform="translate(853.333,972)"><line x1="0" y1="8" x2="26" y2="8" stroke="#000" stroke-width="1.5" stroke-dasharray="3,3"/><text x="13" y="26" text-anchor="middle" font-size="9" fill="#000">km 0,0</text></g>
-<text x="915" y="992" font-size="9.5" fill="#000">Streckengrenze</text>
+<g transform="translate(66.00,974)"><line x1="0" y1="8" x2="50" y2="8" stroke="#000" stroke-width="1.5"/><line x1="5" y1="3" x2="5" y2="13" stroke="#000" stroke-width="1.2"/><line x1="17" y1="3" x2="17" y2="13" stroke="#000" stroke-width="1.2"/><polygon points="17,8 34,8 34,17" fill="#000"/></g>
+<text x="122.00" y="992" font-size="9" fill="#000">Weiche fern</text>
+<line x1="194.29" y1="900" x2="194.29" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(200.29,979)"><line x1="2" y1="1" x2="2" y2="15" stroke="#000" stroke-width="1.5"/><line x1="2" y1="8" x2="14" y2="8" stroke="#000" stroke-width="1.5"/><rect x="14" y="2" width="16" height="11" rx="5.5" fill="#000"/></g>
+<text x="256.29" y="992" font-size="9" fill="#000">Ks-Signal</text>
+<line x1="328.57" y1="900" x2="328.57" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(334.57,979)"><line x1="2" y1="1" x2="2" y2="15" stroke="#000" stroke-width="1.5"/><line x1="2" y1="8" x2="14" y2="8" stroke="#000" stroke-width="1.5"/><rect x="14" y="2" width="16" height="11" rx="5.5" fill="#000"/><polygon points="33,2 42,8 33,14" fill="#000"/></g>
+<text x="390.57" y="992" font-size="9" fill="#000">Zs 3</text>
+<line x1="462.86" y1="900" x2="462.86" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(468.86,979)"><line x1="0" y1="8" x2="26" y2="8" stroke="#000" stroke-width="1.5"/><rect x="8" y="1" width="12" height="14" fill="#fff" stroke="#000" stroke-width="1"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="600" fill="#000">1</text></g>
+<text x="524.86" y="992" font-size="9" fill="#000">Gleisnr.</text>
+<line x1="597.14" y1="900" x2="597.14" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(603.14,979)"><rect x="2" y="2" width="22" height="12" fill="none" stroke="#000" stroke-width="1.5"/></g>
+<text x="659.14" y="992" font-size="9" fill="#000">Gebäude</text>
+<line x1="731.43" y1="900" x2="731.43" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(737.43,972)"><line x1="0" y1="8" x2="26" y2="8" stroke="#000" stroke-width="1.5" stroke-dasharray="3,3"/><text x="13" y="26" text-anchor="middle" font-size="8.5" fill="#000">km 0,0</text></g>
+<text x="793.43" y="992" font-size="9" fill="#000">Str.-Grenze</text>
+<line x1="865.71" y1="900" x2="865.71" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(871.71,979)"><line x1="0" y1="8" x2="40" y2="8" stroke="#000" stroke-width="1.5"/><polygon points="11,8 18,1 25,8 18,15" fill="none" stroke="#000" stroke-width="1.5"/><line x1="25" y1="0" x2="25" y2="16" stroke="#000" stroke-width="1.5"/></g>
+<text x="927.71" y="992" font-size="9" fill="#000">o. Fahrltg.</text>
 </g>
-<text x="68" y="1094" font-size="10" fill="#000" font-family="IBM Plex Mono, monospace">Alle Weichen EW 1:9, 40 km/h · Gegengleisanzeiger an N2 und P3 · AA und FF für Ankunft auf dem Gegengleis · Gleis 4 = Lade- und Ausweichgleis</text>
+<text x="68" y="1094" font-size="10" fill="#000" font-family="IBM Plex Mono, monospace">Alle Weichen EW 1:9, 40 km/h · Gegengleisanzeiger an N2 und P3 · beide Strecken elektrifiziert 15 kV 16,7 Hz · Gleis 4 = Lade- und Ausweichgleis, Nebengleis ohne Fahrleitung</text>
 <g font-family="IBM Plex Mono, monospace">
 <rect x="1050" y="900" width="490" height="176" fill="none" stroke="#000" stroke-width="2"/>
 <line x1="1050" y1="944" x2="1540" y2="944" stroke="#000" stroke-width="1"/>

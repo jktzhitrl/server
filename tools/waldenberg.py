@@ -123,6 +123,29 @@ def gleissperre(x, y, nr, c, surface):
     ])
 
 
+def ohne_fahrleitung(x1, y1, x2, y2, t, seite, c):
+    """Symbol "Nicht elektrifiziertes Gleis" nach Ril 819.9002 Abschnitt 12:
+    Raute auf der Gleislinie mit senkrechtem Strich; der nicht elektrifizierte
+    Bereich liegt auf der Seite des Striches. Das Symbol sitzt im Punkt t der
+    Strecke (x1,y1)->(x2,y2) und liegt in deren Richtung; seite = +1 zeigt den
+    nicht elektrifizierten Bereich nach (x2,y2), seite = -1 nach (x1,y1).
+    Die Ril verlangt, das Symbol vom Weichensymbol weg in den nicht
+    elektrifizierten Bereich zu schieben, bis es sich nicht mehr ueberlagert.
+    Die Fahrleitung selbst wird im sicherungstechnischen Lageplan nicht
+    dargestellt, Schaltabschnittsgrenzen bleiben nach Ril 819.9002A01 ohne
+    Darstellung."""
+    r = 9
+    x = x1 + (x2 - x1) * t
+    y = y1 + (y2 - y1) * t
+    w = math.degrees(math.atan2(y2 - y1, x2 - x1))
+    sx = seite * r
+    return (f'<g transform="translate({x:.1f},{y:.1f}) rotate({w:.2f})">'
+            f'<polygon points="{-r},0 0,{-r} {r},0 0,{r}" '
+            f'fill="none" stroke="{c}" stroke-width="2.5"/>'
+            f'<line x1="{sx}" y1="{-r-3}" x2="{sx}" y2="{r+3}" '
+            f'stroke="{c}" stroke-width="2.5"/></g>')
+
+
 def gleisnummer(x, y, n, c, surface):
     return (f'<rect x="{x-12}" y="{y-10}" width="24" height="20" fill="{surface}"/>'
             f'<text x="{x}" y="{y+6}" text-anchor="middle" font-size="14" '
@@ -146,9 +169,10 @@ def build(c, soft, surface):
     A(f'<g stroke="{c}" fill="none" stroke-width="3">'
       f'<line x1="658" y1="{G3}" x2="{X1}" y2="{G3}"/></g>')
 
-    # ---- Gleis 4: Lade- und Ausweichgleis, an beiden Enden an Gleis 3 angebunden ----
-    A(f'<line x1="878" y1="{G4}" x2="1152" y2="{G4}" stroke="{c}" fill="none" stroke-width="3"/>')
-    A(f'<text x="880" y="{G4+35}" font-size="10.5" fill="{soft}">Lade- und Ausweichgleis</text>')
+    # ---- Gleis 4: Lade- und Ausweichgleis, an beiden Enden an Gleis 3 angebunden.
+    # Nebengleis -> duennere Gleislinie nach Ril 819.9002 Abschnitt 12.
+    A(f'<line x1="878" y1="{G4}" x2="1152" y2="{G4}" stroke="{c}" fill="none" stroke-width="2"/>')
+    A(f'<text x="880" y="{G4+35}" font-size="10.5" fill="{soft}">Lade- und Ausweichgleis · ohne Fahrleitung</text>')
 
     # ---- Westkopf: W1/W2 Ueberleitverbinder ----
     A(weiche(165, 207, 265, G2, KEIL, 1, c, soft))
@@ -164,8 +188,10 @@ def build(c, soft, surface):
 
     # ---- W4: Westanbindung Gleis 3 -> Gleis 4 ----
     A(weiche(690, 732, 790, G3, KEIL, 4, c, soft))
-    A(f'<line x1="790" y1="{G3+KEIL}" x2="878" y2="{G4}" stroke="{c}" stroke-width="3"/>')
+    A(f'<line x1="790" y1="{G3+KEIL}" x2="878" y2="{G4}" stroke="{c}" stroke-width="2"/>')
     A(gz_auf(790, G3 + KEIL, 878, G4, 0.35, c))
+    # Gleis 4 ohne Fahrleitung: Ladearbeiten unter Fahrdraht sind nicht zulaessig
+    A(ohne_fahrleitung(790, G3 + KEIL, 878, G4, 0.74, 1, c))
 
     # ---- Ostkopf: W6/W7 Anbindung Gleis 1 -> Nebenbahn, oestlich des Bahnsteigs.
     # Damit faehrt ein Zug aus Gleis 1 auf die Nebenbahn aus, waehrend in Gleis 3
@@ -173,8 +199,9 @@ def build(c, soft, surface):
     # W5: Ostanbindung Gleis 3 -> Gleis 4, Zungen oestlich, damit die Ausfahrt aus
     # Gleis 4 den Bahnsteigabschnitt von Gleis 3 nicht beruehrt
     A(weiche(1340, 1298, 1240, G3, KEIL, 5, c, soft))
-    A(f'<line x1="1240" y1="{G3+KEIL}" x2="1152" y2="{G4}" stroke="{c}" stroke-width="3"/>')
+    A(f'<line x1="1240" y1="{G3+KEIL}" x2="1152" y2="{G4}" stroke="{c}" stroke-width="2"/>')
     A(gz_auf(1240, G3 + KEIL, 1152, G4, 0.35, c))
+    A(ohne_fahrleitung(1240, G3 + KEIL, 1152, G4, 0.74, 1, c))
 
     # W6/W7: Anbindung Gleis 1 -> Nebenbahn, oestlich des Bahnsteigs
     A(weiche(1210, 1252, 1310, G1, KEIL, 6, c, soft))
@@ -264,10 +291,12 @@ def build(c, soft, surface):
 
     # ---- Richtungshinweise ----
     A(f'<g fill="{soft}" font-size="12" font-style="italic">'
-      f'<text x="{X0}" y="510">← Zollfurt (km 35,5) · Krug (km 34,5)</text>'
-      f'<text x="{X0}" y="528">Strecke 1 · Hauptbahn 120 km/h · zweigleisig · Waldenberg km 37,5</text>'
-      f'<text x="{X1}" y="510" text-anchor="end">Burgwald (km 40,0) · Hyxel (km 49,0) →</text>'
-      f'<text x="{X1}" y="528" text-anchor="end">Strecke 3 · Wehrheim (km 7,0) · Sandheide · Gbf · 80 km/h · eingleisig →</text>'
+      f'<text x="{X0}" y="498">← Zollfurt (km 35,5) · Krug (km 34,5)</text>'
+      f'<text x="{X0}" y="516">Strecke 1 · Hauptbahn · zweigleisig mit Gleiswechselbetrieb · Hg 120 km/h</text>'
+      f'<text x="{X0}" y="534">elektrifiziert 15 kV 16,7 Hz · Waldenberg km 37,5</text>'
+      f'<text x="{X1}" y="498" text-anchor="end">Burgwald (km 40,0) · Hyxel (km 49,0) →</text>'
+      f'<text x="{X1}" y="516" text-anchor="end">Strecke 3 · Wehrheim (km 7,0) · Sandheide · Gbf →</text>'
+      f'<text x="{X1}" y="534" text-anchor="end">Nebenbahn · eingleisig · Hg 80 km/h · elektrifiziert 15 kV 16,7 Hz</text>'
       f'</g>')
 
     return "\n        ".join(s)
