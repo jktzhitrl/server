@@ -1,0 +1,65 @@
+mqtt:
+  host: mosquitto
+  port: 1883
+
+# Standard: CPU-Erkennung (funktioniert ueberall, aber langsam/hohe CPU-Last).
+# Mit einem Google Coral USB/PCIe-Stick stattdessen z.B.:
+#   detectors:
+#     coral:
+#       type: edgetpu
+#       device: usb
+detectors:
+  cpu1:
+    type: cpu
+
+# Passwoerter/Nutzernamen kommen aus der .env (Praefix FRIGATE_, siehe .env.example).
+# In Strings muss auf Umgebungsvariablen mit {FRIGATE_VARNAME} verwiesen werden.
+cameras:
+  reolink_eingang:
+    ffmpeg:
+      inputs:
+        - path: rtsp://{FRIGATE_REOLINK_EINGANG_USER}:{FRIGATE_REOLINK_EINGANG_PASSWORD}@192.168.1.101:554/h264Preview_01_main
+          roles:
+            - record
+        - path: rtsp://{FRIGATE_REOLINK_EINGANG_USER}:{FRIGATE_REOLINK_EINGANG_PASSWORD}@192.168.1.101:554/h264Preview_01_sub
+          roles:
+            - detect
+    detect:
+      width: 640
+      height: 360
+      fps: 5
+    record:
+      enabled: true
+      retain:
+        days: 7
+        mode: motion
+    snapshots:
+      enabled: true
+      retain:
+        default: 14
+
+  reolink_garten:
+    ffmpeg:
+      inputs:
+        - path: rtsp://{FRIGATE_REOLINK_GARTEN_USER}:{FRIGATE_REOLINK_GARTEN_PASSWORD}@192.168.1.102:554/h264Preview_01_main
+          roles:
+            - record
+        - path: rtsp://{FRIGATE_REOLINK_GARTEN_USER}:{FRIGATE_REOLINK_GARTEN_PASSWORD}@192.168.1.102:554/h264Preview_01_sub
+          roles:
+            - detect
+    detect:
+      width: 640
+      height: 360
+      fps: 5
+    record:
+      enabled: true
+      retain:
+        days: 7
+        mode: motion
+    snapshots:
+      enabled: true
+      retain:
+        default: 14
+
+# Weitere Reolink-Kameras: obigen Block kopieren, Kameranamen, IP und
+# .env-Variablennamen anpassen.
