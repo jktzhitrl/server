@@ -1,0 +1,51 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: frigate
+    restart: unless-stopped
+    # privileged wird u.a. fuer Hardware-Beschleunigung (z.B. /dev/dri) benoetigt
+    privileged: true
+    shm_size: "256mb"
+    env_file:
+      - .env
+    volumes:
+      - ./frigate/config.yml:/config/config.yml:ro
+      - frigate-media:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "5000:5000"   # Frigate Web-UI
+      - "8554:8554"   # RTSP-Restream (go2rtc)
+      - "8555:8555/tcp"
+      - "8555:8555/udp"
+    depends_on:
+      - mosquitto
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    volumes:
+      - ha-config:/config
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - mosquitto
+      - frigate
+
+volumes:
+  mosquitto-data:
+  mosquitto-log:
+  frigate-media:
+  ha-config:
