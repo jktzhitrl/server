@@ -14,66 +14,65 @@ from seite import CSS
 
 REPO = str(pathlib.Path(__file__).resolve().parent.parent) + "/"
 
-ARIA = ("Sicherungstechnischer Lageplan des Trennungsbahnhofs Obersosa. Die zweigleisige "
-        "Hauptbahn Strecke 1 (Krug–Furth) durchläuft die Betriebsstelle bei km 63,5 mit den "
-        "durchgehenden Hauptgleisen 1 und 2. Die zweigleisige Strecke 2 aus Silberberg und "
-        "Bernstein endet hier bei km 51,0 und mündet am Westkopf mit den Gleisen 4 und 5 ein. "
-        "Gleis 3 ist Bahnsteiggleis für Überholungen, Gleis 4 führt durchgehend nach Osten, "
-        "die Gleise 5, 6 und 7 enden im Osten am Prellbock und dienen als Wendegleise. "
-        "Vier Bahnsteige, Empfangsgebäude und Hauptzugang im Süden. Einfahrsignale A und AA "
-        "von Hyxel, B und BB von Silberberg, F und FF von Feldheim; Ausfahrsignale N1 bis N4 "
-        "in Richtung der Kilometrierung und P1 bis P7 entgegen; Zs 2 Richtungsanzeiger an "
-        "P3 und P4, Zs 6 Gleiswechselanzeiger an N2 und P2.")
+ARIA = ("Sicherungstechnischer Lageplan des Knotens Obersosa. Sieben Gleise, davon sechs "
+        "Bahnsteiggleise an vier Bahnsteigen; Empfangsgebäude und Hauptzugang im Süden. "
+        "Fünf Zulaufrichtungen: am Westkopf Krug und Erx, Silberberg und Bernstein sowie "
+        "Windingen und Güterbahnhof, am Ostkopf Furth und Neumark. An beiden Bahnhofsköpfen "
+        "eine Gleisharfe aus je sechs Weichenpaaren, die benachbarte Gleise verbindet. "
+        "Zwischensignale ZU und ZR teilen die Gleise 1, 2 und 5 in die Abschnitte a und b. "
+        "Einfahrsignale A, AA, B, BB und C am Westkopf, F, FF und G am Ostkopf; "
+        "Ausfahrsignale P1 bis P7 nach Westen und N1 bis N7 nach Osten mit Zs 2 "
+        "Richtungsanzeiger.")
 
 WEICHEN = [
-    ("1 / 3",  "Überleitverbinder Gleis 1 ↔ Gleis 2 · Westkopf, Gleiswechselbetrieb Strecke 1"),
-    ("2 / 4",  "Überleitverbinder Gleis 4 ↔ Gleis 5 · Westkopf, Gleiswechselbetrieb Strecke 2"),
-    ("5",      "Gleis 2 → Gleis 3 · Westanbindung des Überholungsgleises"),
-    ("6",      "Gleis 5 → Gleis 6 · Westanbindung des Wendegleises"),
-    ("7",      "Gleis 6 → Gleis 7 · Westanbindung des zweiten Wendegleises"),
-    ("8 / 9",  "Verbindung Gleis 4 ↔ Gleis 3 · einzige Verbindung zwischen Strecke 2 und Strecke 1"),
-    ("10 / 11", "Gleis 4 → Gleis 3 · Ostkopf, Fahrweg des durchgehenden Fernverkehrs"),
-    ("12 / 13", "Gleis 3 → Gleis 2 · Ostkopf"),
-    ("14 / 15", "Überleitverbinder Gleis 2 ↔ Gleis 1 · Ostkopf, Gleiswechselbetrieb Strecke 1"),
+    ("1 / 3",   "Gleis 7 ↔ Gleis 6 · Westkopf"),
+    ("2 / 5",   "Gleis 6 ↔ Gleis 5 · Westkopf"),
+    ("4 / 7",   "Gleis 5 ↔ Gleis 4 · Westkopf"),
+    ("6 / 9",   "Gleis 4 ↔ Gleis 3 · Westkopf"),
+    ("8 / 11",  "Gleis 3 ↔ Gleis 2 · Westkopf"),
+    ("10 / 12", "Gleis 2 ↔ Gleis 1 · Westkopf"),
+    ("13 / 15", "Gleis 7 ↔ Gleis 6 · Ostkopf"),
+    ("14 / 17", "Gleis 6 ↔ Gleis 5 · Ostkopf"),
+    ("16 / 19", "Gleis 5 ↔ Gleis 4 · Ostkopf"),
+    ("18 / 21", "Gleis 4 ↔ Gleis 3 · Ostkopf"),
+    ("20 / 23", "Gleis 3 ↔ Gleis 2 · Ostkopf"),
+    ("22 / 24", "Gleis 2 ↔ Gleis 1 · Ostkopf"),
 ]
 
 SIGNALE = [
-    ("A",  "Einfahrsignal Gleis 1 von Altensund/Hyxel · Zs 3 (6)"),
-    ("AA", "Einfahrt vom <strong>Gegengleis (2)</strong> der Strecke 1 · Zs 3 (6)"),
-    ("B",  "Einfahrsignal Gleis 4 von Hochstein/Silberberg · Zs 3 (6)"),
-    ("BB", "Einfahrt vom <strong>Gegengleis (2)</strong> der Strecke 2 · Zs 3 (6)"),
-    ("F",  "Einfahrsignal Gleis 2 von Kunststoffwerk/Feldheim · Zs 3 (6)"),
-    ("FF", "Einfahrt vom <strong>Gegengleis (1)</strong> von Feldheim · Zs 3 (6)"),
-    ("N1 · N2", "Ausfahrt Gleis 1 und 2 Richtung Feldheim/Furth · N2 mit <strong>Zs 6</strong>, "
-                "weil die Ausfahrt über die Weichen 14/15 auf das Gegengleis führen kann"),
-    ("N3 · N4", "Ausfahrt Gleis 3 und 4 Richtung Feldheim/Furth · abzweigend über die "
-                "Weichen 10 bis 13 · <strong>Zs 3 (4)</strong>"),
-    ("P1 · P2", "Ausfahrt Gleis 1 und 2 Richtung Hyxel · P2 mit <strong>Zs 6</strong>"),
-    ("P3 · P4", "Ausfahrt Gleis 3 und 4 · mit <strong>Zs 2 Richtungsanzeiger (H, S)</strong>, "
-                "weil die Fahrt nach Hyxel oder nach Silberberg führen kann"),
-    ("P5 · P6 · P7", "Ausfahrt der Wendegleise Richtung Hochstein/Silberberg"),
-    ("—", "Gesonderte Vorsignale entfallen: Vorsignalisierung über den Ks-2-Begriff der "
-          "Mehrabschnittssignale"),
+    ("A · AA", "Einfahrt von Waldenberg und Krug · AA für Fahrten auf dem <strong>Gegengleis</strong>"),
+    ("B · BB", "Einfahrt von Hochstein und Silberberg · BB für das <strong>Gegengleis</strong>"),
+    ("C",  "Einfahrt vom Güterbahnhof und aus Windingen · eingleisig"),
+    ("F · FF", "Einfahrt von Lossow und Furth · FF für das <strong>Gegengleis</strong>"),
+    ("G",  "Einfahrt von Kirchheim und Neumark · eingleisig"),
+    ("P1 – P7", "Ausfahrt nach Westen · mit <strong>Zs 2 Richtungsanzeiger (K, S, W)</strong>, "
+                "weil die Fahrt nach Krug, Silberberg oder Windingen führen kann"),
+    ("N1 – N7", "Ausfahrt nach Osten · mit <strong>Zs 2 (F, N)</strong> für Furth oder Neumark"),
+    ("P2 · N2", "zusätzlich <strong>Zs 6 Gleiswechselanzeiger</strong> für die Ausfahrt auf das "
+                "Streckengleis der Gegenrichtung"),
+    ("ZU1 · ZR1<br>ZU2 · ZR2<br>ZU5 · ZR5",
+     "<strong>Zwischensignale</strong>, die die Gleise 1, 2 und 5 in die Abschnitte a und b "
+     "teilen · ZR in Richtung der Kilometrierung, ZU entgegen (Ril 819.9001 Abschnitt 4 (3))"),
+    ("—", "Gesonderte Vorsignale entfallen: Vorsignalisierung über den Ks-2-Begriff"),
 ]
 
 PROGRAMM = [
-    ("IC 11<br>Bernstein – Furth", "Durchfahrt ohne Halt: an und ab 10:15. Der Zug läuft aus "
-     "Strecke 2 über Gleis 4 und die Weichen 10 bis 13 durch. <strong>Dieser Zug bestimmt die "
-     "Lage der Strecke 2 am Westkopf</strong> – nur so ist die Durchfahrt ohne Kopfmachen möglich.", "4"),
-    ("IC 13<br>Bernstein – Furth", "Halt an Bahnsteig 3: an 10:45, ab 10:57", "4"),
-    ("IC 15<br>Bernstein – Erx", "an 10:30, ab 10:45. <strong>Macht Kopf</strong>, weil Herkunft "
-     "und Ziel beide am Westkopf liegen. Die 15 Minuten Aufenthalt reichen dafür. Ausfahrt über "
-     "P4 mit Zs 2 Richtung Hyxel", "4"),
-    ("RB 63", "<strong>Wendet mit 27 Minuten</strong>: an 10:11, ab 10:38. Längste Belegung des "
-     "Bahnhofs – deshalb ein eigenes Wendegleis abseits der Fahrwege", "6"),
-    ("RE 72", "Wendet: an 10:30, ab 10:45", "7"),
-    ("RE 70", "Wendet kurz: an 11:00, ab 11:02", "5"),
-    ("RE 71 · RE 70/71<br>RB 61 · RB 65 · RB 66", "Halt an der Hauptbahn, Richtung Osten in "
-     "Gleis 1 an Bahnsteig 1, Richtung Westen in Gleis 2 an Bahnsteig 2", "1 / 2"),
-    ("GZ 4", "Durchfahrt Hauptbahn ohne Halt, gerade über beide Hauptgleise", "1 / 2"),
-    ("GZ 1", "Aus Strecke 2, Überholung durch den Reiseverkehr", "5"),
+    ("RB 62<br>Neumark", "Endet in Obersosa, steht im Abschnitt <strong>1a</strong>. "
+     "Abfahrt Minute 20 und 50", "1a"),
+    ("RB 63<br>Krug", "Endet in Obersosa, steht im Abschnitt <strong>1b</strong>. "
+     "Abfahrt Minute 30", "1b"),
+    ("RE 71 · RE 70<br>Richtung Furth", "Beide Äste des Flügelzuges stehen hintereinander: "
+     "RE 71 an Minute 53 in 2a, RE 70 an Minute 57 in 2b, gemeinsame Abfahrt Minute 00", "2a / 2b"),
+    ("RB 61<br>Richtung Furth", "Durchfahrt mit Halt, Abfahrt Minute 15 und 45 · dazu der "
+     "Fernverkehr Richtung Furth Minute 55", "3"),
+    ("RB 61<br>Ri Waldenberg und Windingen", "Abfahrt Minute 15 und 45 · dazu IC 13 Richtung "
+     "Erx und Richtung Sandheide Minute 25", "4"),
+    ("RE 70/71<br>Teilung des Flügelzuges", "Der Zug wird hier <strong>geteilt</strong>: "
+     "RE 71 nach Bernstein ab Minute 07 aus 5a, RE 70 nach Erx ab Minute 03 aus 5b. "
+     "Beide kommen an Minute 00", "5a / 5b"),
+    ("RB 65", "Richtung Sandheide ab Minute 28, Richtung Furth ab Minute 32", "6"),
+    ("Güterverkehr", "Überholung und Abstellung ohne Bahnsteig, Prellbock im Osten", "7"),
 ]
-
 SEITE = """<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -87,12 +86,12 @@ SEITE = """<!DOCTYPE html>
   <span class="kicker">Los 5 · Sicherungstechnischer Lageplan · Ril 819.9001 / 819.9002</span>
   <h1>Lageplan Obersosa</h1>
   <p class="sub">
-    Obersosa ist der <strong>Knoten des Loses</strong>: Die zweigleisige Hauptbahn
-    <strong>Strecke 1</strong> (Krug–Furth) durchläuft die Betriebsstelle bei km 63,5, die
-    ebenfalls zweigleisige <strong>Strecke 2</strong> aus Bernstein und Silberberg endet hier
-    bei km 51,0 und mündet am Westkopf ein. Sieben Bahnhofsgleise an vier Bahnsteigen, das
-    Empfangsgebäude liegt im Süden – von dort zählen die Gleisnummern nach Ril 819.9001
-    Abschnitt 2 (3) aufsteigend.
+    Obersosa ist der <strong>Knoten des Loses</strong> – hier treffen <strong>fünf
+    Zulaufrichtungen</strong> zusammen: Krug und Erx, Silberberg und Bernstein sowie Windingen
+    und Güterbahnhof am Westkopf, Furth und Neumark am Ostkopf. Sechs Bahnsteiggleise an vier
+    Bahnsteigen, dazu ein Güter- und Abstellgleis. Das Empfangsgebäude liegt im Süden – von dort
+    zählen die Gleisnummern nach Ril 819.9001 Abschnitt 2 (3) aufsteigend. Gleisbelegung und
+    Abfahrtsminuten sind der Projektarbeit entnommen.
   </p>
 
   <section class="panel">
@@ -106,16 +105,16 @@ SEITE = """<!DOCTYPE html>
       Diagonale. Festprellböcke an den Gleisen 5, 6 und 7.
     </p>
     <div class="diagram-scroll">
-      <svg class="plan" viewBox="0 0 3040 1000" role="img" aria-label="__ARIA__">
+      <svg class="plan" viewBox="0 0 3100 940" role="img" aria-label="__ARIA__">
         __PLAN__
       </svg>
     </div>
     <div class="rules">
-      <span>Gleis 1 und 2 sind die durchgehenden Hauptgleise der Strecke 1, Gleis 4 und 5 die Streckengleise der Strecke 2.</span>
-      <span>Die Gleise 5, 6 und 7 enden im Osten am Prellbock: Alle Züge der Strecke 2 wenden hier, ein Ostzulauf ist für sie nutzlos.</span>
+      <span>Gleis 1 und 2 sind die durchgehenden Hauptgleise der Strecke 1; Gleis 4 und 5 führen nach Silberberg, Gleis 7 nach Windingen, Gleis 6 nach Neumark.</span>
+      <span>An beiden Bahnhofsköpfen eine <strong>Gleisharfe</strong> aus je sechs Weichenpaaren: Damit ist jedes Gleis von jeder Richtung erreichbar.</span>
       <span>Weichennummern steigen mit der Kilometrierung der Strecke 1, also von West nach Ost (Ril 819.9001 Abschnitt 3 (1)).</span>
-      <span>Die Weichen 8 und 9 sind die einzige Verbindung zwischen Strecke 2 und Strecke 1 am Westkopf.</span>
-      <span>Alle Weichen EW 1:9, Abzweiggeschwindigkeit 40 km/h; im Fahrweg des durchgehenden Fernverkehrs EW 1:14 mit 60 km/h.</span>
+      <span>Die Zwischensignale ZU und ZR teilen die Gleise 1, 2 und 5 in die Abschnitte a und b – so passen zwei Vierteiler hintereinander an einen Bahnsteig.</span>
+      <span>Alle Weichen EW 1:9, Abzweiggeschwindigkeit 40 km/h; in den Fahrwegen der durchgehenden Hauptgleise EW 1:14 mit 60 km/h.</span>
       <span>Beide Strecken elektrifiziert 15 kV 16,7 Hz. Die Fahrleitung selbst wird im sicherungstechnischen Lageplan nicht dargestellt.</span>
       <span>Regel- und Gegengleis beschreiben nur die freie Strecke; im Bahnhof gibt es Bahnhofsgleise und Fahrstraßen.</span>
     </div>
@@ -124,9 +123,11 @@ SEITE = """<!DOCTYPE html>
   <section class="panel">
     <h2>Betriebsprogramm</h2>
     <p class="panel-note">
-      Aus dem Bildfahrplan über zwei Stunden. Im Zwei-Stunden-Fenster halten oder fahren
-      <strong>62 Züge</strong> durch Obersosa; höchstens <strong>fünf Gleise</strong> sind
-      gleichzeitig belegt (11:02). Die Gleiszahl folgt daraus und nicht aus dem Gefühl.
+      Gleisbelegung und Abfahrtsminuten stammen aus der Projektarbeit. Sechs Bahnsteiggleise
+      reichen, weil drei davon in die Abschnitte a und b geteilt sind: RB 62 und RB 63 enden
+      beide in Gleis 1, die beiden Äste des Flügelzuges RE 70/71 stehen hintereinander in
+      Gleis 2 und in Gleis 5. Ein Desiro HC und ein Mireo sind je Vierteiler – zwei davon
+      passen an einen Bahnsteig.
     </p>
     <div class="table-scroll">
       <table>
@@ -159,22 +160,24 @@ SEITE = """<!DOCTYPE html>
     </div>
 
     <div class="caveat">
-      <strong>Warum die Strecke 2 am Westkopf einmündet:</strong> Der IC 11 Bernstein – Furth hält
-      in Obersosa nicht, er ist um 10:15 an und ab. Ein Zug kann eine Betriebsstelle nur dann ohne
-      Halt durchfahren, wenn Herkunft und Ziel auf verschiedenen Seiten liegen. Da sein Ziel Furth
-      im Osten liegt, muss die Strecke 2 im Westen einmünden. Die Gegenprobe liefert der
-      IC 15 Bernstein – Erx: Er kommt aus derselben Richtung und fährt nach Westen weiter, muss
-      also Kopf machen – und hat mit 15 Minuten genau dafür Aufenthalt. Die Geometrie ist damit
-      aus dem Fahrplan hergeleitet und nicht angenommen.
+      <strong>Warum fünf Richtungen und nicht drei:</strong> Der Liniennetzplan der Projektarbeit
+      zeigt Obersosa als Kreuzungsknoten. Nach Westen gehen drei Strecken ab – nach Krug und Erx,
+      nach Silberberg und Bernstein sowie zum Güterbahnhof und nach Windingen –, nach Osten zwei:
+      nach Lossow und Furth und nach Kirchheim und Neumark. Deshalb braucht jeder Bahnhofskopf
+      eine vollständige Gleisharfe: Ein Zug aus Neumark muss Gleis 1 erreichen, ein Zug aus
+      Windingen Gleis 6, und der Flügelzug RE 70/71 muss aus Gleis 5 in zwei verschiedene
+      Richtungen ausfahren können. Das ist auch der Grund für die Zs 2 Richtungsanzeiger an
+      sämtlichen Ausfahrsignalen.
     </div>
 
     <div class="caveat">
       <strong>Offene Punkte:</strong> Zugbeeinflussung, technisch gesicherter Bahnübergang und die
       Bedieneinrichtungen der Stellwerke fehlen in diesem Blatt noch. Die Kilometrierung der
       Einfahrsignale ist ebenfalls nachzutragen – der Bewertungsbogen fragt sie unter
-      „Kilometrierung (Esig, Mitte/EG, Bksig)" ausdrücklich ab. Dieses Blatt ist aus dem Fahrplan
-      und den vorhandenen Skizzen hergeleitet; es ersetzt den handgezeichneten Plan nicht,
-      sondern ist ein sauber gezeichneter Gegenentwurf.
+      „Kilometrierung (Esig, Mitte/EG, Bksig)" ausdrücklich ab. Nicht übernommen sind die
+      zweibuchstabigen Kästchen des handgezeichneten Plans (G,P · S,W · F,W · G,W), weil ihre
+      Bedeutung nicht geklärt ist. Dieses Blatt ist ein sauber gezeichneter Gegenentwurf, kein
+      Ersatz für den Originalplan.
     </div>
   </section>
 
@@ -192,35 +195,35 @@ ZEICHNUNGSBLATT = """<!DOCTYPE html>
 <style>html,body{margin:0;background:#fff}svg{display:block;width:100%;height:auto}</style>
 </head>
 <body>
-<svg viewBox="0 0 3200 1500" xmlns="http://www.w3.org/2000/svg" role="img"
+<svg viewBox="0 0 3260 1480" xmlns="http://www.w3.org/2000/svg" role="img"
      aria-label="Technische Zeichnung, sicherungstechnischer Lageplan Obersosa"
      font-family="IBM Plex Sans, Calibri, Arial, sans-serif">
-<rect width="3200" height="1500" fill="#fff"/>
-<rect x="24" y="24" width="3152" height="1452" fill="none" stroke="#000" stroke-width="3"/>
+<rect width="3260" height="1480" fill="#fff"/>
+<rect x="24" y="24" width="3212" height="1400" fill="none" stroke="#000" stroke-width="3"/>
 <text x="60" y="80" font-size="22" font-weight="700" fill="#000" font-family="IBM Plex Mono, monospace">Lageplan Obersosa</text>
-<text x="3140" y="80" font-size="14" fill="#000" text-anchor="end" font-family="IBM Plex Mono, monospace">Ril 819.9001 / 819.9002</text>
-<line x1="60" y1="96" x2="3140" y2="96" stroke="#000" stroke-width="2"/>
-<g transform="translate(70,190) scale(0.985)">__PLAN__</g>
+<text x="3200" y="80" font-size="14" fill="#000" text-anchor="end" font-family="IBM Plex Mono, monospace">Ril 819.9001 / 819.9002</text>
+<line x1="60" y1="96" x2="3200" y2="96" stroke="#000" stroke-width="2"/>
+<g transform="translate(70,170) scale(0.98)">__PLAN__</g>
 <g font-family="IBM Plex Mono, monospace">
-<rect x="60" y="1230" width="1900" height="200" fill="none" stroke="#000" stroke-width="1.5"/>
+<rect x="60" y="1200" width="1900" height="190" fill="none" stroke="#000" stroke-width="1.5"/>
 __LEGENDE__
 </g>
-<text x="68" y="1462" font-size="11" fill="#000" font-family="IBM Plex Mono, monospace">__FUSS__</text>
+<text x="68" y="1452" font-size="10.5" fill="#000" font-family="IBM Plex Mono, monospace">__FUSS__</text>
 <g font-family="IBM Plex Mono, monospace">
-<rect x="2020" y="1230" width="1120" height="200" fill="none" stroke="#000" stroke-width="2"/>
-<line x1="2020" y1="1288" x2="3140" y2="1288" stroke="#000" stroke-width="1.5"/>
-<line x1="2020" y1="1348" x2="3140" y2="1348" stroke="#000" stroke-width="1.5"/>
-<line x1="2020" y1="1396" x2="3140" y2="1396" stroke="#000" stroke-width="1.5"/>
-<line x1="2860" y1="1288" x2="2860" y2="1396" stroke="#000" stroke-width="1.5"/>
-<text x="2034" y="1262" font-size="15" font-weight="700" fill="#000">LF 2 Jahresprojekt 2026 „Mitteltrasse"</text>
-<text x="2034" y="1312" font-size="12" fill="#000">5. Teilabschnitt (Los 5) – Chemiezentrum</text>
-<text x="2034" y="1338" font-size="11" fill="#333">Betriebsstelle</text>
-<text x="2034" y="1338" font-size="11" fill="#333"></text>
-<text x="2034" y="1372" font-size="15" font-weight="600" fill="#000">Obersosa</text>
-<text x="2874" y="1338" font-size="11" fill="#333">Kennzahl</text>
-<text x="2874" y="1372" font-size="15" font-weight="600" fill="#000">27</text>
-<text x="2034" y="1420" font-size="11" fill="#333">Inhalt: Sicherungstechnischer Lageplan</text>
-<text x="2874" y="1420" font-size="11" fill="#333">Maßstab: ohne</text>
+<rect x="2020" y="1200" width="1120" height="190" fill="none" stroke="#000" stroke-width="2"/>
+<line x1="2020" y1="1258" x2="3140" y2="1258" stroke="#000" stroke-width="1.5"/>
+<line x1="2020" y1="1318" x2="3140" y2="1318" stroke="#000" stroke-width="1.5"/>
+<line x1="2020" y1="1366" x2="3140" y2="1366" stroke="#000" stroke-width="1.5"/>
+<line x1="2860" y1="1258" x2="2860" y2="1366" stroke="#000" stroke-width="1.5"/>
+<text x="2034" y="1232" font-size="15" font-weight="700" fill="#000">LF 2 Jahresprojekt 2026 „Mitteltrasse"</text>
+<text x="2034" y="1282" font-size="12" fill="#000">5. Teilabschnitt (Los 5) – Chemiezentrum</text>
+<text x="2034" y="1308" font-size="11" fill="#333">Betriebsstelle</text>
+<text x="2034" y="1308" font-size="11" fill="#333"></text>
+<text x="2034" y="1342" font-size="15" font-weight="600" fill="#000">Obersosa</text>
+<text x="2874" y="1308" font-size="11" fill="#333">Kennzahl</text>
+<text x="2874" y="1342" font-size="15" font-weight="600" fill="#000">27</text>
+<text x="2034" y="1386" font-size="11" fill="#333">Inhalt: Sicherungstechnischer Lageplan</text>
+<text x="2874" y="1386" font-size="11" fill="#333">Maßstab: ohne</text>
 </g>
 </svg>
 </body>
@@ -257,9 +260,9 @@ def legende():
     for i, (icon, lab) in enumerate(felder):
         x = x0 + sw * i
         if i:
-            out.append(f'<line x1="{x:.1f}" y1="1230" x2="{x:.1f}" y2="1430" stroke="#000" stroke-width="1"/>')
-        out.append(f'<g transform="translate({x+16:.1f},1312)">{icon}</g>')
-        out.append(f'<text x="{x+16:.1f}" y="1370" font-size="12" fill="#000">{lab}</text>')
+            out.append(f'<line x1="{x:.1f}" y1="1200" x2="{x:.1f}" y2="1390" stroke="#000" stroke-width="1"/>')
+        out.append(f'<g transform="translate({x+16:.1f},1268)">{icon}</g>')
+        out.append(f'<text x="{x+16:.1f}" y="1340" font-size="12" fill="#000">{lab}</text>')
     return "\n".join(out)
 
 
@@ -272,9 +275,9 @@ def zeilen(rows, spalten):
     return "\n".join(out)
 
 
-FUSS = ("Alle Weichen EW 1:9, 40 km/h · im Fahrweg des Fernverkehrs EW 1:14, 60 km/h · "
-        "Zs 2 an P3 und P4 · Zs 6 an N2 und P2 · beide Strecken elektrifiziert 15 kV 16,7 Hz · "
-        "Gleise 5 bis 7 als Wendegleise mit Prellbock")
+FUSS = ("Fünf Zulaufrichtungen · Gleisharfe an beiden Köpfen mit je sechs Weichenpaaren · "
+        "Zs 2 an allen Ausfahrsignalen · Zs 6 an N2 und P2 · Zwischensignale ZU und ZR teilen "
+        "die Gleise 1, 2 und 5 in die Abschnitte a und b · Gleis 7 ohne Bahnsteig")
 
 if __name__ == "__main__":
     seite = (SEITE.replace("__CSS__", CSS)

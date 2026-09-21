@@ -1,44 +1,43 @@
 """Erzeugt den Gleisplan-SVG-Koerper fuer die Betriebsstelle Obersosa.
 
-Obersosa ist der Knoten des Loses: Strecke 1 (Krug - Furth) laeuft durch,
-Strecke 2 (Bernstein - Silberberg - Obersosa) endet hier. Beide muenden am
-Westkopf zusammen, der Ostkopf fuehrt nur die Strecke 1 weiter.
+Obersosa ist der Knoten des Loses. Die Grundlage ist die Projektarbeit selbst:
+Der Gleisbelegungsplan (Seite 5) gibt sechs Bahnsteiggleise mit a- und
+b-Abschnitten vor, der Liniennetzplan (Seite 19) fuenf Zulaufrichtungen, und
+die Abfahrtsminuten (Seite 3) die Belegung.
 
-Die Lage der Strecke 2 am Westkopf ist aus dem Fahrplan hergeleitet: Der
-IC 11 Bernstein - Furth haelt in Obersosa nicht (an und ab 10:15), er muss
-also durchfahren koennen. Das geht nur, wenn die Strecke 2 auf der Seite
-einmuendet, die der Fahrtrichtung nach Furth entgegengesetzt ist - also am
-Westkopf. Der IC 15 Bernstein - Erx macht folgerichtig Kopf (an 10:30,
-ab 10:45), wofuer die 15 Minuten Aufenthalt reichen.
+  Richtungen am Westkopf   Krug/Waldenberg/Erx, Silberberg/Bernstein, Windingen/Gbf
+  Richtungen am Ostkopf    Lossow/Furth, Kirchheim/Neumark
 
-Gleisbelegung aus dem Zwei-Stunden-Fahrplan: hoechstens fuenf Gleise
-gleichzeitig belegt (11:02). Laengste Belegung ist die RB 63 mit 27 Minuten
-Wendezeit, dazu RE 72 und IC 15 mit je 15 Minuten.
+  Gleis 1  RB 62 aus Neumark (1a) und RB 63 aus Krug (1b), beide enden hier
+  Gleis 2  RE 71 und RE 70 Richtung Furth (2a / 2b)
+  Gleis 3  RB 61 Richtung Furth, dazu Fernverkehr
+  Gleis 4  RB 61 Richtung Waldenberg und Windingen, dazu Fernverkehr
+  Gleis 5  RE 71 nach Bernstein (5a) und RE 70 nach Erx (5b) - hier wird der
+           Fluegelzug RE 70/71 geteilt und vereinigt
+  Gleis 6  RB 65 Richtung Sandheide und Furth
+  Gleis 7  Gueter- und Abstellgleis ohne Bahnsteig
 
-  Gleis 1  durchgehendes Hauptgleis Strecke 1, Streckengleis (1) Ri Furth
-  Gleis 2  durchgehendes Hauptgleis Strecke 1, Streckengleis (2) Ri Krug
-  Gleis 3  Bahnsteiggleis, Ueberholung und Verstaerker, beidseitig angebunden
-  Gleis 4  Strecke 2, Streckengleis (1); durchgehend nach Osten fuer den
-           Fernverkehr Bernstein - Furth, der in Obersosa nicht haelt
-  Gleis 5  Strecke 2, Streckengleis (2); Wendegleis, Prellbock im Osten
-  Gleis 6  Wendegleis der RB 63 mit 27 Minuten Wendezeit, Prellbock im Osten
-  Gleis 7  Ueberholungs- und Gueterzuggleis, Prellbock im Osten
+Die a/b-Teilung der Bahnsteiggleise wird durch Zwischensignale hergestellt:
+ZR nach Ril 819.9001 Abschnitt 4(3) in Richtung der Kilometrierung, ZU
+entgegen. Damit koennen zwei Vierteiler - RE Desiro HC, RB Mireo - hinter-
+einander am selben Bahnsteig stehen.
 
-Weichennummern steigen nach Ril 819.9001 Abschnitt 3(1) mit der
-Kilometrierung der Strecke 1, also von West nach Ost.
+Weichennummern steigen mit der Kilometrierung der Strecke 1, also von West
+nach Ost. Die Nummern vergibt der Generator selbst aus den Weichenmitten.
 """
 import math
 
 # Gleislagen, Hauptzugang und Empfangsgebaeude liegen unten -> Gleis 1 unten
-G7, G6, G5, G4, G3, G2, G1 = 120, 212, 304, 396, 488, 580, 672
-X0, X1 = 40, 3000
+G7, G6, G5, G4, G3, G2, G1 = 110, 198, 286, 374, 462, 550, 638
+X0, X1 = 40, 3060
 KEIL = 34
 TICK = 9
 
-BS_W, BS_O = 1210, 1740         # Bahnsteigkanten
-P_X, N_X = 1150, 1780           # Standort der Ausfahrsignale
-PRELL = 1830                    # Prellboecke der Wendegleise
-MITTE = 1475                    # Gleisnummern und Personenunterfuehrung
+BS_W, BS_O = 1240, 1880         # Bahnsteigkanten
+P_X, N_X = 1180, 1940           # Standort der Ausfahrsignale
+Z_X = 1560                      # Zwischensignale der a/b-Teilung
+MITTE = 1560                    # Gleisnummern und Personenunterfuehrung
+PRELL = 2960                    # Prellbock Gueter- und Abstellgleis
 
 
 def tick(x, y, c):
@@ -153,66 +152,61 @@ def build(c, soft, surface):
     A = s.append
     A(f'<text x="{MITTE}" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="{c}">Obersosa</text>')
     A(f'<text x="{MITTE}" y="48" text-anchor="middle" font-size="11" fill="{soft}">'
-      f'(Os) 27 · Trennungsbahnhof · Strecke 1 km 63,5 · Strecke 2 km 51,0</text>')
+      f'Knoten mit fünf Zulaufrichtungen · Strecke 1 km 63,5 · Strecke 2 km 51,0</text>')
 
     # ---- Gleise ----
+    # Streckengleise: Westkopf Krug (Gleis 1/2), Silberberg (Gleis 4/5),
+    # Windingen (Gleis 7); Ostkopf Furth (Gleis 1/2), Neumark (Gleis 6).
     G = f'<g stroke="{c}" fill="none" stroke-width="3">'
     A(G + f'<line x1="{X0}" y1="{G1}" x2="{X1}" y2="{G1}"/>'
         + f'<line x1="{X0}" y1="{G2}" x2="{X1}" y2="{G2}"/>'
-        + f'<line x1="770" y1="{G3}" x2="2300" y2="{G3}"/>'
-        + f'<line x1="{X0}" y1="{G4}" x2="2000" y2="{G4}"/>'
-        + f'<line x1="{X0}" y1="{G5}" x2="{PRELL}" y2="{G5}"/>'
-        + f'<line x1="770" y1="{G6}" x2="{PRELL}" y2="{G6}"/>'
-        + f'<line x1="1070" y1="{G7}" x2="{PRELL}" y2="{G7}"/></g>')
-    for y in (G5, G6, G7):
-        A(prellbock(PRELL, y, c))
+        + f'<line x1="590" y1="{G3}" x2="2760" y2="{G3}"/>'
+        + f'<line x1="{X0}" y1="{G4}" x2="2630" y2="{G4}"/>'
+        + f'<line x1="{X0}" y1="{G5}" x2="2500" y2="{G5}"/>'
+        + f'<line x1="200" y1="{G6}" x2="{X1}" y2="{G6}"/>'
+        + f'<line x1="{X0}" y1="{G7}" x2="{PRELL}" y2="{G7}"/></g>')
+    A(prellbock(PRELL, G7, c))
 
     # ---- Weichen ----
-    # Jede Weichenverbindung als Paar; die Nummern werden anschliessend nach
-    # der Weichenmitte vergeben, damit sie nach Ril 819.9001 Abschnitt 3(1)
-    # mit der Kilometrierung steigen.
-    paare = [
-        # (Gleis A: wa, wm, we, y, dy) , (Gleis B: ...) , Beschreibung
-        ((170, 212, 270, G1, -KEIL), (490, 448, 390, G2,  KEIL)),   # UELV Gleis 1 <-> 2
-        ((190, 232, 290, G4, -KEIL), (510, 468, 410, G5,  KEIL)),   # UELV Strecke 2
-        ((560, 602, 660, G2, -KEIL), None),                          # Gleis 2 -> Gleis 3
-        ((580, 622, 680, G5, -KEIL), None),                          # Gleis 5 -> Gleis 6
-        ((860, 902, 960, G6, -KEIL), None),                          # Gleis 6 -> Gleis 7
-        ((880, 922, 980, G4,  KEIL), (1120, 1078, 1020, G3, -KEIL)), # Gleis 4 <-> Gleis 3
-        ((1900, 1942, 2000, G4, KEIL), (2160, 2118, 2060, G3, -KEIL)),  # Ostkopf Gleis 4 -> 3
-        ((2200, 2242, 2300, G3, KEIL), (2460, 2418, 2360, G2, -KEIL)),  # Ostkopf Gleis 3 -> 2
-        ((2500, 2542, 2600, G2, KEIL), (2790, 2748, 2690, G1, -KEIL)),  # UELV Gleis 2 <-> 1
-    ]
-    # freie Enden: Weiche -> Gleisanfang
-    frei = {2: (770, G3), 3: (770, G6), 4: (1070, G7)}
+    # An beiden Koepfen eine Gleisharfe, die jeweils benachbarte Gleise
+    # verbindet. Dadurch ist jedes Bahnhofsgleis von jeder Richtung erreichbar.
+    paare = []
+    # Westkopf: von oben nach unten aufgefaechert
+    west = [(G7, G6, 200), (G6, G5, 330), (G5, G4, 460), (G4, G3, 590),
+            (G3, G2, 720), (G2, G1, 850)]
+    for yo, yu, x in west:
+        paare.append(((x, x + 42, x + 100, yo, KEIL),
+                      (x + 270, x + 228, x + 170, yu, -KEIL)))
+    # Ostkopf: spiegelbildlich, Zungen nach Osten
+    ost = [(G7, G6, 2100), (G6, G5, 2230), (G5, G4, 2360), (G4, G3, 2490),
+           (G3, G2, 2620), (G2, G1, 2750)]
+    for yo, yu, x in ost:
+        paare.append(((x + 270, x + 228, x + 170, yo, KEIL),
+                      (x, x + 42, x + 100, yu, -KEIL)))
 
-    nummern = sorted(wm for a, b in paare for (_, wm, _, _, _) in
-                     ([a] + ([b] if b else [])))
+    nummern = sorted(wm for a_, b_ in paare for (_, wm, _, _, _) in
+                     ([a_] + ([b_] if b_ else [])))
     assert len(nummern) == len(set(nummern)), \
         'zwei Weichen auf derselben Weichenmitte: Nummerierung waere nicht eindeutig'
     nr_von = {wm: i + 1 for i, wm in enumerate(nummern)}
-    for i, (a, b) in enumerate(paare):
-        wa, wm, we, y, dy = a
+    for a_, b_ in paare:
+        wa, wm, we, y, dy = a_
         A(weiche(wa, wm, we, y, dy, nr_von[wm], c, soft))
-        if b:
-            wa2, wm2, we2, y2, dy2 = b
-            A(weiche(wa2, wm2, we2, y2, dy2, nr_von[wm2], c, soft))
-            A(verbindung(we, y + dy, we2, y2 + dy2, c))
-        else:
-            zx, zy = frei[i]
-            A(verbindung(we, y + dy, zx, zy, c, gz=(0.5,)))
+        wa2, wm2, we2, y2, dy2 = b_
+        A(weiche(wa2, wm2, we2, y2, dy2, nr_von[wm2], c, soft))
+        A(verbindung(we, y + dy, we2, y2 + dy2, c))
 
     # ---- Bahnsteige und Empfangsgebaeude ----
-    A(bahnsteig(G7 + 22, G6 - 22, 4, 'Bahnsteig 4 (Mittelbahnsteig)', c, soft))
-    A(bahnsteig(G5 + 22, G4 - 22, 3, 'Bahnsteig 3 (Mittelbahnsteig)', c, soft))
-    A(bahnsteig(G3 + 22, G2 - 22, 2, 'Bahnsteig 2 (Mittelbahnsteig)', c, soft))
-    A(bahnsteig(G1 + 22, G1 + 68, 1, 'Bahnsteig 1 (Hausbahnsteig)', c, soft))
+    A(bahnsteig(G6 + 20, G5 - 20, 4, 'Bahnsteig 4 · Gleis 6 und 5', c, soft))
+    A(bahnsteig(G4 + 20, G3 - 20, 3, 'Bahnsteig 3 · Gleis 4 und 3', c, soft))
+    A(bahnsteig(G2 + 20, G1 - 20, 2, 'Bahnsteig 2 · Gleis 2 und 1', c, soft))
+    A(bahnsteig(G1 + 24, G1 + 66, 1, 'Bahnsteig 1 (Hausbahnsteig) · Gleis 1', c, soft))
     A(f'<rect x="{MITTE-150}" y="{G1+100}" width="300" height="48" fill="none" stroke="{c}" stroke-width="2"/>')
     A(f'<text x="{MITTE}" y="{G1+130}" text-anchor="middle" font-size="12" fill="{c}">Empfangsgebäude</text>')
     A(f'<text x="{MITTE+165}" y="{G1+130}" font-size="10.5" fill="{soft}">Hauptzugang</text>')
     A(f'<line x1="{MITTE}" y1="{G7+22}" x2="{MITTE}" y2="{G1+68}" stroke="{soft}" '
       f'stroke-width="1.5" stroke-dasharray="3,4"/>')
-    A(f'<text x="{MITTE+10}" y="{G1-34}" font-size="10.5" fill="{soft}">Personenunterführung</text>')
+    A(f'<text x="{MITTE+14}" y="{G7+40}" font-size="10.5" fill="{soft}">Personenunterführung</text>')
 
     # ---- Gleisnummern ----
     for y, n in ((G1, 1), (G2, 2), (G3, 3), (G4, 4), (G5, 5), (G6, 6), (G7, 7)):
@@ -222,45 +216,49 @@ def build(c, soft, surface):
     A(f'<g fill="{soft}" font-size="12">'
       f'<text x="46" y="{G1+22}">(1)</text><text x="46" y="{G2-10}">(2)</text>'
       f'<text x="46" y="{G4+22}">(1)</text><text x="46" y="{G5-10}">(2)</text>'
+      f'<text x="46" y="{G7-10}">(1)</text>'
+      f'<text x="{X1-6}" y="{G6-10}" text-anchor="end">(1)</text>'
       f'<text x="{X1-6}" y="{G1+22}" text-anchor="end">(1)</text>'
       f'<text x="{X1-6}" y="{G2-10}" text-anchor="end">(2)</text></g>')
 
     # ---- Signale ----
-    # Einfahrsignale in Richtung der Kilometrierung: A-E (Ril 819.9001 Abs. 4(2)),
-    # doppelter Buchstabe fuer Einfahrten vom Gegengleis
-    A(signal(100, G1, False, 'e', 'A',  c, zs3='6'))
-    A(signal(140, G2, True,  'e', 'AA', c, zs3='6'))
-    A(signal(100, G4, False, 'e', 'B',  c, zs3='6'))
-    A(signal(140, G5, True,  'e', 'BB', c, zs3='6'))
-    # Einfahrsignale entgegen der Kilometrierung: F-K
-    A(signal(X1 - 30, G2, True,  'w', 'F',  c, zs3='6'))
-    A(signal(X1 - 80, G1, False, 'w', 'FF', c, zs3='6'))
-    # Ausfahrsignale entgegen der Kilometrierung: P + Gleisnummer.
-    # Zs 2 Richtungsanzeiger dort, wo die Ausfahrt nach Hyxel (H) oder
-    # Silberberg (S) fuehren kann.
-    A(signal(P_X, G1, False, 'w', 'P1', c, zs3='6'))
-    A(signal(P_X, G2, True,  'w', 'P2', c, zs3='6', zs6=True))
-    A(signal(P_X, G3, True,  'w', 'P3', c, zs3='4', zs2='H,S'))
-    A(signal(P_X, G4, True,  'w', 'P4', c, zs3='6', zs2='H,S'))
-    A(signal(P_X, G5, True,  'w', 'P5', c, zs3='6'))
-    A(signal(P_X, G6, True,  'w', 'P6', c, zs3='4'))
-    A(signal(P_X, G7, True,  'w', 'P7', c, zs3='4'))
-    # Ausfahrsignale in Richtung der Kilometrierung: N + Gleisnummer.
-    # Nur die Gleise 1 bis 4 haben eine Ausfahrt nach Osten.
-    A(signal(N_X, G1, False, 'e', 'N1', c, zs3='6'))
-    A(signal(N_X, G2, True,  'e', 'N2', c, zs3='6', zs6=True))
-    A(signal(N_X, G3, True,  'e', 'N3', c, zs3='4'))
-    A(signal(N_X, G4, True,  'e', 'N4', c, zs3='4'))
+    # Einfahrsignale: A-E in Richtung der Kilometrierung (Westkopf), F-K
+    # entgegen (Ostkopf). Doppelter Buchstabe fuer Einfahrten vom Gegengleis.
+    A(signal(95,  G1, False, 'e', 'A',  c, zs3='6'))
+    A(signal(145, G2, True,  'e', 'AA', c, zs3='6'))
+    A(signal(95,  G4, False, 'e', 'B',  c, zs3='6'))
+    A(signal(145, G5, True,  'e', 'BB', c, zs3='6'))
+    A(signal(95,  G7, False, 'e', 'C',  c, zs3='4'))
+    A(signal(X1 - 35, G2, True,  'w', 'F',  c, zs3='6'))
+    A(signal(X1 - 90, G1, False, 'w', 'FF', c, zs3='6'))
+    A(signal(X1 - 35, G6, True,  'w', 'G',  c, zs3='4'))
+    # Ausfahrsignale: P + Gleisnummer entgegen der Kilometrierung (nach Westen),
+    # N + Gleisnummer in Richtung der Kilometrierung (nach Osten). Zs 2
+    # Richtungsanzeiger, weil die Ausfahrt mehrere Strecken erreichen kann:
+    # K = Krug, S = Silberberg, W = Windingen, F = Furth, N = Neumark.
+    for y, nr in ((G1, 1), (G2, 2), (G3, 3), (G4, 4), (G5, 5), (G6, 6), (G7, 7)):
+        A(signal(P_X, y, y != G1, 'w', f'P{nr}', c,
+                 zs3='6' if nr in (1, 2) else '4',
+                 zs2=None if nr == 7 else 'K,S,W', zs6=(nr == 2)))
+    for y, nr in ((G1, 1), (G2, 2), (G3, 3), (G4, 4), (G5, 5), (G6, 6), (G7, 7)):
+        A(signal(N_X, y, y != G1, 'e', f'N{nr}', c,
+                 zs3='6' if nr in (1, 2) else '4',
+                 zs2=None if nr == 7 else 'F,N', zs6=(nr == 2)))
+    # Zwischensignale teilen die Bahnsteiggleise in die Abschnitte a und b.
+    # Erst dadurch koennen zwei Vierteiler hintereinander am Bahnsteig stehen.
+    for y, nr in ((G1, 1), (G2, 2), (G5, 5)):
+        A(signal(Z_X - 40, y, y != G1, 'w', f'ZU{nr}', c, zs3='4'))
+        A(signal(Z_X + 40, y, y != G1, 'e', f'ZR{nr}', c, zs3='4'))
 
     # ---- Streckenangaben ----
     A(f'<g fill="{soft}" font-size="12" font-style="italic">'
-      f'<text x="{X0}" y="{G1+200}">← Altensund (km 62,0) · Hyxel (km 49,0) · Krug · Erx</text>'
-      f'<text x="{X0}" y="{G1+218}">Strecke 1 · Hauptbahn · zweigleisig mit Gleiswechselbetrieb · Hg 120 km/h</text>'
-      f'<text x="{X0}" y="{G1+236}">elektrifiziert 15 kV 16,7 Hz · Obersosa km 63,5</text>'
-      f'<text x="{X0}" y="{G7-58}">← Hochstein (km 46,0) · Silberberg (km 24,5) · Bernstein</text>'
-      f'<text x="{X0}" y="{G7-40}">Strecke 2 · Hauptbahn · zweigleisig · Hg 120 km/h · elektrifiziert · endet hier bei km 51,0</text>'
-      f'<text x="{X1}" y="{G1+200}" text-anchor="end">Kunststoffwerk (km 65,5) · Rotheim · Feldheim (km 75,5) · Furth →</text>'
-      f'<text x="{X1}" y="{G1+218}" text-anchor="end">Strecke 1 · Angaben wie links</text></g>')
+      f'<text x="{X0}" y="{G1+190}">← Altensund · Hyxel (km 49,0) · Waldenberg · Krug (km 34,5) · Erx</text>'
+      f'<text x="{X0}" y="{G1+208}">Strecke 1 · Hauptbahn · zweigleisig mit Gleiswechselbetrieb · Hg 120 km/h · elektrifiziert · Obersosa km 63,5</text>'
+      f'<text x="{X0}" y="{G7-76}">← Hochstein (km 46,0) · Silberberg (km 24,5) · Bernstein · zweigleisig</text>'
+      f'<text x="{X0}" y="{G7-58}">← Gbf · Windingen · eingleisig</text>'
+      f'<text x="{X1}" y="{G1+190}" text-anchor="end">Kunststoffwerk · Rotheim · Feldheim (km 75,5) · Lossow · Furth (km 117,5) →</text>'
+      f'<text x="{X1}" y="{G1+208}" text-anchor="end">Strecke 1 · Angaben wie links</text>'
+      f'<text x="{X1}" y="{G7-58}" text-anchor="end">Kirchheim Hbf · Neumark · eingleisig →</text></g>')
     return "\n".join(s)
 
 
