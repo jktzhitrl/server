@@ -39,23 +39,23 @@ W, X0, X1 = 2720, 400, 2670
 ROT, TIEF, STAHL, GRAU, SOFT = "#C8102E", "#16202E", "#4A6FA5", "#98A4B4", "#5C6879"
 FARBE = {"bf": ROT, "bst": TIEF, "hp": TIEF, "anst": STAHL, "ausgen": GRAU}
 # Beschriftungsspuren: drei ueber, drei unter dem Gleisband
-SPUREN = [(-24, -37), (-58, -71), (-92, -105),
-          (32, 45), (66, 79), (100, 113)]
+SPUREN = [(-26, -41), (-64, -79), (-102, -117),
+          (34, 49), (72, 87), (110, 125)]
 
 
 def km_text(km):
     return ("%.1f" % km).replace(".", ",")
 
 
-def band(y, nummer, strecke, angabe, stationen, kmax, linienfarbe):
+def band(y, nummer, strecke, angabe, stationen, kmin, kmax, linienfarbe):
     o = [f'<text x="40" y="{y-6}" font-size="21" font-weight="700" fill="{TIEF}">{nummer}</text>',
          f'<line x1="{X0}" y1="{y}" x2="{X1}" y2="{y}" stroke="{linienfarbe}" stroke-width="4"/>',
          f'<text x="40" y="{y+18}" font-size="12.5" fill="{SOFT}">{strecke}</text>',
          f'<text x="40" y="{y+36}" font-size="12.5" fill="{SOFT}">{angabe}</text>']
     belegt = [-1e9] * len(SPUREN)
     for name, km, art in stationen:
-        x = X0 + (X1 - X0) * km / kmax
-        breite = max(len(name) * 7.2, 46) + 12
+        x = X0 + (X1 - X0) * (km - kmin) / (kmax - kmin)
+        breite = max(len(name) * 8.2, 54) + 14
         spur = 0
         for i in range(len(SPUREN)):
             if x - belegt[i] >= breite:
@@ -73,15 +73,15 @@ def band(y, nummer, strecke, angabe, stationen, kmax, linienfarbe):
         else:
             o.append(f'<circle cx="{x:.1f}" cy="{y}" r="8" fill="#fff" stroke="{c}" '
                      f'stroke-width="3" stroke-dasharray="3,3"/>')
-        if abs(dy_name) > 34:          # zweite und dritte Spur brauchen eine Fuehrungslinie
+        if abs(dy_name) > 36:          # zweite und dritte Spur brauchen eine Fuehrungslinie
             y1 = y + (14 if dy_name > 0 else -14)
             y2 = y + (dy_name - 11 if dy_name > 0 else dy_name + 5)
             o.append(f'<line x1="{x:.1f}" y1="{y1}" x2="{x:.1f}" y2="{y2}" stroke="#C9D2DE" stroke-width="1.5"/>')
         fett = "700" if art in ("bf", "bst") else "400"
         farbe_txt = TIEF if art != "ausgen" else GRAU
-        o.append(f'<text x="{x:.1f}" y="{y+dy_name}" font-size="13" font-weight="{fett}" '
+        o.append(f'<text x="{x:.1f}" y="{y+dy_name}" font-size="15" font-weight="{fett}" '
                  f'fill="{farbe_txt}" text-anchor="middle">{name}</text>')
-        o.append(f'<text x="{x:.1f}" y="{y+dy_km}" font-size="10" fill="{SOFT}" text-anchor="middle" '
+        o.append(f'<text x="{x:.1f}" y="{y+dy_km}" font-size="11" fill="{SOFT}" text-anchor="middle" '
                  f'font-family="Courier New, monospace">{km_text(km)}</text>')
     return "\n".join(o)
 
@@ -111,18 +111,22 @@ def legende(y):
 
 
 def build():
+    s1_west = [z for z in STRECKE_1 if z[1] <= 63.5]
+    s1_ost = [z for z in STRECKE_1 if z[1] >= 63.5]
     teile = [
-        band(300, "Strecke 1", "Krug (ausgen.) – Obersosa – Furth (ausgen.)",
-             "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", STRECKE_1, 117.5, TIEF),
-        band(700, "Strecke 2", "Bernstein (ausgen.) – Silberberg – Obersosa",
-             "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", STRECKE_2, 51.0, TIEF),
-        band(1060, "Strecke 3", "Waldenberg – Gbf (ausgen.)",
-             "Nebenbahn · eingleisig · 80 km/h · elektrifiziert", STRECKE_3, 29.5, STAHL),
-        legende(1240),
+        band(280, "Strecke 1 · West", "Krug (ausgen.) – Waldenberg – Hyxel – Obersosa",
+             "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", s1_west, 34.5, 63.5, TIEF),
+        band(570, "Strecke 1 · Ost", "Obersosa – Feldheim – Lossow – Furth (ausgen.)",
+             "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", s1_ost, 63.5, 117.5, TIEF),
+        band(860, "Strecke 2", "Bernstein (ausgen.) – Silberberg – Obersosa",
+             "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", STRECKE_2, 0.0, 51.0, TIEF),
+        band(1150, "Strecke 3", "Waldenberg – Gbf (ausgen.)",
+             "Nebenbahn · eingleisig · 80 km/h · elektrifiziert", STRECKE_3, 0.0, 29.5, STAHL),
+        legende(1330),
     ]
-    return (f'<svg id="gleisband" width="{W}" height="1320" viewBox="0 0 {W} 1320" '
+    return (f'<svg id="gleisband" width="{W}" height="1410" viewBox="0 0 {W} 1410" '
             f'xmlns="http://www.w3.org/2000/svg" font-family="Calibri, Arial, sans-serif">'
-            f'<rect width="{W}" height="1320" fill="#fff"/>{"".join(teile)}</svg>')
+            f'<rect width="{W}" height="1410" fill="#fff"/>{"".join(teile)}</svg>')
 
 
 SEITE = """<!DOCTYPE html>
@@ -140,7 +144,7 @@ SEITE = """<!DOCTYPE html>
   footer {{ margin-top:28px; color:#5C6879; font-size:12.5px; }}
 </style></head><body><div class="wrap">
 <h1>Gleisband Los 5 – Chemiezentrum</h1>
-<p class="sub">Übersichtsdarstellung der drei Strecken mit Kilometrierung ·
+<p class="sub">Übersichtsdarstellung der drei Strecken mit Kilometrierung · Strecke 1 in zwei Abschnitten ·
 LF 2 Jahresprojekt 2026 „Mitteltrasse", 5. Teilabschnitt</p>
 <div class="scroll">{svg}</div>
 <footer>Kilometerangaben nach Aufgabenstellung; Zwischenbetriebsstellen nach den
