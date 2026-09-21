@@ -11,6 +11,10 @@ auseinanderlaufen.
 | `waldenberg.py` | Gleisgeometrie und Symbole nach Ril 819.9002. `build()` liefert den Plan einmal mit `currentColor` (Lageplan, Dark Mode) und einmal in Schwarz (Zeichnungsblatt). |
 | `build_waldenberg.py` | Schreibt `lageplan-waldenberg.html` und `zeichnung-waldenberg.html` – Seitenrahmen, Tabellen, Begleittexte. |
 | `render_export.py` | Rendert `export/lageplan-waldenberg.jpg` aus dem fertigen Lageplan (Playwright). |
+| `obersosa.py` | Gleisgeometrie des Knotens Obersosa. Die Weichennummern werden aus den Weichenmitten automatisch vergeben, damit sie nach Ril 819.9001 mit der Kilometrierung steigen. |
+| `build_obersosa.py` | Schreibt `lageplan-obersosa.html` und `zeichnung-obersosa.html`. |
+| `gleisband.py` | Schreibt `gleisband-los5.html`, die Übersichtsdarstellung der drei Strecken. |
+| `seite.py` | Gemeinsames Stylesheet der Blätter. `build_waldenberg.py` führt noch eine eigene Kopie und sollte darauf umgestellt werden. |
 
 ## Ablauf
 
