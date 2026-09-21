@@ -13,7 +13,7 @@ auseinanderlaufen.
 | `render_export.py` | Rendert `export/lageplan-waldenberg.jpg` aus dem fertigen Lageplan (Playwright). |
 | `obersosa.py` | Gleisgeometrie des Knotens Obersosa. Die Weichennummern werden aus den Weichenmitten automatisch vergeben, damit sie nach Ril 819.9001 mit der Kilometrierung steigen. |
 | `build_obersosa.py` | Schreibt `lageplan-obersosa.html` und `zeichnung-obersosa.html`. |
-| `gleisband.py` | Schreibt `gleisband-los5.html`, die Übersichtsdarstellung der drei Strecken. |
+| `gleisband.py` | Schreibt `gleisband-los5.html`: das Übersichtsblatt aller drei Strecken und darunter vier Einzelblätter im Folienformat (`eb-s1-west`, `eb-s1-ost`, `eb-s2`, `eb-s3`). Das Übersichtsblatt ist fürs Zeichnungsblatt gedacht, die Einzelblätter für die Projektion – dort entscheidet die Schriftgröße im Verhältnis zur Bildbreite über die Lesbarkeit. |
 | `seite.py` | Gemeinsames Stylesheet der Blätter. `build_waldenberg.py` führt noch eine eigene Kopie und sollte darauf umgestellt werden. |
 
 ## Ablauf
