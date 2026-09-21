@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Führerstandssimulator – Mitteltrasse Los 5</title>
+<style>
+  :root {
+    --bg: #f5f3ed; --surface: #ffffff; --ink: #191b18; --ink-soft: #55594f;
+    --line: #d9d5c7; --accent: #a8201a; --accent-soft: #f2dad8; --accent-ink: #741512;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141613; --surface: #1c1f1b; --ink: #edece7; --ink-soft: #a2a699;
+      --line: #32352e; --accent: #e0574d; --accent-soft: #38221f; --accent-ink: #f3a49e;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif;
+    height: 100%; overflow: hidden; overscroll-behavior: none;
+  }
+  #app { position: fixed; inset: 0; }
+
+  /* ---------- Start screen ---------- */
+  #startScreen {
+    position: absolute; inset: 0; overflow-y: auto; padding: 28px 20px 60px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink);
+    background: var(--accent-soft); display: inline-block; padding: 3px 9px;
+    border-radius: 3px; margin-bottom: 12px;
+  }
+  h1 { font-size: clamp(24px, 4.5vw, 34px); margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; max-width: 68ch; margin: 0 0 26px; line-height: 1.5; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+  .panel h2 { font-size: 14px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 10px; }
+  .opt {
+    border: 2px solid var(--line); border-radius: 8px; padding: 14px; cursor: pointer; background: var(--bg);
+    transition: border-color .15s, background .15s;
+  }
+  .opt.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .opt b { display: block; font-size: 14.5px; margin-bottom: 3px; }
+  .opt span { font-size: 12.5px; color: var(--ink-soft); }
+  .startBtn {
+    width: 100%; padding: 16px; border: none; border-radius: 8px; background: var(--accent); color: #fff;
+    font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: .02em; margin-top: 6px;
+  }
+  .startBtn:disabled { opacity: .4; }
+  .backLink { color: var(--ink-soft); font-size: 13px; text-decoration: none; display: inline-block; margin-bottom: 18px; }
+  .rotateHint {
+    display: none; position: fixed; inset: 0; background: #0c0d0b; color: #fff; z-index: 999;
+    align-items: center; justify-content: center; text-align: center; font-size: 18px; padding: 30px; flex-direction: column;
+  }
+  @media (max-width: 900px) and (orientation: portrait) {
+    .rotateHint.active { display: flex; }
+  }
+
+  /* ---------- Sim screen ---------- */
+  #simScreen { position: absolute; inset: 0; display: none; background: #05060a; }
+  #simScreen.active { display: block; }
+  #three-canvas { position: absolute; inset: 0; display: block; touch-action: none; }
+
+  .hud { position: absolute; z-index: 5; font-family: "IBM Plex Mono", ui-monospace, monospace; color: #d9dccf; }
+  #topBar {
+    top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 10px 14px; background: linear-gradient(#000a, transparent); pointer-events: none;
+  }
+  #topBar .stationInfo { pointer-events: auto; }
+  #topBar .stationInfo .label { font-size: 9.5px; letter-spacing: .08em; color: #8a8f7c; text-transform: uppercase; }
+  #topBar .stationInfo .val { font-size: 16px; color: #fff; font-weight: 600; }
+  #topBar .delay { font-size: 12.5px; margin-top: 2px; }
+  #topBar .delay.late { color: #ff6b5e; }
+  #topBar .delay.ontime { color: #6fce7a; }
+  #exitBtn {
+    pointer-events: auto; background: #0006; border: 1px solid #ffffff30; color: #fff; border-radius: 6px;
+    padding: 8px 12px; font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+
+  #cabFrame { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+
+  /* Speedometer */
+  #gaugeWrap { position: absolute; left: 16px; bottom: 16px; z-index: 5; }
+  #gauge { display: block; filter: drop-shadow(0 4px 10px #0009); }
+  #digSpeed {
+    position: absolute; left: 50%; top: 68%; transform: translate(-50%,0); font-size: 22px; font-weight: 700; color: #fff;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  #digTarget { position: absolute; left: 50%; top: 82%; transform: translate(-50%,0); font-size: 11px; color: #ffb14e; text-align:center; width:100%; }
+
+  /* PZB / Sifa panel */
+  #safetyPanel {
+    position: absolute; right: 16px; bottom: 16px; z-index: 5; background: #10120dcc; border: 1px solid #3a3d31;
+    border-radius: 8px; padding: 10px 12px; display: flex; gap: 14px; align-items: center; pointer-events: auto;
+  }
+  .lampCol { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .lampCol .lname { font-size: 8.5px; color: #8a8f7c; letter-spacing: .05em; }
+  .lamp { width: 16px; height: 16px; border-radius: 50%; background: #2a2d22; border: 1px solid #000; box-shadow: inset 0 0 3px #000; }
+  .lamp.on1000 { background: radial-gradient(circle at 35% 30%, #ffe27a, #d98f00); box-shadow: 0 0 8px #ffcf4a; }
+  .lamp.on500 { background: radial-gradient(circle at 35% 30%, #ffb0a6, #d9401f); box-shadow: 0 0 8px #ff6b52; }
+  .lamp.on40 { background: radial-gradient(circle at 35% 30%, #a6c8ff, #1f5fd9); box-shadow: 0 0 8px #5a8fff; }
+  #wachsamBtn, #sifaBtn {
+    pointer-events: auto; width: 58px; height: 58px; border-radius: 50%; border: 2px solid #555; cursor: pointer;
+    font-family: inherit; font-size: 10px; font-weight: 700; color: #eee; background: #24261e;
+  }
+  #wachsamBtn.blink, #sifaBtn.blink {
+    animation: blinkLamp .5s infinite; border-color: #ffb14e;
+  }
+  @keyframes blinkLamp { 0%,49% { background:#5a3f10; } 50%,100% { background:#24261e; } }
+
+  /* Lever (throttle/brake) */
+  #leverWrap {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 5; pointer-events: auto;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  #leverTrack {
+    width: 54px; height: 260px; background: #14150fcc; border: 1px solid #3a3d31; border-radius: 27px; position: relative;
+  }
+  #leverTrack .zone { position: absolute; left: 4px; right: 4px; font-size: 8px; color: #7d8270; }
+  #leverTrack .zone.top { top: 6px; }
+  #leverTrack .zone.bottom { bottom: 6px; text-align: right; }
+  #leverKnob {
+    position: absolute; left: 3px; width: 48px; height: 34px; border-radius: 8px; background: linear-gradient(#4b4e3f,#2b2d23);
+    border: 1px solid #6b6f5a; top: 50%; transform: translateY(-50%); cursor: grab; touch-action: none;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 700;
+  }
+  #leverLabel { font-size: 10px; color: #d9dccf; }
+  #ebBtn {
+    pointer-events: auto; margin-top: 6px; background: #7a1c14; color: #fff; border: 1px solid #ffb0a6; border-radius: 6px;
+    padding: 8px 10px; font-size: 10px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+
+  #signalMsg {
+    position: absolute; left: 50%; top: 14%; transform: translateX(-50%); z-index: 6; pointer-events: none;
+    font-size: 15px; padding: 8px 16px; border-radius: 6px; background: #000a; color: #fff; opacity: 0; transition: opacity .2s;
+  }
+  #signalMsg.show { opacity: 1; }
+
+  #ebOverlay {
+    position: absolute; inset: 0; z-index: 8; background: #a8201a22; display: none; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #ebOverlay.show { display: flex; }
+  #ebOverlay .txt {
+    background: #7a1c14; color: #fff; padding: 14px 26px; border-radius: 8px; font-weight: 700; font-size: 16px;
+    box-shadow: 0 8px 30px #000a;
+  }
+
+  #endPanel {
+    position: absolute; inset: 0; z-index: 10; background: #0b0c09ee; display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  #endPanel.show { display: flex; }
+  #endPanel .card {
+    background: var(--surface); color: var(--ink); border-radius: 12px; padding: 28px; max-width: 420px; width: 100%;
+    font-family: "IBM Plex Sans", sans-serif;
+  }
+  #endPanel h2 { margin: 0 0 14px; font-size: 20px; }
+  #endPanel table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 18px; }
+  #endPanel td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  #endPanel td:last-child { text-align: right; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+
+  #crossingBanner {
+    position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 6; pointer-events: none;
+    background: #142033cc; border: 1px solid #3a5b8f; color: #cfe0ff; padding: 8px 16px; border-radius: 6px; font-size: 13px;
+    opacity: 0; transition: opacity .2s;
+  }
+  #crossingBanner.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== START SCREEN ===================== -->
+  <div id="startScreen">
+    <div class="wrap">
+      <a class="backLink" href="index.html">← Zurück zur Fahrplanverwaltung</a>
+      <div class="kicker">Führerstandssimulator · Ausbildung Tablet</div>
+      <h1>🚆 Führerstand Mitteltrasse Los 5</h1>
+      <p class="sub">
+        Fahre einen Zug auf echten Streckendaten aus eurer Fahrplanverwaltung. Beachte Hauptsignale (Hp0/Hp1),
+        Vorsignale und die PZB-Wachsamkeit, halte den Fahrplan ein und stoppe präzise am Bahnsteig.
+        Bedienung per Touch: Hebel rechts = Fahren/Bremsen, Wachsam-Taste bei Vorsignal Halt erwarten,
+        Sifa-Taste bei Aufforderung drücken.
+      </p>
+
+      <div class="panel">
+        <h2>1 · Strecke</h2>
+        <div class="grid2" id="routeGrid"></div>
+      </div>
+
+      <div class="panel">
+        <h2>2 · Zuggattung</h2>
+        <div class="grid2" id="trainGrid"></div>
+      </div>
+
+      <div class="panel">
+        <h2>3 · Richtung</h2>
+        <div class="grid2" id="dirGrid"></div>
+      </div>
+
+      <button class="startBtn" id="startBtn" disabled>Führerstand betreten</button>
+    </div>
+  </div>
+
+  <div class="rotateHint" id="rotateHint">
+    <div>📱↻<br><br>Bitte Tablet ins Querformat drehen für den Führerstand.</div>
+  </div>
+
+  <!-- ===================== SIM SCREEN ===================== -->
+  <div id="simScreen">
+    <canvas id="three-canvas"></canvas>
+
+    <div class="hud" id="topBar">
+      <div class="stationInfo">
+        <div class="label">Nächster Halt</div>
+        <div class="val" id="nextStationName">–</div>
+        <div class="delay ontime" id="delayVal">pünktlich</div>
+      </div>
+      <button id="exitBtn">✕ Führerstand verlassen</button>
+    </div>
+
+    <div id="gaugeWrap">
+      <canvas id="gauge" width="220" height="220"></canvas>
+      <div id="digSpeed">0</div>
+      <div id="digTarget">Soll –</div>
+    </div>
+
+    <div id="safetyPanel">
+      <div class="lampCol"><div class="lname">1000</div><div class="lamp" id="lamp1000"></div></div>
+      <div class="lampCol"><div class="lname">500</div><div class="lamp" id="lamp500"></div></div>
+      <div class="lampCol"><div class="lname">40</div><div class="lamp" id="lamp40"></div></div>
+      <button id="wachsamBtn">WACHSAM</button>
+      <button id="sifaBtn">SIFA</button>
+    </div>
+
+    <div id="leverWrap">
+      <div id="leverLabel">Fahren / Bremsen</div>
+      <div id="leverTrack">
+        <div class="zone top">FAHREN</div>
+        <div class="zone bottom">BREMSEN</div>
+        <div id="leverKnob">0</div>
+      </div>
+      <button id="ebBtn">SCHNELLBREMSE</button>
+    </div>
+
+    <div id="signalMsg"></div>
+    <div id="crossingBanner">⏳ Zugkreuzung – Warten auf Gegenzug…</div>
+    <div id="ebOverlay"><div class="txt">⚠ ZWANGSBREMSUNG – PZB ausgelöst</div></div>
+
+    <div id="endPanel">
+      <div class="card">
+        <h2>🏁 Fahrt beendet</h2>
+        <table id="endTable"></table>
+        <button class="startBtn" onclick="location.reload()">Neue Fahrt</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="lib/three.min.js"></script>
+<script>
+"use strict";
+
+/* ============================================================
+   1. STRECKENDATEN (aus den bestehenden Fahrplänen übernommen)
+   ============================================================ */
+const ROUTES = {
+  s1: {
+    id: 's1', name: 'Strecke 1 · Krug – Furth', maxSpeed: 120, singleTrack: false,
+    stations: [
+      { name: 'Krug', km: 34.5 }, { name: 'Zollfurt', km: 35.5 }, { name: 'Waldenberg', km: 37.5 },
+      { name: 'Burgwald', km: 40.0 }, { name: 'Steinbruch-Anschl.', km: 42.0, freightOnly: true },
+      { name: 'Langenbach', km: 45.0 }, { name: 'Hyxel', km: 49.0 }, { name: 'Lindenau', km: 58.0 },
+      { name: 'Großrafenerie-Anschl.', km: 60.0, freightOnly: true }, { name: 'Altensund', km: 62.0 },
+      { name: 'Obersosa', km: 63.5, junction: true }, { name: 'Kunststoffwerk', km: 65.5 },
+      { name: 'Rotheim', km: 68.0 }, { name: 'Feldheim', km: 75.5 }, { name: 'Unterfels', km: 81.5 },
+      { name: 'Lossow', km: 88.0 }, { name: 'Furth', km: 117.5 }
+    ]
+  },
+  s2: {
+    id: 's2', name: 'Strecke 2 · Bernstein – Obersosa', maxSpeed: 120, singleTrack: false,
+    stations: [
+      { name: 'Bernstein', km: 0.0 }, { name: 'Silberberg', km: 24.5 }, { name: 'Chem. I', km: 30.0, freightOnly: true },
+      { name: 'Feldkirchen', km: 31.0 }, { name: 'Finsterberg', km: 40.0 }, { name: 'Chem. II', km: 41.0, freightOnly: true },
+      { name: 'Hochstein', km: 46.0 }, { name: 'Obersosa', km: 51.0, junction: true }
+    ]
+  },
+  s3: {
+    id: 's3', name: 'Strecke 3 · Waldenberg – Gbf', maxSpeed: 80, singleTrack: true,
+    stations: [
+      { name: 'Waldenberg', km: 0.0 }, { name: 'Wehrheim', km: 7.0 }, { name: 'Sandheide', km: 14.5 },
+      { name: 'Getreide', km: 18.0, freightOnly: true }, { name: 'Wassergrund', km: 19.0 }, { name: 'Gbf', km: 29.5 }
+    ]
+  }
+};
+
+const TRAIN_TYPES = {
+  RE: { name: 'RE – Regional-Express', mass: 140, power: 1.05, brake: 0.9, maxSpeedFactor: 1.0, stopPattern: 'all', color: '#06a77d' },
+  IC: { name: 'IC – Intercity', mass: 420, power: 0.75, brake: 0.7, maxSpeedFactor: 1.0, stopPattern: 'major', color: '#e63946' },
+  RB: { name: 'RB – Regionalbahn', mass: 110, power: 1.1, brake: 0.95, maxSpeedFactor: 0.9, stopPattern: 'all', color: '#1d72b8' },
+  GZ: { name: 'Gz – Güterzug', mass: 900, power: 0.35, brake: 0.4, maxSpeedFactor: 0.65, stopPattern: 'none', color: '#6c757d' }
+};
+
+/* ============================================================
+   2. START SCREEN LOGIC
+   ============================================================ */
+let chosen = { route: null, train: null, dir: 'hin' };
+
+function buildOption(container, key, label, sub, groupKey) {
+  const el = document.createElement('div');
+  el.className = 'opt';
+  el.innerHTML = `<b>${label}</b><span>${sub}</span>`;
+  el.addEventListener('click', () => {
+    [...container.children].forEach(c => c.classList.remove('sel'));
+    el.classList.add('sel');
+    chosen[groupKey] = key;
+    updateStartBtn();
+  });
+  container.appendChild(el);
+}
+
+const routeGrid = document.getElementById('routeGrid');
+Object.values(ROUTES).forEach(r => {
+  buildOption(routeGrid, r.id, r.name, `${r.stations.length} Betriebsstellen · v(max) ${r.maxSpeed} km/h${r.singleTrack ? ' · eingleisig' : ''}`, 'route');
+});
+
+const trainGrid = document.getElementById('trainGrid');
+Object.entries(TRAIN_TYPES).forEach(([key, t]) => {
+  buildOption(trainGrid, key, t.name, `${t.mass} t · Halteschema: ${t.stopPattern === 'all' ? 'alle Halte' : t.stopPattern === 'major' ? 'nur Hauptbahnhöfe' : 'durchfahrend'}`, 'train');
+});
+
+const dirGrid = document.getElementById('dirGrid');
+buildOption(dirGrid, 'hin', 'Hinfahrt', 'in Reihenfolge der Strecke', 'dir');
+buildOption(dirGrid, 'rueck', 'Rückfahrt', 'entgegen der Streckenreihenfolge', 'dir');
+dirGrid.children[0].classList.add('sel');
+
+function updateStartBtn() {
+  document.getElementById('startBtn').disabled = !(chosen.route && chosen.train);
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('simScreen').classList.add('active');
+  initSim(ROUTES[chosen.route], TRAIN_TYPES[chosen.train], chosen.dir);
+});
+
+function checkOrientation() {
+  const active = document.getElementById('simScreen').classList.contains('active');
+  document.getElementById('rotateHint').classList.toggle('active', active && window.innerWidth < window.innerHeight && window.innerWidth < 900);
+}
+window.addEventListener('resize', checkOrientation);
+
+/* ============================================================
+   3. SIMULATION
+   ============================================================ */
+function initSim(route, train, dir) {
+  checkOrientation();
+
+  // --- Stationsliste in Fahrtrichtung, Streckenkilometer relativ zum Start ---
+  let stations = route.stations.slice();
+  if (dir === 'rueck') stations = stations.slice().reverse();
+  const startKm = stations[0].km;
+  stations = stations.map(s => ({ ...s, relKm: Math.abs(s.km - startKm) }));
+  const totalKm = stations[stations.length - 1].relKm;
+
+  // Haltepunkte gemäß Zuggattung
+  function stopsHere(s, idx) {
+    if (idx === 0 || idx === stations.length - 1) return true; // Endpunkte immer
+    if (s.freightOnly) return false;
+    if (train.stopPattern === 'none') return false;
+    if (train.stopPattern === 'major') return !!s.junction;
+    return true; // 'all'
+  }
+  stations.forEach((s, i) => s.isStop = stopsHere(s, i));
+
+  // Fahrplan (Soll-Zeiten) grob berechnen: Reisegeschwindigkeit + Dwell
+  const avgSpeed = route.maxSpeed * train.maxSpeedFactor * 0.72; // realistische Reiseschnitt inkl. Beschl./Brems
+  let t = 0;
+  stations.forEach((s, i) => {
+    if (i > 0) t += (s.relKm - stations[i - 1].relKm) / avgSpeed * 3600;
+    s.sollArr = t;
+    if (s.isStop && i < stations.length - 1) t += 35;
+    s.sollDep = t;
+  });
+
+  // --- Signale: pro Betriebsstelle ein Einfahr- und Ausfahrsignal ---
+  stations.forEach((s, i) => {
+    s.entrySignalKm = i === 0 ? -0.3 : s.relKm - 0.35;
+    s.entryRed = i > 0 && i < stations.length - 1 && !s.isStop === false && Math.random() < 0.12;
+    s.exitSignalKm = s.relKm + 0.15;
+    s.needsCrossing = route.singleTrack && s.isStop && i > 0 && i < stations.length - 1 && Math.random() < 0.4;
+    s.crossingCleared = false;
+    s.passed = false;
+    s.stoppedHere = false;
+  });
+
+  const maxSpeedFor = (km) => route.maxSpeed * train.maxSpeedFactor;
+
+  /* ---------- Three.js Setup ---------- */
+  const canvas = document.getElementById('three-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x8fb8d8);
+  scene.fog = new THREE.Fog(0x8fb8d8, 400, 2600);
+
+  const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 3000);
+  camera.position.set(0, 3.4, 0);
+
+  function resize() {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Sky / sun
+  scene.add(new THREE.HemisphereLight(0xdfefff, 0x3a4a2e, 0.9));
+  const sun = new THREE.DirectionalLight(0xfff2d6, 0.9);
+  sun.position.set(400, 600, -200);
+  scene.add(sun);
+
+  // Ground
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(400, 6000),
+    new THREE.MeshLambertMaterial({ color: 0x5f8a4e })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.z = -2000;
+  scene.add(ground);
+
+  // Ballast bed
+  const ballast = new THREE.Mesh(
+    new THREE.PlaneGeometry(4.6, 6000),
+    new THREE.MeshLambertMaterial({ color: 0x7a726a })
+  );
+  ballast.rotation.x = -Math.PI / 2;
+  ballast.position.y = 0.02;
+  ballast.position.z = -2000;
+  scene.add(ballast);
+
+  // Rails texture (tiled canvas): sleepers + two rails, scrolled via offset
+  const railCanvas = document.createElement('canvas');
+  railCanvas.width = 64; railCanvas.height = 512;
+  const rc = railCanvas.getContext('2d');
+  rc.fillStyle = '#7a726a'; rc.fillRect(0, 0, 64, 512);
+  for (let i = 0; i < 512; i += 64) {
+    rc.fillStyle = '#5c4a34'; rc.fillRect(4, i, 56, 16);
+  }
+  rc.fillStyle = '#8c8c92';
+  rc.fillRect(10, 0, 5, 512);
+  rc.fillRect(49, 0, 5, 512);
+  const railTex = new THREE.CanvasTexture(railCanvas);
+  railTex.wrapS = railTex.wrapT = THREE.RepeatWrapping;
+  railTex.repeat.set(1, 400);
+  const railBed = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.4, 6000),
+    new THREE.MeshBasicMaterial({ map: railTex })
+  );
+  railBed.rotation.x = -Math.PI / 2;
+  railBed.position.y = 0.025;
+  railBed.position.z = -2000;
+  scene.add(railBed);
+
+  // Pooled catenary masts (recycled by modulo distance)
+  const mastGroup = new THREE.Group(); scene.add(mastGroup);
+  const MAST_SPACING = 60, MAST_COUNT = 24;
+  const mastMat = new THREE.MeshLambertMaterial({ color: 0x777f70 });
+  const masts = [];
+  for (let i = 0; i < MAST_COUNT; i++) {
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 7, 6), mastMat);
+    pole.position.y = 3.5;
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.1, 0.1), mastMat);
+    arm.position.set(1.1, 6.6, 0);
+    g.add(pole, arm);
+    g.position.x = (i % 2 === 0) ? -2.5 : 2.5;
+    mastGroup.add(g);
+    masts.push(g);
+  }
+
+  // Pooled trees
+  const treeGroup = new THREE.Group(); scene.add(treeGroup);
+  const TREE_SPACING = 22, TREE_COUNT = 60;
+  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6b5136 });
+  const leafMat = new THREE.MeshLambertMaterial({ color: 0x3f6b34 });
+  const trees = [];
+  for (let i = 0; i < TREE_COUNT; i++) {
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 2.2, 5), trunkMat);
+    trunk.position.y = 1.1;
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(1.4, 6, 5), leafMat);
+    leaf.position.y = 2.6;
+    g.add(trunk, leaf);
+    const side = (i % 2 === 0) ? -1 : 1;
+    g.position.x = side * (7 + Math.random() * 14);
+    g.position.y = 0;
+    treeGroup.add(g);
+    trees.push({ obj: g, side });
+  }
+
+  // Station groups (platform + name board) — fixed count = station count
+  const stationGroup = new THREE.Group(); scene.add(stationGroup);
+  const platMat = new THREE.MeshLambertMaterial({ color: 0xb9b3a1 });
+  const boardMat = new THREE.MeshLambertMaterial({ color: 0x191b18 });
+  function makeNameTexture(name) {
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 96;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#191b18'; ctx.fillRect(0, 0, 512, 96);
+    ctx.fillStyle = '#f2dad8'; ctx.strokeStyle = '#f2dad8'; ctx.lineWidth = 4;
+    ctx.strokeRect(6, 6, 500, 84);
+    ctx.font = '700 46px "IBM Plex Sans", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(name, 256, 50);
+    return new THREE.CanvasTexture(c);
+  }
+  const stationObjs = stations.map(s => {
+    const g = new THREE.Group();
+    const plat = new THREE.Mesh(new THREE.BoxGeometry(4, 0.9, 60), platMat);
+    plat.position.set(3.6, 0.45, 0);
+    const postMat = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
+    const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 6), postMat);
+    postL.position.set(1.95, 1.3, -28);
+    const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 6), postMat);
+    postR.position.set(5.25, 1.3, -28);
+    const board = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.75, 0.08),
+      new THREE.MeshBasicMaterial({ map: makeNameTexture(s.name) })
+    );
+    board.position.set(3.6, 2.5, -28);
+    g.add(plat, postL, postR, board);
+    stationGroup.add(g);
+    return g;
+  });
+
+  // Signals: entry (Hauptsignal + Vorsignal) and exit per station
+  const sigMatRed = new THREE.MeshBasicMaterial({ color: 0xff2a1e });
+  const sigMatGreen = new THREE.MeshBasicMaterial({ color: 0x35d15a });
+  const sigMatDim = new THREE.MeshBasicMaterial({ color: 0x222222 });
+  function makeSignalMast() {
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.2, 6), new THREE.MeshLambertMaterial({ color: 0x3a3a3a }));
+    pole.position.y = 1.6;
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.5, 10), new THREE.MeshLambertMaterial({ color: 0x111111 }));
+    head.rotation.z = Math.PI / 2;
+    head.position.y = 3.1;
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8), sigMatDim);
+    lamp.position.set(0, 3.1, 0.28);
+    g.add(pole, head, lamp);
+    g.userData.lamp = lamp;
+    return g;
+  }
+  const entrySignals = stations.map(() => makeSignalMast());
+  const exitSignals = stations.map(() => makeSignalMast());
+  const vorSignals = stations.map(() => {
+    const g = makeSignalMast();
+    g.scale.set(0.75, 0.75, 0.75);
+    return g;
+  });
+  [...entrySignals, ...exitSignals, ...vorSignals].forEach(g => scene.add(g));
+
+  /* ---------- Physik / Zustand ---------- */
+  const state = {
+    km: -0.05, speedKmh: 0, lever: 0, // -1 (Schnellbremse) .. 0 .. 1 (Volle Fahrt)
+    simTime: 0, running: true, ended: false,
+    pzbActive: false, pzbTimer: 0, pzbPhase: null, wachsamWindowOpen: false,
+    sifaTimer: 0, sifaBlinking: false, sifaWindowOpen: false,
+    emergencyBrake: false, emergencyReason: '', ebCount: 0,
+    waitingCrossing: null, crossingTimer: 0,
+    stopTimer: 0, atStop: null,
+    currentIdx: 0, log: []
+  };
+
+  const MASS_T = train.mass;
+  const ACCEL_MAX = 0.55 * train.power;       // m/s^2 bei Volllast
+  const BRAKE_SERVICE = 0.75 * train.brake;   // m/s^2 Betriebsbremse
+  const BRAKE_QUICK = 1.15;                   // m/s^2 Schnellbremse / Zwangsbremse
+
+  function kmhToMs(v) { return v / 3.6; }
+  function msToKmh(v) { return v * 3.6; }
+
+  function currentSegmentTargetSpeed(km) {
+    // Geschwindigkeit reduzieren bei Annäherung an Halt / rotes Signal
+    let target = maxSpeedFor(km);
+    for (let i = 0; i < stations.length; i++) {
+      const s = stations[i];
+      if (s.passed) continue;
+      const distToStop = (s.relKm - km) * 1000; // m
+      if (s.isStop && distToStop < 900 && distToStop > -20) {
+        const braking = Math.sqrt(2 * BRAKE_SERVICE * Math.max(distToStop, 0)) * 3.6;
+        target = Math.min(target, braking);
+      }
+      if (!s.entryRed) continue;
+      const distToSignal = (s.entrySignalKm - km) * 1000;
+      if (distToSignal > -20 && distToSignal < 900) {
+        const braking = Math.sqrt(2 * BRAKE_SERVICE * Math.max(distToSignal, 0)) * 3.6;
+        target = Math.min(target, braking);
+      }
+    }
+    return target;
+  }
+
+  function fmtClock(sec) {
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function showMsg(text, ms = 2200) {
+    const el = document.getElementById('signalMsg');
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(showMsg._t);
+    showMsg._t = setTimeout(() => el.classList.remove('show'), ms);
+  }
+
+  function triggerEB(reason) {
+    if (state.emergencyBrake) return;
+    state.emergencyBrake = true;
+    state.emergencyReason = reason;
+    state.ebCount++;
+    document.getElementById('ebOverlay').classList.add('show');
+    setTimeout(() => {
+      document.getElementById('ebOverlay').classList.remove('show');
+      state.emergencyBrake = false;
+    }, 3500);
+  }
+
+  /* ---------- HUD Controls ---------- */
+  const knob = document.getElementById('leverKnob');
+  const track = document.getElementById('leverTrack');
+  let dragging = false;
+  function setLeverFromClientY(clientY) {
+    const rect = track.getBoundingClientRect();
+    const usable = rect.height - 34;
+    let rel = (clientY - rect.top - 17) / usable; // 0 top .. 1 bottom
+    rel = Math.min(1, Math.max(0, rel));
+    state.lever = 1 - rel * 2; // 1 top(power) .. -1 bottom(brake)
+    knob.style.top = (rel * usable + 17) + 'px';
+    knob.style.transform = 'translateY(-50%)';
+    knob.textContent = state.lever > 0.05 ? 'F' + Math.round(state.lever * 5) : state.lever < -0.05 ? 'B' + Math.round(-state.lever * 3) : '0';
+  }
+  setLeverFromClientY(track.getBoundingClientRect().top + 130);
+  knob.addEventListener('pointerdown', e => { dragging = true; knob.setPointerCapture(e.pointerId); });
+  knob.addEventListener('pointermove', e => { if (dragging) setLeverFromClientY(e.clientY); });
+  knob.addEventListener('pointerup', () => dragging = false);
+  knob.addEventListener('pointercancel', () => dragging = false);
+
+  document.getElementById('ebBtn').addEventListener('click', () => {
+    state.lever = -1;
+    setLeverFromClientY(track.getBoundingClientRect().bottom - 17);
+  });
+
+  document.getElementById('wachsamBtn').addEventListener('click', () => {
+    if (state.wachsamWindowOpen) {
+      state.wachsamWindowOpen = false;
+      state.pzbPhase = 'monitor';
+      document.getElementById('wachsamBtn').classList.remove('blink');
+      showMsg('PZB quittiert – Geschwindigkeit reduzieren', 1800);
+    }
+  });
+  document.getElementById('sifaBtn').addEventListener('click', () => {
+    if (state.sifaWindowOpen) {
+      state.sifaWindowOpen = false;
+      state.sifaBlinking = false;
+      state.sifaTimer = 0;
+      document.getElementById('sifaBtn').classList.remove('blink');
+    }
+  });
+
+  document.getElementById('exitBtn').addEventListener('click', () => {
+    if (confirm('Fahrt abbrechen und Führerstand verlassen?')) location.href = 'index.html';
+  });
+
+  /* ---------- Gauge drawing ---------- */
+  const gctx = document.getElementById('gauge').getContext('2d');
+  function drawGauge(speed, target) {
+    const cx = 110, cy = 110, r = 95;
+    gctx.clearRect(0, 0, 220, 220);
+    gctx.beginPath(); gctx.arc(cx, cy, r, 0, Math.PI * 2);
+    gctx.fillStyle = '#14150fcc'; gctx.fill();
+    gctx.lineWidth = 2; gctx.strokeStyle = '#3a3d31'; gctx.stroke();
+
+    const maxV = 160, startA = Math.PI * 0.75, endA = Math.PI * 2.25;
+    for (let v = 0; v <= maxV; v += 10) {
+      const a = startA + (v / maxV) * (endA - startA);
+      const big = v % 20 === 0;
+      const r1 = r - (big ? 16 : 10), r2 = r - 4;
+      gctx.beginPath();
+      gctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+      gctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+      gctx.strokeStyle = v > target + 2 ? '#e0574d' : '#d9dccf';
+      gctx.lineWidth = big ? 2.2 : 1.2;
+      gctx.stroke();
+      if (big) {
+        gctx.fillStyle = '#d9dccf'; gctx.font = '10px IBM Plex Mono, monospace'; gctx.textAlign = 'center';
+        gctx.fillText(v, cx + Math.cos(a) * (r1 - 10), cy + Math.sin(a) * (r1 - 10) + 3);
+      }
+    }
+    // target marker
+    const ta = startA + (Math.min(target, maxV) / maxV) * (endA - startA);
+    gctx.beginPath();
+    gctx.arc(cx + Math.cos(ta) * (r - 4), cy + Math.sin(ta) * (r - 4), 4, 0, Math.PI * 2);
+    gctx.fillStyle = '#ffb14e'; gctx.fill();
+
+    // needle
+    const na = startA + (Math.min(speed, maxV) / maxV) * (endA - startA);
+    gctx.beginPath();
+    gctx.moveTo(cx - Math.cos(na) * 10, cy - Math.sin(na) * 10);
+    gctx.lineTo(cx + Math.cos(na) * (r - 20), cy + Math.sin(na) * (r - 20));
+    gctx.strokeStyle = speed > target + 2 ? '#ff6b5e' : '#f2dad8';
+    gctx.lineWidth = 3;
+    gctx.stroke();
+    gctx.beginPath(); gctx.arc(cx, cy, 6, 0, Math.PI * 2); gctx.fillStyle = '#d9dccf'; gctx.fill();
+  }
+
+  /* ---------- Main loop ---------- */
+  let lastT = performance.now();
+  function frame(now) {
+    if (state.ended) return;
+    const dt = Math.min(0.1, (now - lastT) / 1000);
+    lastT = now;
+    step(dt);
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  function step(dt) {
+    state.simTime += dt;
+
+    // --- Fahrzielgeschwindigkeit & Bremsprofil ---
+    const target = currentSegmentTargetSpeed(state.km);
+    const speedMs = kmhToMs(state.speedKmh);
+
+    let accel = 0;
+    const overspeed = state.speedKmh > target + 3;
+    if (state.emergencyBrake || overspeed) {
+      accel = -BRAKE_QUICK;
+    } else if (state.lever > 0.03 && !state.atStop) {
+      accel = state.lever * ACCEL_MAX * (1 - Math.min(0.7, state.speedKmh / (route.maxSpeed * 1.3)));
+    } else if (state.lever < -0.03) {
+      accel = state.lever * BRAKE_QUICK; // negative
+    } else {
+      accel = -0.02; // Rollwiderstand
+    }
+
+    let newSpeedMs = Math.max(0, speedMs + accel * dt);
+    state.speedKmh = msToKmh(newSpeedMs);
+    state.km += (newSpeedMs * dt) / 1000;
+    if (state.km < 0) state.km = 0;
+
+    // --- Haltestellen-Logik ---
+    const s = stations[state.currentIdx];
+    if (s) {
+      const distM = (s.relKm - state.km) * 1000;
+      if (s.isStop && !s.passed && distM < 5 && distM > -40) {
+        if (state.speedKmh < 3) {
+          if (!s.stoppedHere) {
+            s.stoppedHere = true;
+            state.atStop = s;
+            state.stopTimer = 0;
+            const delay = state.simTime - s.sollArr;
+            s.arrDelay = delay;
+            document.getElementById('delayVal').textContent = delay > 20 ? `+${Math.round(delay)}s verspätet` : delay < -20 ? `${Math.round(-delay)}s zu früh` : 'pünktlich';
+            document.getElementById('delayVal').className = 'delay ' + (Math.abs(delay) > 20 ? 'late' : 'ontime');
+            showMsg(`Halt: ${s.name} erreicht`);
+          }
+        }
+      }
+      if (state.atStop === s) {
+        state.stopTimer += dt;
+        if (s.needsCrossing && !s.crossingCleared) {
+          state.waitingCrossing = s;
+          if (state.stopTimer > 3 && state.stopTimer < 3 + 0.02) showMsg('⏳ Zugkreuzung: Warten auf Gegenzug', 4000);
+          document.getElementById('crossingBanner').classList.toggle('show', true);
+          if (state.stopTimer > 22) { s.crossingCleared = true; document.getElementById('crossingBanner').classList.remove('show'); showMsg('✔ Gegenzug durchgefahren – Ausfahrt frei', 2000); }
+        } else if (state.stopTimer > 20) {
+          s.passed = true; state.atStop = null; state.currentIdx++;
+          document.getElementById('crossingBanner').classList.remove('show');
+        }
+      } else if (!s.isStop && distM < -40 && !s.passed) {
+        s.passed = true; state.currentIdx++;
+      } else if (s.isStop && distM < -60 && !s.passed) {
+        s.passed = true; state.currentIdx++;
+      }
+    } else {
+      // Endstation erreicht
+      if (state.speedKmh < 1 && !state.ended && state.km >= totalKm - 0.02) {
+        endRun();
+      }
+    }
+
+    // --- Signale Rot/Grün Status live (Vorsignal spiegelt Hauptsignal) ---
+    stations.forEach(st => { st.currentlyRed = !!st.entryRed && !st.passed; });
+
+    // --- PZB: Vorsignal-Überfahrt bei Warnstellung ---
+    stations.forEach((st, i) => {
+      if (st.currentlyRed && !st._pzbArmed) {
+        const vorKm = st.entrySignalKm - (route.singleTrack ? 0.4 : 0.7);
+        if (state.km >= vorKm && state.km < st.entrySignalKm) {
+          st._pzbArmed = true;
+          state.pzbActive = true;
+          state.pzbPhase = 'ack';
+          state.wachsamWindowOpen = true;
+          state.pzbTimer = 0;
+          document.getElementById('wachsamBtn').classList.add('blink');
+          showMsg('⚠ Vorsignal: Halt erwarten – PZB 1000Hz', 2500);
+        }
+      }
+    });
+    if (state.pzbActive) {
+      state.pzbTimer += dt;
+      if (state.pzbPhase === 'ack') {
+        if (state.pzbTimer > 4) {
+          triggerEB('PZB nicht quittiert (Wachsamkeit)');
+          state.pzbActive = false; state.wachsamWindowOpen = false;
+          document.getElementById('wachsamBtn').classList.remove('blink');
+        }
+      } else if (state.pzbPhase === 'monitor') {
+        if (state.pzbTimer > 23 && state.speedKmh > 65) {
+          triggerEB('PZB-Überwachung 65 km/h überschritten');
+          state.pzbActive = false;
+        }
+        const redAhead = stations.find(st => st.currentlyRed && (st.entrySignalKm - state.km) * 1000 < 30 && (st.entrySignalKm - state.km) * 1000 > -30);
+        if (redAhead && state.speedKmh > 3) {
+          triggerEB('Halt zeigendes Signal überfahren');
+        }
+        if (state.speedKmh < 2 || !stations.some(st => st.currentlyRed)) {
+          state.pzbActive = false;
+        }
+      }
+    }
+
+    // --- Sifa (Totmann) ---
+    state.sifaTimer += dt;
+    if (!state.sifaBlinking && state.sifaTimer > 28 && state.speedKmh > 5) {
+      state.sifaBlinking = true; state.sifaWindowOpen = true; state.pzbTimer40 = 0;
+      document.getElementById('sifaBtn').classList.add('blink');
+      state._sifaDeadline = state.simTime + 4;
+    }
+    if (state.sifaBlinking && state.simTime > state._sifaDeadline) {
+      triggerEB('Sifa nicht bestätigt');
+      state.sifaBlinking = false; state.sifaWindowOpen = false; state.sifaTimer = 0;
+      document.getElementById('sifaBtn').classList.remove('blink');
+    }
+    if (!state.sifaBlinking) state.sifaTimer = Math.min(state.sifaTimer, 28);
+    if (state.sifaWindowOpen === false && !state.sifaBlinking) { /* reset handled on click */ }
+
+    // --- HUD updaten ---
+    document.getElementById('digSpeed').textContent = Math.round(state.speedKmh);
+    document.getElementById('digTarget').textContent = 'Soll ' + Math.round(target);
+    drawGauge(state.speedKmh, target);
+    document.getElementById('lamp1000').className = 'lamp' + (state.pzbActive ? ' on1000' : '');
+
+    const nextStop = stations.find(st => st.isStop && !st.passed && st !== state.atStop) || stations[stations.length - 1];
+    if (nextStop) {
+      document.getElementById('nextStationName').textContent = nextStop.name + (nextStop.junction ? ' (Kreuzungsbf.)' : '');
+    }
+  }
+
+  function endRun() {
+    state.ended = true;
+    const dt = document.getElementById('endTable');
+    const lastDelay = stations[stations.length - 1].arrDelay || 0;
+    dt.innerHTML = `
+      <tr><td>Strecke</td><td>${route.name.split('·')[1] || route.name}</td></tr>
+      <tr><td>Zuggattung</td><td>${train.name}</td></tr>
+      <tr><td>Fahrzeit</td><td>${fmtClock(state.simTime)}</td></tr>
+      <tr><td>Ankunftsverspätung</td><td>${Math.round(lastDelay)}s</td></tr>
+      <tr><td>Zwangsbremsungen</td><td>${state.ebCount}</td></tr>
+      <tr><td>Bewertung</td><td>${state.ebCount === 0 && Math.abs(lastDelay) < 60 ? 'Sehr gut ✅' : state.ebCount <= 1 ? 'Befriedigend' : 'Nachbesprechung nötig'}</td></tr>
+    `;
+    document.getElementById('endPanel').classList.add('show');
+  }
+
+  function render() {
+    // Welt scrollt relativ zur (fest stehenden) Kamera, Position folgt state.km
+    railTex.offset.y = -state.km * 1000 / 8;
+
+    // Masten recyceln
+    masts.forEach((m, i) => {
+      let z = -((state.km * 1000 + i * MAST_SPACING) % (MAST_SPACING * MAST_COUNT));
+      if (z > 5) z -= MAST_SPACING * MAST_COUNT;
+      m.position.z = z;
+    });
+    trees.forEach((tr, i) => {
+      let z = -((state.km * 1000 + i * TREE_SPACING + (tr.side > 0 ? TREE_SPACING / 2 : 0)) % (TREE_SPACING * TREE_COUNT));
+      if (z > 8) z -= TREE_SPACING * TREE_COUNT;
+      tr.obj.position.z = z;
+    });
+
+    // Stationen & Signale absolut positionieren
+    stations.forEach((s, i) => {
+      const z = -(s.relKm - state.km) * 1000;
+      stationObjs[i].position.z = z;
+      entrySignals[i].position.set(-2.9, 0, -(s.entrySignalKm - state.km) * 1000);
+      exitSignals[i].position.set(2.9, 0, -(s.exitSignalKm - state.km) * 1000);
+      const vorKm = s.entrySignalKm - (route.singleTrack ? 0.4 : 0.7);
+      vorSignals[i].position.set(-2.6, 0, -(vorKm - state.km) * 1000);
+
+      const redMat = s.currentlyRed ? sigMatRed : sigMatGreen;
+      entrySignals[i].userData.lamp.material = s.passed ? sigMatDim : redMat;
+      vorSignals[i].userData.lamp.material = s.passed ? sigMatDim : redMat;
+      exitSignals[i].userData.lamp.material = (state.waitingCrossing === s && !s.crossingCleared) ? sigMatRed : sigMatGreen;
+    });
+
+    ground.position.z = -2000; // static, camera fixed at origin
+    ballast.position.z = -2000;
+    railBed.position.z = -2000;
+
+    // leichtes Wippen für Fahrgefühl
+    camera.position.y = 3.4 + Math.sin(state.simTime * 6) * 0.006;
+    camera.rotation.z = Math.sin(state.simTime * 3.1) * 0.001;
+
+    renderer.render(scene, camera);
+  }
+
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
