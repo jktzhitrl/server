@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lageplan Obersosa – Mitteltrasse Los 5</title>
+<style>
+  :root {
+    --bg: #f5f3ed; --surface: #ffffff; --ink: #191b18; --ink-soft: #55594f;
+    --line: #d9d5c7; --accent: #a8201a; --accent-soft: #f2dad8; --accent-ink: #741512;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141613; --surface: #1c1f1b; --ink: #edece7; --ink-soft: #a2a699;
+      --line: #32352e; --accent: #e0574d; --accent-soft: #38221f; --accent-ink: #f3a49e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141613; --surface: #1c1f1b; --ink: #edece7; --ink-soft: #a2a699;
+    --line: #32352e; --accent: #e0574d; --accent-soft: #38221f; --accent-ink: #f3a49e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif;
+    margin: 0; padding-inline: 20px; padding-block: 28px 56px; line-height: 1.5;
+  }
+  .wrap { max-width: 1340px; margin: 0 auto; }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink);
+    background: var(--accent-soft); display: inline-block; padding: 3px 9px;
+    border-radius: 3px; margin-bottom: 12px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 36px); margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 78ch; margin: 0 0 26px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .diagram-scroll { overflow-x: auto; }
+  svg.plan { width: 100%; height: auto; min-width: 1200px; display: block; }
+  svg.plan text { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  h2 { font-size: 19px; margin: 0 0 4px; }
+  h3 { font-size: 13.5px; margin: 0 0 8px; }
+  .panel-note { color: var(--ink-soft); font-size: 13.5px; margin: 0 0 16px; max-width: 80ch; }
+  .rules {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px;
+    color: var(--ink-soft); border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px;
+  }
+  .rules span { display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    text-align: left; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10.5px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft);
+    padding: 0 10px 8px; border-bottom: 1px solid var(--line);
+  }
+  tbody td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--accent-ink); font-weight: 600; white-space: nowrap; }
+  .table-scroll { overflow-x: auto; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+  .legend { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; color: var(--ink-soft); }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .caveat {
+    background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+    border-radius: 8px; padding: 12px 14px; font-size: 13px; color: var(--ink); margin-top: 14px;
+  }
+  .caveat strong { color: var(--accent-ink); }
+  footer.foot { margin-top: 26px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="kicker">Los 5 · Sicherungstechnischer Lageplan · Ril 819.9001 / 819.9002</span>
+  <h1>Lageplan Obersosa</h1>
+  <p class="sub">
+    Obersosa ist der <strong>Knoten des Loses</strong> – hier treffen <strong>fünf
+    Zulaufrichtungen</strong> zusammen: Krug und Erx, Silberberg und Bernstein sowie Windingen
+    und Güterbahnhof am Westkopf, Furth und Neumark am Ostkopf. Sechs Bahnsteiggleise an vier
+    Bahnsteigen, dazu ein Güter- und Abstellgleis. Das Empfangsgebäude liegt im Süden – von dort
+    zählen die Gleisnummern nach Ril 819.9001 Abschnitt 2 (3) aufsteigend. Gleisbelegung und
+    Abfahrtsminuten sind der Projektarbeit entnommen.
+  </p>
+
+  <section class="panel">
+    <h2>Gleistopologie</h2>
+    <p class="panel-note">
+      Symbole nach Ril 819.9002: Weichenanfang und Weichenmitte je als senkrechter Strich, ab der
+      Weichenmitte die Schwärzung zum Zweiggleis, dahinter das Grenzzeichen. Zusatzsignale nach
+      819.9002A01, wie an einem stehenden Mast angeordnet: <strong>Zs 3</strong>
+      Geschwindigkeitsanzeiger als Dreieck mit der Spitze nach oben, <strong>Zs 2</strong>
+      Richtungsanzeiger als Fünfeck, <strong>Zs 6</strong> Gleiswechselanzeiger als Quadrat mit
+      Diagonale. Festprellböcke an den Gleisen 5, 6 und 7.
+    </p>
+    <div class="diagram-scroll">
+      <svg class="plan" viewBox="0 0 3100 940" role="img" aria-label="Sicherungstechnischer Lageplan des Knotens Obersosa. Sieben Gleise, davon sechs Bahnsteiggleise an vier Bahnsteigen; Empfangsgebäude und Hauptzugang im Süden. Fünf Zulaufrichtungen: am Westkopf Krug und Erx, Silberberg und Bernstein sowie Windingen und Güterbahnhof, am Ostkopf Furth und Neumark. An beiden Bahnhofsköpfen eine Gleisharfe aus je sechs Weichenpaaren, die benachbarte Gleise verbindet. Zwischensignale ZU und ZR teilen die Gleise 1, 2 und 5 in die Abschnitte a und b. Einfahrsignale A, AA, B, BB und C am Westkopf, F, FF und G am Ostkopf; Ausfahrsignale P1 bis P7 nach Westen und N1 bis N7 nach Osten mit Zs 2 Richtungsanzeiger.">
+        <text x="1560" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="currentColor">Obersosa</text>
+<text x="1560" y="48" text-anchor="middle" font-size="11" fill="var(--ink-soft)">Knoten mit fünf Zulaufrichtungen · Strecke 1 km 63,5 · Strecke 2 km 51,0</text>
+<g stroke="currentColor" fill="none" stroke-width="3"><line x1="40" y1="638" x2="3060" y2="638"/><line x1="40" y1="550" x2="3060" y2="550"/><line x1="590" y1="462" x2="2760" y2="462"/><line x1="40" y1="374" x2="2630" y2="374"/><line x1="40" y1="286" x2="2500" y2="286"/><line x1="200" y1="198" x2="3060" y2="198"/><line x1="40" y1="110" x2="2960" y2="110"/></g>
+<g stroke="currentColor" stroke-width="3" fill="none"><line x1="2946" y1="110" x2="2960" y2="110"/><line x1="2960" y1="97" x2="2960" y2="123"/><line x1="2960" y1="97" x2="2951" y2="97"/><line x1="2960" y1="123" x2="2951" y2="123"/></g>
+<line x1="200" y1="101" x2="200" y2="119" stroke="currentColor" stroke-width="2"/>
+<line x1="242" y1="101" x2="242" y2="119" stroke="currentColor" stroke-width="2"/>
+<polygon points="242,110 300,110 300,144" fill="currentColor"/>
+<text x="242" y="138" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">1</text>
+<line x1="470" y1="189" x2="470" y2="207" stroke="currentColor" stroke-width="2"/>
+<line x1="428" y1="189" x2="428" y2="207" stroke="currentColor" stroke-width="2"/>
+<polygon points="428,198 370,198 370,164" fill="currentColor"/>
+<text x="428" y="181" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">3</text>
+<line x1="300" y1="144" x2="370" y2="164" stroke="currentColor" stroke-width="3"/>
+<line x1="318.0" y1="155.4" x2="321.2" y2="143.8" stroke="currentColor" stroke-width="2"/>
+<line x1="348.8" y1="164.2" x2="352.0" y2="152.6" stroke="currentColor" stroke-width="2"/>
+<line x1="330" y1="189" x2="330" y2="207" stroke="currentColor" stroke-width="2"/>
+<line x1="372" y1="189" x2="372" y2="207" stroke="currentColor" stroke-width="2"/>
+<polygon points="372,198 430,198 430,232" fill="currentColor"/>
+<text x="372" y="226" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">2</text>
+<line x1="600" y1="277" x2="600" y2="295" stroke="currentColor" stroke-width="2"/>
+<line x1="558" y1="277" x2="558" y2="295" stroke="currentColor" stroke-width="2"/>
+<polygon points="558,286 500,286 500,252" fill="currentColor"/>
+<text x="558" y="269" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">5</text>
+<line x1="430" y1="232" x2="500" y2="252" stroke="currentColor" stroke-width="3"/>
+<line x1="448.0" y1="243.4" x2="451.2" y2="231.8" stroke="currentColor" stroke-width="2"/>
+<line x1="478.8" y1="252.2" x2="482.0" y2="240.6" stroke="currentColor" stroke-width="2"/>
+<line x1="460" y1="277" x2="460" y2="295" stroke="currentColor" stroke-width="2"/>
+<line x1="502" y1="277" x2="502" y2="295" stroke="currentColor" stroke-width="2"/>
+<polygon points="502,286 560,286 560,320" fill="currentColor"/>
+<text x="502" y="314" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">4</text>
+<line x1="730" y1="365" x2="730" y2="383" stroke="currentColor" stroke-width="2"/>
+<line x1="688" y1="365" x2="688" y2="383" stroke="currentColor" stroke-width="2"/>
+<polygon points="688,374 630,374 630,340" fill="currentColor"/>
+<text x="688" y="357" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">7</text>
+<line x1="560" y1="320" x2="630" y2="340" stroke="currentColor" stroke-width="3"/>
+<line x1="578.0" y1="331.4" x2="581.2" y2="319.8" stroke="currentColor" stroke-width="2"/>
+<line x1="608.8" y1="340.2" x2="612.0" y2="328.6" stroke="currentColor" stroke-width="2"/>
+<line x1="590" y1="365" x2="590" y2="383" stroke="currentColor" stroke-width="2"/>
+<line x1="632" y1="365" x2="632" y2="383" stroke="currentColor" stroke-width="2"/>
+<polygon points="632,374 690,374 690,408" fill="currentColor"/>
+<text x="632" y="402" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">6</text>
+<line x1="860" y1="453" x2="860" y2="471" stroke="currentColor" stroke-width="2"/>
+<line x1="818" y1="453" x2="818" y2="471" stroke="currentColor" stroke-width="2"/>
+<polygon points="818,462 760,462 760,428" fill="currentColor"/>
+<text x="818" y="445" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">9</text>
+<line x1="690" y1="408" x2="760" y2="428" stroke="currentColor" stroke-width="3"/>
+<line x1="708.0" y1="419.4" x2="711.2" y2="407.8" stroke="currentColor" stroke-width="2"/>
+<line x1="738.8" y1="428.2" x2="742.0" y2="416.6" stroke="currentColor" stroke-width="2"/>
+<line x1="720" y1="453" x2="720" y2="471" stroke="currentColor" stroke-width="2"/>
+<line x1="762" y1="453" x2="762" y2="471" stroke="currentColor" stroke-width="2"/>
+<polygon points="762,462 820,462 820,496" fill="currentColor"/>
+<text x="762" y="490" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">8</text>
+<line x1="990" y1="541" x2="990" y2="559" stroke="currentColor" stroke-width="2"/>
+<line x1="948" y1="541" x2="948" y2="559" stroke="currentColor" stroke-width="2"/>
+<polygon points="948,550 890,550 890,516" fill="currentColor"/>
+<text x="948" y="533" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">11</text>
+<line x1="820" y1="496" x2="890" y2="516" stroke="currentColor" stroke-width="3"/>
+<line x1="838.0" y1="507.4" x2="841.2" y2="495.8" stroke="currentColor" stroke-width="2"/>
+<line x1="868.8" y1="516.2" x2="872.0" y2="504.6" stroke="currentColor" stroke-width="2"/>
+<line x1="850" y1="541" x2="850" y2="559" stroke="currentColor" stroke-width="2"/>
+<line x1="892" y1="541" x2="892" y2="559" stroke="currentColor" stroke-width="2"/>
+<polygon points="892,550 950,550 950,584" fill="currentColor"/>
+<text x="892" y="578" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">10</text>
+<line x1="1120" y1="629" x2="1120" y2="647" stroke="currentColor" stroke-width="2"/>
+<line x1="1078" y1="629" x2="1078" y2="647" stroke="currentColor" stroke-width="2"/>
+<polygon points="1078,638 1020,638 1020,604" fill="currentColor"/>
+<text x="1078" y="621" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">12</text>
+<line x1="950" y1="584" x2="1020" y2="604" stroke="currentColor" stroke-width="3"/>
+<line x1="968.0" y1="595.4" x2="971.2" y2="583.8" stroke="currentColor" stroke-width="2"/>
+<line x1="998.8" y1="604.2" x2="1002.0" y2="592.6" stroke="currentColor" stroke-width="2"/>
+<line x1="2370" y1="101" x2="2370" y2="119" stroke="currentColor" stroke-width="2"/>
+<line x1="2328" y1="101" x2="2328" y2="119" stroke="currentColor" stroke-width="2"/>
+<polygon points="2328,110 2270,110 2270,144" fill="currentColor"/>
+<text x="2328" y="138" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">15</text>
+<line x1="2100" y1="189" x2="2100" y2="207" stroke="currentColor" stroke-width="2"/>
+<line x1="2142" y1="189" x2="2142" y2="207" stroke="currentColor" stroke-width="2"/>
+<polygon points="2142,198 2200,198 2200,164" fill="currentColor"/>
+<text x="2142" y="181" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">13</text>
+<line x1="2270" y1="144" x2="2200" y2="164" stroke="currentColor" stroke-width="3"/>
+<line x1="2248.8" y1="143.8" x2="2252.0" y2="155.4" stroke="currentColor" stroke-width="2"/>
+<line x1="2218.0" y1="152.6" x2="2221.2" y2="164.2" stroke="currentColor" stroke-width="2"/>
+<line x1="2500" y1="189" x2="2500" y2="207" stroke="currentColor" stroke-width="2"/>
+<line x1="2458" y1="189" x2="2458" y2="207" stroke="currentColor" stroke-width="2"/>
+<polygon points="2458,198 2400,198 2400,232" fill="currentColor"/>
+<text x="2458" y="226" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">17</text>
+<line x1="2230" y1="277" x2="2230" y2="295" stroke="currentColor" stroke-width="2"/>
+<line x1="2272" y1="277" x2="2272" y2="295" stroke="currentColor" stroke-width="2"/>
+<polygon points="2272,286 2330,286 2330,252" fill="currentColor"/>
+<text x="2272" y="269" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">14</text>
+<line x1="2400" y1="232" x2="2330" y2="252" stroke="currentColor" stroke-width="3"/>
+<line x1="2378.8" y1="231.8" x2="2382.0" y2="243.4" stroke="currentColor" stroke-width="2"/>
+<line x1="2348.0" y1="240.6" x2="2351.2" y2="252.2" stroke="currentColor" stroke-width="2"/>
+<line x1="2630" y1="277" x2="2630" y2="295" stroke="currentColor" stroke-width="2"/>
+<line x1="2588" y1="277" x2="2588" y2="295" stroke="currentColor" stroke-width="2"/>
+<polygon points="2588,286 2530,286 2530,320" fill="currentColor"/>
+<text x="2588" y="314" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">19</text>
+<line x1="2360" y1="365" x2="2360" y2="383" stroke="currentColor" stroke-width="2"/>
+<line x1="2402" y1="365" x2="2402" y2="383" stroke="currentColor" stroke-width="2"/>
+<polygon points="2402,374 2460,374 2460,340" fill="currentColor"/>
+<text x="2402" y="357" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">16</text>
+<line x1="2530" y1="320" x2="2460" y2="340" stroke="currentColor" stroke-width="3"/>
+<line x1="2508.8" y1="319.8" x2="2512.0" y2="331.4" stroke="currentColor" stroke-width="2"/>
+<line x1="2478.0" y1="328.6" x2="2481.2" y2="340.2" stroke="currentColor" stroke-width="2"/>
+<line x1="2760" y1="365" x2="2760" y2="383" stroke="currentColor" stroke-width="2"/>
+<line x1="2718" y1="365" x2="2718" y2="383" stroke="currentColor" stroke-width="2"/>
+<polygon points="2718,374 2660,374 2660,408" fill="currentColor"/>
+<text x="2718" y="402" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">21</text>
+<line x1="2490" y1="453" x2="2490" y2="471" stroke="currentColor" stroke-width="2"/>
+<line x1="2532" y1="453" x2="2532" y2="471" stroke="currentColor" stroke-width="2"/>
+<polygon points="2532,462 2590,462 2590,428" fill="currentColor"/>
+<text x="2532" y="445" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">18</text>
+<line x1="2660" y1="408" x2="2590" y2="428" stroke="currentColor" stroke-width="3"/>
+<line x1="2638.8" y1="407.8" x2="2642.0" y2="419.4" stroke="currentColor" stroke-width="2"/>
+<line x1="2608.0" y1="416.6" x2="2611.2" y2="428.2" stroke="currentColor" stroke-width="2"/>
+<line x1="2890" y1="453" x2="2890" y2="471" stroke="currentColor" stroke-width="2"/>
+<line x1="2848" y1="453" x2="2848" y2="471" stroke="currentColor" stroke-width="2"/>
+<polygon points="2848,462 2790,462 2790,496" fill="currentColor"/>
+<text x="2848" y="490" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">23</text>
+<line x1="2620" y1="541" x2="2620" y2="559" stroke="currentColor" stroke-width="2"/>
+<line x1="2662" y1="541" x2="2662" y2="559" stroke="currentColor" stroke-width="2"/>
+<polygon points="2662,550 2720,550 2720,516" fill="currentColor"/>
+<text x="2662" y="533" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">20</text>
+<line x1="2790" y1="496" x2="2720" y2="516" stroke="currentColor" stroke-width="3"/>
+<line x1="2768.8" y1="495.8" x2="2772.0" y2="507.4" stroke="currentColor" stroke-width="2"/>
+<line x1="2738.0" y1="504.6" x2="2741.2" y2="516.2" stroke="currentColor" stroke-width="2"/>
+<line x1="3020" y1="541" x2="3020" y2="559" stroke="currentColor" stroke-width="2"/>
+<line x1="2978" y1="541" x2="2978" y2="559" stroke="currentColor" stroke-width="2"/>
+<polygon points="2978,550 2920,550 2920,584" fill="currentColor"/>
+<text x="2978" y="578" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">24</text>
+<line x1="2750" y1="629" x2="2750" y2="647" stroke="currentColor" stroke-width="2"/>
+<line x1="2792" y1="629" x2="2792" y2="647" stroke="currentColor" stroke-width="2"/>
+<polygon points="2792,638 2850,638 2850,604" fill="currentColor"/>
+<text x="2792" y="621" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">22</text>
+<line x1="2920" y1="584" x2="2850" y2="604" stroke="currentColor" stroke-width="3"/>
+<line x1="2898.8" y1="583.8" x2="2902.0" y2="595.4" stroke="currentColor" stroke-width="2"/>
+<line x1="2868.0" y1="592.6" x2="2871.2" y2="604.2" stroke="currentColor" stroke-width="2"/>
+<rect x="1240" y="218" width="640" height="48" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/><text x="1560.0" y="247.0" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 4 · Gleis 6 und 5</text>
+<rect x="1240" y="394" width="640" height="48" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/><text x="1560.0" y="423.0" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 3 · Gleis 4 und 3</text>
+<rect x="1240" y="570" width="640" height="48" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/><text x="1560.0" y="599.0" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 2 · Gleis 2 und 1</text>
+<rect x="1240" y="662" width="640" height="42" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/><text x="1560.0" y="688.0" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 1 (Hausbahnsteig) · Gleis 1</text>
+<rect x="1410" y="738" width="300" height="48" fill="none" stroke="currentColor" stroke-width="2"/>
+<text x="1560" y="768" text-anchor="middle" font-size="12" fill="currentColor">Empfangsgebäude</text>
+<text x="1725" y="768" font-size="10.5" fill="var(--ink-soft)">Hauptzugang</text>
+<line x1="1560" y1="132" x2="1560" y2="706" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="3,4"/>
+<text x="1574" y="150" font-size="10.5" fill="var(--ink-soft)">Personenunterführung</text>
+<rect x="1548" y="628" width="24" height="20" fill="var(--surface)"/><text x="1560" y="644" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">1</text>
+<rect x="1548" y="540" width="24" height="20" fill="var(--surface)"/><text x="1560" y="556" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">2</text>
+<rect x="1548" y="452" width="24" height="20" fill="var(--surface)"/><text x="1560" y="468" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">3</text>
+<rect x="1548" y="364" width="24" height="20" fill="var(--surface)"/><text x="1560" y="380" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">4</text>
+<rect x="1548" y="276" width="24" height="20" fill="var(--surface)"/><text x="1560" y="292" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">5</text>
+<rect x="1548" y="188" width="24" height="20" fill="var(--surface)"/><text x="1560" y="204" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">6</text>
+<rect x="1548" y="100" width="24" height="20" fill="var(--surface)"/><text x="1560" y="116" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">7</text>
+<g fill="var(--ink-soft)" font-size="12"><text x="46" y="660">(1)</text><text x="46" y="540">(2)</text><text x="46" y="396">(1)</text><text x="46" y="276">(2)</text><text x="46" y="100">(1)</text><text x="3054" y="188" text-anchor="end">(1)</text><text x="3054" y="660" text-anchor="end">(1)</text><text x="3054" y="540" text-anchor="end">(2)</text></g>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="95" y1="614" x2="95" y2="628"/><line x1="95" y1="621" x2="111" y2="621"/></g>
+<rect x="111" y="615" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="126,627 140,627 133,614" fill="currentColor"/>
+<text x="133" y="610" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<text x="87" y="625" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">A</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="145" y1="560" x2="145" y2="574"/><line x1="145" y1="567" x2="161" y2="567"/></g>
+<rect x="161" y="561" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="176,573 190,573 183,560" fill="currentColor"/>
+<text x="183" y="556" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<text x="137" y="571" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">AA</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="95" y1="350" x2="95" y2="364"/><line x1="95" y1="357" x2="111" y2="357"/></g>
+<rect x="111" y="351" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="126,363 140,363 133,350" fill="currentColor"/>
+<text x="133" y="346" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<text x="87" y="361" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">B</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="145" y1="296" x2="145" y2="310"/><line x1="145" y1="303" x2="161" y2="303"/></g>
+<rect x="161" y="297" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="176,309 190,309 183,296" fill="currentColor"/>
+<text x="183" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<text x="137" y="307" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">BB</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="95" y1="86" x2="95" y2="100"/><line x1="95" y1="93" x2="111" y2="93"/></g>
+<rect x="111" y="87" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="126,99 140,99 133,86" fill="currentColor"/>
+<text x="133" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="87" y="97" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">C</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="3025" y1="560" x2="3025" y2="574"/><line x1="3025" y1="567" x2="3009" y2="567"/></g>
+<rect x="2991" y="561" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="2980,573 2994,573 2987,560" fill="currentColor"/>
+<text x="2987" y="556" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<text x="3033" y="571" font-size="13" font-weight="600" fill="currentColor">F</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="2970" y1="614" x2="2970" y2="628"/><line x1="2970" y1="621" x2="2954" y2="621"/></g>
+<rect x="2936" y="615" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="2925,627 2939,627 2932,614" fill="currentColor"/>
+<text x="2932" y="610" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<text x="2978" y="625" font-size="13" font-weight="600" fill="currentColor">FF</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="3025" y1="208" x2="3025" y2="222"/><line x1="3025" y1="215" x2="3009" y2="215"/></g>
+<rect x="2991" y="209" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="2980,221 2994,221 2987,208" fill="currentColor"/>
+<text x="2987" y="204" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="3033" y="219" font-size="13" font-weight="600" fill="currentColor">G</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1180" y1="614" x2="1180" y2="628"/><line x1="1180" y1="621" x2="1164" y2="621"/></g>
+<rect x="1146" y="615" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1135,627 1149,627 1142,614" fill="currentColor"/>
+<text x="1142" y="610" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<polygon points="1105,628 1105,619 1112,613 1119,619 1119,628" fill="currentColor"/>
+<text x="1112" y="608" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">K,S,W</text>
+<text x="1188" y="625" font-size="13" font-weight="600" fill="currentColor">P1</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1180" y1="560" x2="1180" y2="574"/><line x1="1180" y1="567" x2="1166" y2="567"/></g>
+<rect x="1153" y="560.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"/>
+<polygon points="1166,560.5 1153,560.5 1153,573.5" fill="currentColor"/>
+<rect x="1135" y="561" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1124,573 1138,573 1131,560" fill="currentColor"/>
+<text x="1131" y="556" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<polygon points="1094,574 1094,565 1101,559 1108,565 1108,574" fill="currentColor"/>
+<text x="1101" y="554" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">K,S,W</text>
+<text x="1188" y="571" font-size="13" font-weight="600" fill="currentColor">P2</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1180" y1="472" x2="1180" y2="486"/><line x1="1180" y1="479" x2="1164" y2="479"/></g>
+<rect x="1146" y="473" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1135,485 1149,485 1142,472" fill="currentColor"/>
+<text x="1142" y="468" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="1105,486 1105,477 1112,471 1119,477 1119,486" fill="currentColor"/>
+<text x="1112" y="466" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">K,S,W</text>
+<text x="1188" y="483" font-size="13" font-weight="600" fill="currentColor">P3</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1180" y1="384" x2="1180" y2="398"/><line x1="1180" y1="391" x2="1164" y2="391"/></g>
+<rect x="1146" y="385" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1135,397 1149,397 1142,384" fill="currentColor"/>
+<text x="1142" y="380" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="1105,398 1105,389 1112,383 1119,389 1119,398" fill="currentColor"/>
+<text x="1112" y="378" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">K,S,W</text>
+<text x="1188" y="395" font-size="13" font-weight="600" fill="currentColor">P4</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1180" y1="296" x2="1180" y2="310"/><line x1="1180" y1="303" x2="1164" y2="303"/></g>
+<rect x="1146" y="297" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1135,309 1149,309 1142,296" fill="currentColor"/>
+<text x="1142" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="1105,310 1105,301 1112,295 1119,301 1119,310" fill="currentColor"/>
+<text x="1112" y="290" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">K,S,W</text>
+<text x="1188" y="307" font-size="13" font-weight="600" fill="currentColor">P5</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1180" y1="208" x2="1180" y2="222"/><line x1="1180" y1="215" x2="1164" y2="215"/></g>
+<rect x="1146" y="209" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1135,221 1149,221 1142,208" fill="currentColor"/>
+<text x="1142" y="204" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="1105,222 1105,213 1112,207 1119,213 1119,222" fill="currentColor"/>
+<text x="1112" y="202" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">K,S,W</text>
+<text x="1188" y="219" font-size="13" font-weight="600" fill="currentColor">P6</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1180" y1="120" x2="1180" y2="134"/><line x1="1180" y1="127" x2="1164" y2="127"/></g>
+<rect x="1146" y="121" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1135,133 1149,133 1142,120" fill="currentColor"/>
+<text x="1142" y="116" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1188" y="131" font-size="13" font-weight="600" fill="currentColor">P7</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1940" y1="614" x2="1940" y2="628"/><line x1="1940" y1="621" x2="1956" y2="621"/></g>
+<rect x="1956" y="615" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1971,627 1985,627 1978,614" fill="currentColor"/>
+<text x="1978" y="610" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<polygon points="2001,628 2001,619 2008,613 2015,619 2015,628" fill="currentColor"/>
+<text x="2008" y="608" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">F,N</text>
+<text x="1932" y="625" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1940" y1="560" x2="1940" y2="574"/><line x1="1940" y1="567" x2="1954" y2="567"/></g>
+<rect x="1954" y="560.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"/>
+<polygon points="1954,560.5 1967,560.5 1967,573.5" fill="currentColor"/>
+<rect x="1967" y="561" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1982,573 1996,573 1989,560" fill="currentColor"/>
+<text x="1989" y="556" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">6</text>
+<polygon points="2012,574 2012,565 2019,559 2026,565 2026,574" fill="currentColor"/>
+<text x="2019" y="554" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">F,N</text>
+<text x="1932" y="571" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N2</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1940" y1="472" x2="1940" y2="486"/><line x1="1940" y1="479" x2="1956" y2="479"/></g>
+<rect x="1956" y="473" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1971,485 1985,485 1978,472" fill="currentColor"/>
+<text x="1978" y="468" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="2001,486 2001,477 2008,471 2015,477 2015,486" fill="currentColor"/>
+<text x="2008" y="466" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">F,N</text>
+<text x="1932" y="483" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N3</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1940" y1="384" x2="1940" y2="398"/><line x1="1940" y1="391" x2="1956" y2="391"/></g>
+<rect x="1956" y="385" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1971,397 1985,397 1978,384" fill="currentColor"/>
+<text x="1978" y="380" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="2001,398 2001,389 2008,383 2015,389 2015,398" fill="currentColor"/>
+<text x="2008" y="378" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">F,N</text>
+<text x="1932" y="395" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N4</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1940" y1="296" x2="1940" y2="310"/><line x1="1940" y1="303" x2="1956" y2="303"/></g>
+<rect x="1956" y="297" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1971,309 1985,309 1978,296" fill="currentColor"/>
+<text x="1978" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="2001,310 2001,301 2008,295 2015,301 2015,310" fill="currentColor"/>
+<text x="2008" y="290" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">F,N</text>
+<text x="1932" y="307" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N5</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1940" y1="208" x2="1940" y2="222"/><line x1="1940" y1="215" x2="1956" y2="215"/></g>
+<rect x="1956" y="209" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1971,221 1985,221 1978,208" fill="currentColor"/>
+<text x="1978" y="204" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<polygon points="2001,222 2001,213 2008,207 2015,213 2015,222" fill="currentColor"/>
+<text x="2008" y="202" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">F,N</text>
+<text x="1932" y="219" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N6</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1940" y1="120" x2="1940" y2="134"/><line x1="1940" y1="127" x2="1956" y2="127"/></g>
+<rect x="1956" y="121" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1971,133 1985,133 1978,120" fill="currentColor"/>
+<text x="1978" y="116" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1932" y="131" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N7</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1520" y1="614" x2="1520" y2="628"/><line x1="1520" y1="621" x2="1504" y2="621"/></g>
+<rect x="1486" y="615" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1475,627 1489,627 1482,614" fill="currentColor"/>
+<text x="1482" y="610" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1528" y="625" font-size="13" font-weight="600" fill="currentColor">ZU1</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1600" y1="614" x2="1600" y2="628"/><line x1="1600" y1="621" x2="1616" y2="621"/></g>
+<rect x="1616" y="615" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1631,627 1645,627 1638,614" fill="currentColor"/>
+<text x="1638" y="610" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1592" y="625" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">ZR1</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1520" y1="560" x2="1520" y2="574"/><line x1="1520" y1="567" x2="1504" y2="567"/></g>
+<rect x="1486" y="561" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1475,573 1489,573 1482,560" fill="currentColor"/>
+<text x="1482" y="556" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1528" y="571" font-size="13" font-weight="600" fill="currentColor">ZU2</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1600" y1="560" x2="1600" y2="574"/><line x1="1600" y1="567" x2="1616" y2="567"/></g>
+<rect x="1616" y="561" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1631,573 1645,573 1638,560" fill="currentColor"/>
+<text x="1638" y="556" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1592" y="571" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">ZR2</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1520" y1="296" x2="1520" y2="310"/><line x1="1520" y1="303" x2="1504" y2="303"/></g>
+<rect x="1486" y="297" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1475,309 1489,309 1482,296" fill="currentColor"/>
+<text x="1482" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1528" y="307" font-size="13" font-weight="600" fill="currentColor">ZU5</text>
+<g stroke="currentColor" stroke-width="2" fill="none"><line x1="1600" y1="296" x2="1600" y2="310"/><line x1="1600" y1="303" x2="1616" y2="303"/></g>
+<rect x="1616" y="297" width="18" height="12" rx="6" fill="currentColor"/>
+<polygon points="1631,309 1645,309 1638,296" fill="currentColor"/>
+<text x="1638" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">4</text>
+<text x="1592" y="307" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">ZR5</text>
+<g fill="var(--ink-soft)" font-size="12" font-style="italic"><text x="40" y="828">← Altensund · Hyxel (km 49,0) · Waldenberg · Krug (km 34,5) · Erx</text><text x="40" y="846">Strecke 1 · Hauptbahn · zweigleisig mit Gleiswechselbetrieb · Hg 120 km/h · elektrifiziert · Obersosa km 63,5</text><text x="40" y="34">← Hochstein (km 46,0) · Silberberg (km 24,5) · Bernstein · zweigleisig</text><text x="40" y="52">← Gbf · Windingen · eingleisig</text><text x="3060" y="828" text-anchor="end">Kunststoffwerk · Rotheim · Feldheim (km 75,5) · Lossow · Furth (km 117,5) →</text><text x="3060" y="846" text-anchor="end">Strecke 1 · Angaben wie links</text><text x="3060" y="52" text-anchor="end">Kirchheim Hbf · Neumark · eingleisig →</text></g>
+      </svg>
+    </div>
+    <div class="rules">
+      <span>Gleis 1 und 2 sind die durchgehenden Hauptgleise der Strecke 1; Gleis 4 und 5 führen nach Silberberg, Gleis 7 nach Windingen, Gleis 6 nach Neumark.</span>
+      <span>An beiden Bahnhofsköpfen eine <strong>Gleisharfe</strong> aus je sechs Weichenpaaren: Damit ist jedes Gleis von jeder Richtung erreichbar.</span>
+      <span>Weichennummern steigen mit der Kilometrierung der Strecke 1, also von West nach Ost (Ril 819.9001 Abschnitt 3 (1)).</span>
+      <span>Die Zwischensignale ZU und ZR teilen die Gleise 1, 2 und 5 in die Abschnitte a und b – so passen zwei Vierteiler hintereinander an einen Bahnsteig.</span>
+      <span>Alle Weichen EW 1:9, Abzweiggeschwindigkeit 40 km/h; in den Fahrwegen der durchgehenden Hauptgleise EW 1:14 mit 60 km/h.</span>
+      <span>Beide Strecken elektrifiziert 15 kV 16,7 Hz. Die Fahrleitung selbst wird im sicherungstechnischen Lageplan nicht dargestellt.</span>
+      <span>Regel- und Gegengleis beschreiben nur die freie Strecke; im Bahnhof gibt es Bahnhofsgleise und Fahrstraßen.</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Betriebsprogramm</h2>
+    <p class="panel-note">
+      Gleisbelegung und Abfahrtsminuten stammen aus der Projektarbeit. Sechs Bahnsteiggleise
+      reichen, weil drei davon in die Abschnitte a und b geteilt sind: RB 62 und RB 63 enden
+      beide in Gleis 1, die beiden Äste des Flügelzuges RE 70/71 stehen hintereinander in
+      Gleis 2 und in Gleis 5. Ein Desiro HC und ein Mireo sind je Vierteiler – zwei davon
+      passen an einen Bahnsteig.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Zug</th><th>Weg durch Obersosa</th><th>Gleis</th></tr></thead>
+        <tbody><tr><td class="mono">RB 62<br>Neumark</td><td>Endet in Obersosa, steht im Abschnitt <strong>1a</strong>. Abfahrt Minute 20 und 50</td><td class="mono">1a</td></tr>
+<tr><td class="mono">RB 63<br>Krug</td><td>Endet in Obersosa, steht im Abschnitt <strong>1b</strong>. Abfahrt Minute 30</td><td class="mono">1b</td></tr>
+<tr><td class="mono">RE 71 · RE 70<br>Richtung Furth</td><td>Beide Äste des Flügelzuges stehen hintereinander: RE 71 an Minute 53 in 2a, RE 70 an Minute 57 in 2b, gemeinsame Abfahrt Minute 00</td><td class="mono">2a / 2b</td></tr>
+<tr><td class="mono">RB 61<br>Richtung Furth</td><td>Durchfahrt mit Halt, Abfahrt Minute 15 und 45 · dazu der Fernverkehr Richtung Furth Minute 55</td><td class="mono">3</td></tr>
+<tr><td class="mono">RB 61<br>Ri Waldenberg und Windingen</td><td>Abfahrt Minute 15 und 45 · dazu IC 13 Richtung Erx und Richtung Sandheide Minute 25</td><td class="mono">4</td></tr>
+<tr><td class="mono">RE 70/71<br>Teilung des Flügelzuges</td><td>Der Zug wird hier <strong>geteilt</strong>: RE 71 nach Bernstein ab Minute 07 aus 5a, RE 70 nach Erx ab Minute 03 aus 5b. Beide kommen an Minute 00</td><td class="mono">5a / 5b</td></tr>
+<tr><td class="mono">RB 65</td><td>Richtung Sandheide ab Minute 28, Richtung Furth ab Minute 32</td><td class="mono">6</td></tr>
+<tr><td class="mono">Güterverkehr</td><td>Überholung und Abstellung ohne Bahnsteig, Prellbock im Osten</td><td class="mono">7</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="two-col">
+      <div>
+        <h3>Weichenverzeichnis</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Lageplan</th><th>Verbindung</th></tr></thead>
+            <tbody><tr><td class="mono">1 / 3</td><td>Gleis 7 ↔ Gleis 6 · Westkopf</td></tr>
+<tr><td class="mono">2 / 5</td><td>Gleis 6 ↔ Gleis 5 · Westkopf</td></tr>
+<tr><td class="mono">4 / 7</td><td>Gleis 5 ↔ Gleis 4 · Westkopf</td></tr>
+<tr><td class="mono">6 / 9</td><td>Gleis 4 ↔ Gleis 3 · Westkopf</td></tr>
+<tr><td class="mono">8 / 11</td><td>Gleis 3 ↔ Gleis 2 · Westkopf</td></tr>
+<tr><td class="mono">10 / 12</td><td>Gleis 2 ↔ Gleis 1 · Westkopf</td></tr>
+<tr><td class="mono">13 / 15</td><td>Gleis 7 ↔ Gleis 6 · Ostkopf</td></tr>
+<tr><td class="mono">14 / 17</td><td>Gleis 6 ↔ Gleis 5 · Ostkopf</td></tr>
+<tr><td class="mono">16 / 19</td><td>Gleis 5 ↔ Gleis 4 · Ostkopf</td></tr>
+<tr><td class="mono">18 / 21</td><td>Gleis 4 ↔ Gleis 3 · Ostkopf</td></tr>
+<tr><td class="mono">20 / 23</td><td>Gleis 3 ↔ Gleis 2 · Ostkopf</td></tr>
+<tr><td class="mono">22 / 24</td><td>Gleis 2 ↔ Gleis 1 · Ostkopf</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3>Signalverzeichnis</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Lageplan</th><th>Funktion</th></tr></thead>
+            <tbody><tr><td class="mono">A · AA</td><td>Einfahrt von Waldenberg und Krug · AA für Fahrten auf dem <strong>Gegengleis</strong></td></tr>
+<tr><td class="mono">B · BB</td><td>Einfahrt von Hochstein und Silberberg · BB für das <strong>Gegengleis</strong></td></tr>
+<tr><td class="mono">C</td><td>Einfahrt vom Güterbahnhof und aus Windingen · eingleisig</td></tr>
+<tr><td class="mono">F · FF</td><td>Einfahrt von Lossow und Furth · FF für das <strong>Gegengleis</strong></td></tr>
+<tr><td class="mono">G</td><td>Einfahrt von Kirchheim und Neumark · eingleisig</td></tr>
+<tr><td class="mono">P1 – P7</td><td>Ausfahrt nach Westen · mit <strong>Zs 2 Richtungsanzeiger (K, S, W)</strong>, weil die Fahrt nach Krug, Silberberg oder Windingen führen kann</td></tr>
+<tr><td class="mono">N1 – N7</td><td>Ausfahrt nach Osten · mit <strong>Zs 2 (F, N)</strong> für Furth oder Neumark</td></tr>
+<tr><td class="mono">P2 · N2</td><td>zusätzlich <strong>Zs 6 Gleiswechselanzeiger</strong> für die Ausfahrt auf das Streckengleis der Gegenrichtung</td></tr>
+<tr><td class="mono">ZU1 · ZR1<br>ZU2 · ZR2<br>ZU5 · ZR5</td><td><strong>Zwischensignale</strong>, die die Gleise 1, 2 und 5 in die Abschnitte a und b teilen · ZR in Richtung der Kilometrierung, ZU entgegen (Ril 819.9001 Abschnitt 4 (3))</td></tr>
+<tr><td class="mono">—</td><td>Gesonderte Vorsignale entfallen: Vorsignalisierung über den Ks-2-Begriff</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="caveat">
+      <strong>Warum fünf Richtungen und nicht drei:</strong> Der Liniennetzplan der Projektarbeit
+      zeigt Obersosa als Kreuzungsknoten. Nach Westen gehen drei Strecken ab – nach Krug und Erx,
+      nach Silberberg und Bernstein sowie zum Güterbahnhof und nach Windingen –, nach Osten zwei:
+      nach Lossow und Furth und nach Kirchheim und Neumark. Deshalb braucht jeder Bahnhofskopf
+      eine vollständige Gleisharfe: Ein Zug aus Neumark muss Gleis 1 erreichen, ein Zug aus
+      Windingen Gleis 6, und der Flügelzug RE 70/71 muss aus Gleis 5 in zwei verschiedene
+      Richtungen ausfahren können. Das ist auch der Grund für die Zs 2 Richtungsanzeiger an
+      sämtlichen Ausfahrsignalen.
+    </div>
+
+    <div class="caveat">
+      <strong>Offene Punkte:</strong> Zugbeeinflussung, technisch gesicherter Bahnübergang und die
+      Bedieneinrichtungen der Stellwerke fehlen in diesem Blatt noch. Die Kilometrierung der
+      Einfahrsignale ist ebenfalls nachzutragen – der Bewertungsbogen fragt sie unter
+      „Kilometrierung (Esig, Mitte/EG, Bksig)" ausdrücklich ab. Nicht übernommen sind die
+      zweibuchstabigen Kästchen des handgezeichneten Plans (G,P · S,W · F,W · G,W), weil ihre
+      Bedeutung nicht geklärt ist. Dieses Blatt ist ein sauber gezeichneter Gegenentwurf, kein
+      Ersatz für den Originalplan.
+    </div>
+  </section>
+
+  <footer class="foot">LF 2 Jahresprojekt 2026 „Mitteltrasse" · 5. Teilabschnitt (Los 5) — Chemiezentrum</footer>
+</div>
+</body>
+</html>

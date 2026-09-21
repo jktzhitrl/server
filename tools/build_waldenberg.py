@@ -1,4 +1,35 @@
-<!DOCTYPE html>
+"""Erzeugt lageplan-waldenberg.html und zeichnung-waldenberg.html neu.
+
+Aufruf aus dem Repo-Wurzelverzeichnis:  python3 tools/build_waldenberg.py
+Die Gleisgeometrie steht in tools/waldenberg.py, hier nur der Seitenrahmen,
+die Tabellen und die Begleittexte.
+"""
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import waldenberg as w
+
+REPO = str(pathlib.Path(__file__).resolve().parent.parent) + "/"
+
+ARIA = ("Sicherungstechnischer Lageplan des Abzweigbahnhofs Waldenberg. Die zweigleisige "
+        "Hauptbahn (Strecke 1, Krug–Furth, km 37,5) läuft mit Gleis 2 (oben) und Gleis 1 (Mitte) durchgehend "
+        "gerade durch die Betriebsstelle. Gleis 3 ist Bahnsteiggleis der eingleisigen Nebenbahn "
+        "und geht östlich in die Strecke 3 nach Wehrheim–Sandheide–Gbf über, deren Kilometrierung "
+        "hier bei km 0,0 beginnt. Gleis 4 liegt als Lade- und Ausweichgleis südlich davon und ist "
+        "über die Weichen 4 und 5 an beiden Enden an Gleis 3 angebunden. Am Westkopf verbinden die "
+        "Weichen 1 und 2 als Überleitverbinder Gleis 2 und Gleis 1, Weiche 3 führt von Gleis 1 auf "
+        "Gleis 3. Am Ostkopf verbinden die Weichen 6 und 7 Gleis 1 mit der Nebenbahn, die Weichen 8 "
+        "und 9 bilden einen zweiten Überleitverbinder zwischen Gleis 2 und Gleis 1. Bahnsteig 1 ist "
+        "Hausbahnsteig an Gleis 2 am Empfangsgebäude, Bahnsteig 2 Mittelbahnsteig zwischen Gleis 1 "
+        "und Gleis 3, verbunden über eine Personenunterführung. Einfahrsignale A und AA von "
+        "Zollfurt, F und FF von Burgwald sowie G von Wehrheim; Ausfahrsignale N1, N2, N3, N4, P2 "
+        "und P3 sowie Zwischensignal ZU4; N2 und P3 mit Gegengleisanzeiger für die "
+        "Weiterfahrt auf dem Streckengleis der Gegenrichtung. Beide Strecken sind mit "
+        "15 kV 16,7 Hz elektrifiziert; Gleis 4 ist nicht elektrifiziert und an beiden "
+        "Verbindungsrampen mit dem Symbol für nicht elektrifiziertes Gleis gekennzeichnet.")
+
+LAGEPLAN = """<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -103,141 +134,8 @@
     </p>
 
     <div class="diagram-scroll">
-      <svg class="plan" viewBox="0 0 1920 560" role="img" aria-label="Sicherungstechnischer Lageplan des Abzweigbahnhofs Waldenberg. Die zweigleisige Hauptbahn (Strecke 1, Krug–Furth, km 37,5) läuft mit Gleis 2 (oben) und Gleis 1 (Mitte) durchgehend gerade durch die Betriebsstelle. Gleis 3 ist Bahnsteiggleis der eingleisigen Nebenbahn und geht östlich in die Strecke 3 nach Wehrheim–Sandheide–Gbf über, deren Kilometrierung hier bei km 0,0 beginnt. Gleis 4 liegt als Lade- und Ausweichgleis südlich davon und ist über die Weichen 4 und 5 an beiden Enden an Gleis 3 angebunden. Am Westkopf verbinden die Weichen 1 und 2 als Überleitverbinder Gleis 2 und Gleis 1, Weiche 3 führt von Gleis 1 auf Gleis 3. Am Ostkopf verbinden die Weichen 6 und 7 Gleis 1 mit der Nebenbahn, die Weichen 8 und 9 bilden einen zweiten Überleitverbinder zwischen Gleis 2 und Gleis 1. Bahnsteig 1 ist Hausbahnsteig an Gleis 2 am Empfangsgebäude, Bahnsteig 2 Mittelbahnsteig zwischen Gleis 1 und Gleis 3, verbunden über eine Personenunterführung. Einfahrsignale A und AA von Zollfurt, F und FF von Burgwald sowie G von Wehrheim; Ausfahrsignale N1, N2, N3, N4, P2 und P3 sowie Zwischensignal ZU4; N2 und P3 mit Gegengleisanzeiger für die Weiterfahrt auf dem Streckengleis der Gegenrichtung. Beide Strecken sind mit 15 kV 16,7 Hz elektrifiziert; Gleis 4 ist nicht elektrifiziert und an beiden Verbindungsrampen mit dem Symbol für nicht elektrifiziertes Gleis gekennzeichnet.">
-        <text x="850" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor">Waldenberg</text>
-        <text x="850" y="45" text-anchor="middle" font-size="11" fill="var(--ink-soft)">(Wbg) 31 · Abzweigbahnhof</text>
-        <g stroke="currentColor" fill="none" stroke-width="3"><line x1="40" y1="275" x2="1860" y2="275"/><line x1="40" y1="175" x2="1860" y2="175"/></g>
-        <g stroke="currentColor" fill="none" stroke-width="3"><line x1="658" y1="355" x2="1860" y2="355"/></g>
-        <line x1="878" y1="435" x2="1152" y2="435" stroke="currentColor" fill="none" stroke-width="2"/>
-        <text x="880" y="470" font-size="10.5" fill="var(--ink-soft)">Lade- und Ausweichgleis · ohne Fahrleitung</text>
-        <line x1="165" y1="166" x2="165" y2="184" stroke="currentColor" stroke-width="2"/>
-<line x1="207" y1="166" x2="207" y2="184" stroke="currentColor" stroke-width="2"/>
-<polygon points="207,175 265,175 265,207" fill="currentColor"/>
-<text x="207" y="202" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">1</text>
-        <line x1="440" y1="266" x2="440" y2="284" stroke="currentColor" stroke-width="2"/>
-<line x1="398" y1="266" x2="398" y2="284" stroke="currentColor" stroke-width="2"/>
-<polygon points="398,275 340,275 340,243" fill="currentColor"/>
-<text x="398" y="259" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">2</text>
-        <line x1="265" y1="207" x2="340" y2="243" stroke="currentColor" stroke-width="3"/>
-        <line x1="281.9" y1="221.8" x2="287.1" y2="211.0" stroke="currentColor" stroke-width="2"/>
-        <line x1="317.9" y1="239.0" x2="323.1" y2="228.2" stroke="currentColor" stroke-width="2"/>
-        <line x1="470" y1="266" x2="470" y2="284" stroke="currentColor" stroke-width="2"/>
-<line x1="512" y1="266" x2="512" y2="284" stroke="currentColor" stroke-width="2"/>
-<polygon points="512,275 570,275 570,307" fill="currentColor"/>
-<text x="512" y="302" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">3</text>
-        <line x1="570" y1="307" x2="658" y2="355" stroke="currentColor" stroke-width="3"/>
-        <line x1="615.5" y1="338.7" x2="621.3" y2="328.1" stroke="currentColor" stroke-width="2"/>
-        <line x1="690" y1="346" x2="690" y2="364" stroke="currentColor" stroke-width="2"/>
-<line x1="732" y1="346" x2="732" y2="364" stroke="currentColor" stroke-width="2"/>
-<polygon points="732,355 790,355 790,387" fill="currentColor"/>
-<text x="732" y="382" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">4</text>
-        <line x1="790" y1="387" x2="878" y2="435" stroke="currentColor" stroke-width="2"/>
-        <line x1="817.9" y1="409.1" x2="823.7" y2="398.5" stroke="currentColor" stroke-width="2"/>
-        <g transform="translate(855.1,422.5) rotate(28.61)"><polygon points="-9,0 0,-9 9,0 0,9" fill="none" stroke="currentColor" stroke-width="2.5"/><line x1="9" y1="-12" x2="9" y2="12" stroke="currentColor" stroke-width="2.5"/></g>
-        <line x1="1340" y1="346" x2="1340" y2="364" stroke="currentColor" stroke-width="2"/>
-<line x1="1298" y1="346" x2="1298" y2="364" stroke="currentColor" stroke-width="2"/>
-<polygon points="1298,355 1240,355 1240,387" fill="currentColor"/>
-<text x="1298" y="382" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">5</text>
-        <line x1="1240" y1="387" x2="1152" y2="435" stroke="currentColor" stroke-width="2"/>
-        <line x1="1206.3" y1="398.5" x2="1212.1" y2="409.1" stroke="currentColor" stroke-width="2"/>
-        <g transform="translate(1174.9,422.5) rotate(151.39)"><polygon points="-9,0 0,-9 9,0 0,9" fill="none" stroke="currentColor" stroke-width="2.5"/><line x1="9" y1="-12" x2="9" y2="12" stroke="currentColor" stroke-width="2.5"/></g>
-        <line x1="1210" y1="266" x2="1210" y2="284" stroke="currentColor" stroke-width="2"/>
-<line x1="1252" y1="266" x2="1252" y2="284" stroke="currentColor" stroke-width="2"/>
-<polygon points="1252,275 1310,275 1310,307" fill="currentColor"/>
-<text x="1252" y="302" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">6</text>
-        <line x1="1460" y1="346" x2="1460" y2="364" stroke="currentColor" stroke-width="2"/>
-<line x1="1418" y1="346" x2="1418" y2="364" stroke="currentColor" stroke-width="2"/>
-<polygon points="1418,355 1360,355 1360,323" fill="currentColor"/>
-<text x="1418" y="339" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">7</text>
-        <line x1="1310" y1="307" x2="1360" y2="323" stroke="currentColor" stroke-width="3"/>
-        <line x1="1319.2" y1="316.2" x2="1322.8" y2="304.8" stroke="currentColor" stroke-width="2"/>
-        <line x1="1347.2" y1="325.2" x2="1350.8" y2="313.8" stroke="currentColor" stroke-width="2"/>
-        <line x1="1430" y1="166" x2="1430" y2="184" stroke="currentColor" stroke-width="2"/>
-<line x1="1472" y1="166" x2="1472" y2="184" stroke="currentColor" stroke-width="2"/>
-<polygon points="1472,175 1530,175 1530,207" fill="currentColor"/>
-<text x="1472" y="202" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">8</text>
-        <line x1="1705" y1="266" x2="1705" y2="284" stroke="currentColor" stroke-width="2"/>
-<line x1="1663" y1="266" x2="1663" y2="284" stroke="currentColor" stroke-width="2"/>
-<polygon points="1663,275 1605,275 1605,243" fill="currentColor"/>
-<text x="1663" y="259" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">9</text>
-        <line x1="1530" y1="207" x2="1605" y2="243" stroke="currentColor" stroke-width="3"/>
-        <line x1="1546.9" y1="221.8" x2="1552.1" y2="211.0" stroke="currentColor" stroke-width="2"/>
-        <line x1="1582.9" y1="239.0" x2="1588.1" y2="228.2" stroke="currentColor" stroke-width="2"/>
-        <rect x="800" y="58" width="150" height="40" fill="none" stroke="currentColor" stroke-width="2"/>
-        <text x="875" y="83" text-anchor="middle" font-size="11" fill="currentColor">Empfangsgebäude</text>
-        <text x="962" y="83" font-size="10.5" fill="var(--ink-soft)">Hauptzugang</text>
-        <rect x="820" y="120" width="245" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
-        <text x="942" y="142" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 1 (Hausbahnsteig)</text>
-        <rect x="820" y="295" width="245" height="34" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="5,4"/>
-        <text x="942" y="317" text-anchor="middle" fill="var(--ink-soft)" font-size="12">Bahnsteig 2 (Mittelbahnsteig)</text>
-        <line x1="1010" y1="120" x2="1010" y2="329" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="3,4"/>
-        <text x="1020" y="238" font-size="10.5" fill="var(--ink-soft)">Personenunterführung</text>
-        <rect x="848" y="265" width="24" height="20" fill="var(--surface)"/><text x="860" y="281" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">1</text>
-        <rect x="848" y="165" width="24" height="20" fill="var(--surface)"/><text x="860" y="181" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">2</text>
-        <rect x="848" y="345" width="24" height="20" fill="var(--surface)"/><text x="860" y="361" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">3</text>
-        <rect x="888" y="425" width="24" height="20" fill="var(--surface)"/><text x="900" y="441" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">4</text>
-        <g fill="var(--ink-soft)" font-size="12"><text x="46" y="297">(1)</text><text x="46" y="165">(2)</text><text x="1854" y="297" text-anchor="end">(1)</text><text x="1854" y="165" text-anchor="end">(2)</text></g>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="95" y1="251" x2="95" y2="265"/><line x1="95" y1="258" x2="111" y2="258"/></g>
-<rect x="111" y="252" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="132,252 142,258 132,264" fill="currentColor"/>
-<text x="146" y="262" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="87" y="262" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">A</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="130" y1="185" x2="130" y2="199"/><line x1="130" y1="192" x2="146" y2="192"/></g>
-<rect x="146" y="186" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="167,186 177,192 167,198" fill="currentColor"/>
-<text x="181" y="196" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="122" y="196" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">AA</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="690" y1="185" x2="690" y2="199"/><line x1="690" y1="192" x2="674" y2="192"/></g>
-<rect x="656" y="186" width="18" height="12" rx="6" fill="currentColor"/>
-<text x="698" y="196" font-size="13" font-weight="600" fill="currentColor">P2</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="850" y1="365" x2="850" y2="379"/><line x1="850" y1="372" x2="836" y2="372"/></g>
-<rect x="823" y="365.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"/>
-<polygon points="836,365.5 823,365.5 823,378.5" fill="currentColor"/>
-<rect x="805" y="366" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="802,366 792,372 802,378" fill="currentColor"/>
-<text x="788" y="376" text-anchor="end" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="858" y="376" font-size="13" font-weight="600" fill="currentColor">P3</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="1080" y1="251" x2="1080" y2="265"/><line x1="1080" y1="258" x2="1096" y2="258"/></g>
-<rect x="1096" y="252" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="1117,252 1127,258 1117,264" fill="currentColor"/>
-<text x="1131" y="262" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="1072" y="262" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N1</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="1080" y1="185" x2="1080" y2="199"/><line x1="1080" y1="192" x2="1094" y2="192"/></g>
-<rect x="1094" y="185.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"/>
-<polygon points="1094,185.5 1107,185.5 1107,198.5" fill="currentColor"/>
-<rect x="1107" y="186" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="1128,186 1138,192 1128,198" fill="currentColor"/>
-<text x="1142" y="196" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="1072" y="196" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N2</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="1080" y1="365" x2="1080" y2="379"/><line x1="1080" y1="372" x2="1096" y2="372"/></g>
-<rect x="1096" y="366" width="18" height="12" rx="6" fill="currentColor"/>
-<text x="1072" y="376" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N3</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="1090" y1="445" x2="1090" y2="459"/><line x1="1090" y1="452" x2="1106" y2="452"/></g>
-<rect x="1106" y="446" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="1127,446 1137,452 1127,458" fill="currentColor"/>
-<text x="1141" y="456" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="1082" y="456" text-anchor="end" font-size="13" font-weight="600" fill="currentColor">N4</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="975" y1="445" x2="975" y2="459"/><line x1="975" y1="452" x2="959" y2="452"/></g>
-<rect x="941" y="446" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="938,446 928,452 938,458" fill="currentColor"/>
-<text x="924" y="456" text-anchor="end" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="983" y="456" font-size="13" font-weight="600" fill="currentColor">ZU4</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="1810" y1="185" x2="1810" y2="199"/><line x1="1810" y1="192" x2="1794" y2="192"/></g>
-<rect x="1776" y="186" width="18" height="12" rx="6" fill="currentColor"/>
-<text x="1818" y="196" font-size="13" font-weight="600" fill="currentColor">F</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="1770" y1="251" x2="1770" y2="265"/><line x1="1770" y1="258" x2="1754" y2="258"/></g>
-<rect x="1736" y="252" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="1733,252 1723,258 1733,264" fill="currentColor"/>
-<text x="1719" y="262" text-anchor="end" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="1778" y="262" font-size="13" font-weight="600" fill="currentColor">FF</text>
-        <g stroke="currentColor" stroke-width="2" fill="none"><line x1="1760" y1="365" x2="1760" y2="379"/><line x1="1760" y1="372" x2="1744" y2="372"/></g>
-<rect x="1726" y="366" width="18" height="12" rx="6" fill="currentColor"/>
-<polygon points="1723,366 1713,372 1723,378" fill="currentColor"/>
-<text x="1709" y="376" text-anchor="end" font-size="11" font-weight="600" fill="currentColor">4</text>
-<text x="1768" y="376" font-size="13" font-weight="600" fill="currentColor">G</text>
-        <line x1="1560" y1="333" x2="1560" y2="377" stroke="var(--ink-soft)" stroke-width="1.5" stroke-dasharray="4,3"/>
-        <text x="1568" y="329" font-size="10.5" fill="var(--ink-soft)">Strecke 3 · km 0,0</text>
-        <g fill="var(--ink-soft)" font-size="12" font-style="italic"><text x="40" y="498">← Zollfurt (km 35,5) · Krug (km 34,5)</text><text x="40" y="516">Strecke 1 · Hauptbahn · zweigleisig mit Gleiswechselbetrieb · Hg 120 km/h</text><text x="40" y="534">elektrifiziert 15 kV 16,7 Hz · Waldenberg km 37,5</text><text x="1860" y="498" text-anchor="end">Burgwald (km 40,0) · Hyxel (km 49,0) →</text><text x="1860" y="516" text-anchor="end">Strecke 3 · Wehrheim (km 7,0) · Sandheide · Gbf →</text><text x="1860" y="534" text-anchor="end">Nebenbahn · eingleisig · Hg 80 km/h · elektrifiziert 15 kV 16,7 Hz</text></g>
+      <svg class="plan" viewBox="0 0 1920 560" role="img" aria-label="__ARIA__">
+        __PLAN__
       </svg>
     </div>
 
@@ -432,3 +330,85 @@
 
 </body>
 </html>
+"""
+
+ZEICHNUNG = """<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Zeichnung Waldenberg</title>
+<style>
+  html,body{margin:0;padding:0;background:#ffffff;}
+  .sheet{width:1600px;height:1131px;}
+</style>
+</head>
+<body>
+<div class="sheet">
+<svg viewBox="0 0 1600 1131" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Technische Zeichnung, sicherungstechnischer Lageplan Waldenberg">
+<rect x="0" y="0" width="1600" height="1131" fill="#ffffff"/>
+<rect x="10" y="10" width="1580" height="1111" fill="none" stroke="#000" stroke-width="1"/>
+<rect x="22" y="22" width="1556" height="1087" fill="none" stroke="#000" stroke-width="2.5"/>
+<text x="42" y="60" font-size="15" font-weight="700" fill="#000" font-family="IBM Plex Mono, monospace">Lageplan Waldenberg</text>
+<text x="1558" y="60" text-anchor="end" font-size="11" fill="#000" font-family="IBM Plex Mono, monospace">Ril 819.9001 / 819.9002</text>
+<line x1="42" y1="70" x2="1558" y2="70" stroke="#000" stroke-width="1"/>
+<g transform="translate(51,300) scale(0.78)" font-family="IBM Plex Mono, monospace">
+        __PLAN__
+</g>
+<g font-family="IBM Plex Mono, monospace">
+<rect x="60" y="900" width="940" height="176" fill="none" stroke="#000" stroke-width="1.5"/>
+<g transform="translate(66.00,974)"><line x1="0" y1="8" x2="50" y2="8" stroke="#000" stroke-width="1.5"/><line x1="5" y1="3" x2="5" y2="13" stroke="#000" stroke-width="1.2"/><line x1="17" y1="3" x2="17" y2="13" stroke="#000" stroke-width="1.2"/><polygon points="17,8 34,8 34,17" fill="#000"/></g>
+<text x="122.00" y="992" font-size="9" fill="#000">Weiche fern</text>
+<line x1="194.29" y1="900" x2="194.29" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(200.29,979)"><line x1="2" y1="1" x2="2" y2="15" stroke="#000" stroke-width="1.5"/><line x1="2" y1="8" x2="14" y2="8" stroke="#000" stroke-width="1.5"/><rect x="14" y="2" width="16" height="11" rx="5.5" fill="#000"/></g>
+<text x="256.29" y="992" font-size="9" fill="#000">Ks-Signal</text>
+<line x1="328.57" y1="900" x2="328.57" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(334.57,979)"><line x1="2" y1="1" x2="2" y2="15" stroke="#000" stroke-width="1.5"/><line x1="2" y1="8" x2="14" y2="8" stroke="#000" stroke-width="1.5"/><rect x="14" y="2" width="16" height="11" rx="5.5" fill="#000"/><polygon points="33,2 42,8 33,14" fill="#000"/></g>
+<text x="390.57" y="992" font-size="9" fill="#000">Zs 3</text>
+<line x1="462.86" y1="900" x2="462.86" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(468.86,979)"><line x1="0" y1="8" x2="26" y2="8" stroke="#000" stroke-width="1.5"/><rect x="8" y="1" width="12" height="14" fill="#fff" stroke="#000" stroke-width="1"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="600" fill="#000">1</text></g>
+<text x="524.86" y="992" font-size="9" fill="#000">Gleisnr.</text>
+<line x1="597.14" y1="900" x2="597.14" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(603.14,979)"><rect x="2" y="2" width="22" height="12" fill="none" stroke="#000" stroke-width="1.5"/></g>
+<text x="659.14" y="992" font-size="9" fill="#000">Gebäude</text>
+<line x1="731.43" y1="900" x2="731.43" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(737.43,972)"><line x1="0" y1="8" x2="26" y2="8" stroke="#000" stroke-width="1.5" stroke-dasharray="3,3"/><text x="13" y="26" text-anchor="middle" font-size="8.5" fill="#000">km 0,0</text></g>
+<text x="793.43" y="992" font-size="9" fill="#000">Str.-Grenze</text>
+<line x1="865.71" y1="900" x2="865.71" y2="1076" stroke="#000" stroke-width="1"/>
+<g transform="translate(871.71,979)"><line x1="0" y1="8" x2="40" y2="8" stroke="#000" stroke-width="1.5"/><polygon points="11,8 18,1 25,8 18,15" fill="none" stroke="#000" stroke-width="1.5"/><line x1="25" y1="0" x2="25" y2="16" stroke="#000" stroke-width="1.5"/></g>
+<text x="927.71" y="992" font-size="9" fill="#000">o. Fahrltg.</text>
+</g>
+<text x="68" y="1094" font-size="10" fill="#000" font-family="IBM Plex Mono, monospace">Alle Weichen EW 1:9, 40 km/h · Gegengleisanzeiger an N2 und P3 · beide Strecken elektrifiziert 15 kV 16,7 Hz · Gleis 4 = Lade- und Ausweichgleis, Nebengleis ohne Fahrleitung</text>
+<g font-family="IBM Plex Mono, monospace">
+<rect x="1050" y="900" width="490" height="176" fill="none" stroke="#000" stroke-width="2"/>
+<line x1="1050" y1="944" x2="1540" y2="944" stroke="#000" stroke-width="1"/>
+<line x1="1050" y1="988" x2="1540" y2="988" stroke="#000" stroke-width="1"/>
+<line x1="1050" y1="1018" x2="1540" y2="1018" stroke="#000" stroke-width="1"/>
+<line x1="1050" y1="1048" x2="1540" y2="1048" stroke="#000" stroke-width="1"/>
+<text x="1062" y="927" font-size="13" font-weight="700" fill="#000">LF 2 Jahresprojekt 2026 „Mitteltrasse"</text>
+<text x="1062" y="971" font-size="11" fill="#000">5. Teilabschnitt (Los 5) – Chemiezentrum</text>
+<line x1="1295" y1="988" x2="1295" y2="1048" stroke="#000" stroke-width="1"/>
+<text x="1062" y="1000" font-size="10" fill="#333">Betriebsstelle</text>
+<text x="1062" y="1013" font-size="13" font-weight="600" fill="#000">Waldenberg</text>
+<text x="1307" y="1000" font-size="10" fill="#333">Kennzahl</text>
+<text x="1307" y="1013" font-size="13" font-weight="600" fill="#000">31</text>
+<text x="1062" y="1030" font-size="10" fill="#333">Inhalt</text>
+<text x="1062" y="1043" font-size="11" fill="#000">Sicherungstechnischer Lageplan</text>
+<text x="1307" y="1030" font-size="10" fill="#333">Blatt</text>
+<text x="1307" y="1043" font-size="13" font-weight="600" fill="#000">2/5</text>
+<line x1="1213.33" y1="1048" x2="1213.33" y2="1076" stroke="#000" stroke-width="1"/>
+<line x1="1376.67" y1="1048" x2="1376.67" y2="1076" stroke="#000" stroke-width="1"/>
+<text x="1060" y="1067" font-size="9.5" fill="#333">Maßstab: ohne</text>
+<text x="1223.33" y="1067" font-size="9.5" fill="#333">Gezeichnet: LT-Azubi</text>
+<text x="1386.67" y="1067" font-size="9.5" fill="#333">Datum: 2026</text>
+</g>
+</svg>
+</div>
+</body>
+</html>
+"""
+
+open(REPO + "lageplan-waldenberg.html", "w").write(
+    LAGEPLAN.replace("__PLAN__", w.LAGEPLAN).replace("__ARIA__", ARIA))
+open(REPO + "zeichnung-waldenberg.html", "w").write(
+    ZEICHNUNG.replace("__PLAN__", w.ZEICHNUNG))
+print("geschrieben")
