@@ -140,11 +140,12 @@ def build():
 
 EB_W, EB_H = 1900, 540
 EB_X0, EB_X1 = 120, 1810
-EB_Y = 300
+EB_Y_STD = 300
 EB_SPUREN = [(-42, -68), (-100, -126), (56, 82), (114, 140)]
 
 
-def einzelband(stationen, kmin, kmax, linienfarbe):
+def einzelband(stationen, kmin, kmax, linienfarbe, ybase=None):
+    EB_Y = EB_Y_STD if ybase is None else ybase
     o = [f'<line x1="{EB_X0}" y1="{EB_Y}" x2="{EB_X1}" y2="{EB_Y}" '
          f'stroke="{linienfarbe}" stroke-width="6"/>']
     belegt = [-1e9] * len(EB_SPUREN)
@@ -183,16 +184,19 @@ def einzelband(stationen, kmin, kmax, linienfarbe):
     return "\n".join(o)
 
 
-def einzelblatt(kennung, nummer, strecke, angabe, stationen, kmin, kmax, linienfarbe):
+def eb_kopf(y, nummer, strecke, angabe):
+    return (f'<text x="{EB_X0}" y="{y}" font-size="34" font-weight="700" fill="{TIEF}">{nummer}</text>'
+            f'<text x="{EB_X0}" y="{y+32}" font-size="20" fill="{SOFT}">{strecke}</text>'
+            f'<text x="{EB_X0}" y="{y+58}" font-size="18" fill="{SOFT}">{angabe}</text>')
+
+
+def eb_legende(cy):
     leg = [("bf", "eigener Lageplan"), ("bst", "Betriebsstelle"),
            ("hp", "Haltepunkt"), ("anst", "Anschlussstelle"), ("ausgen", "ausgenommen")]
-    o = [f'<text x="{EB_X0}" y="58" font-size="34" font-weight="700" fill="{TIEF}">{nummer}</text>',
-         f'<text x="{EB_X0}" y="90" font-size="20" fill="{SOFT}">{strecke}</text>',
-         f'<text x="{EB_X0}" y="116" font-size="18" fill="{SOFT}">{angabe}</text>',
-         einzelband(stationen, kmin, kmax, linienfarbe)]
+    o = []
     x = EB_X0
     for art, text in leg:
-        c, cy = FARBE[art], EB_H - 30
+        c = FARBE[art]
         if art == "bf":
             o.append(f'<circle cx="{x+10}" cy="{cy-5}" r="11" fill="#fff" stroke="{c}" stroke-width="5"/>')
         elif art == "anst":
@@ -205,11 +209,54 @@ def einzelblatt(kennung, nummer, strecke, angabe, stationen, kmin, kmax, linienf
                      f'stroke-width="4" stroke-dasharray="4,4"/>')
         o.append(f'<text x="{x+30}" y="{cy+2}" font-size="19" fill="{SOFT}">{text}</text>')
         x += 30 + len(text) * 10.2 + 46
-    o.append(f'<text x="{EB_X1}" y="{EB_H-28}" font-size="18" fill="{SOFT}" font-style="italic" '
-             f'text-anchor="end">maßstäblich</text>')
-    return (f'<svg id="{kennung}" width="{EB_W}" height="{EB_H}" viewBox="0 0 {EB_W} {EB_H}" '
+    o.append(f'<text x="{EB_X1}" y="{cy+2}" font-size="18" fill="{SOFT}" font-style="italic" '
+             f'text-anchor="end">Kilometrierung je Strecke maßstäblich</text>')
+    return "".join(o)
+
+
+def _svg(kennung, hoehe, inhalt):
+    return (f'<svg id="{kennung}" width="{EB_W}" height="{hoehe}" viewBox="0 0 {EB_W} {hoehe}" '
             f'xmlns="http://www.w3.org/2000/svg" font-family="Calibri, Arial, sans-serif">'
-            f'<rect width="{EB_W}" height="{EB_H}" fill="#fff"/>{"".join(o)}</svg>')
+            f'<rect width="{EB_W}" height="{hoehe}" fill="#fff"/>{inhalt}</svg>')
+
+
+def einzelblatt(kennung, nummer, strecke, angabe, stationen, kmin, kmax, linienfarbe):
+    return _svg(kennung, EB_H,
+                eb_kopf(58, nummer, strecke, angabe)
+                + einzelband(stationen, kmin, kmax, linienfarbe)
+                + eb_legende(EB_H - 30))
+
+
+def doppelblatt(kennung, oben, unten):
+    """Zwei Streckenbaender auf einem Blatt. Die Blattbreite bleibt gleich,
+    deshalb bleibt auch das Verhaeltnis von Schrifthoehe zu Bildbreite gleich -
+    auf der Folie ist das Blatt so gut lesbar wie ein Einzelblatt."""
+    return _svg(kennung, 1050,
+                eb_kopf(58, oben[0], oben[1], oben[2])
+                + einzelband(oben[3], oben[4], oben[5], oben[6], ybase=300)
+                + eb_kopf(578, unten[0], unten[1], unten[2])
+                + einzelband(unten[3], unten[4], unten[5], unten[6], ybase=820)
+                + eb_legende(1012))
+
+
+def _abschnitte():
+    s1w = [z for z in STRECKE_1 if z[1] <= 63.5]
+    s1o = [z for z in STRECKE_1 if z[1] >= 63.5]
+    return [
+        ("Strecke 1 · West", "Krug (ausgen.) – Waldenberg – Hyxel – Obersosa",
+         "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", s1w, 34.5, 63.5, TIEF),
+        ("Strecke 1 · Ost", "Obersosa – Feldheim – Lossow – Furth (ausgen.)",
+         "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", s1o, 63.5, 117.5, TIEF),
+        ("Strecke 2", "Bernstein (ausgen.) – Silberberg – Obersosa",
+         "Hauptbahn · zweigleisig · 120 km/h · elektrifiziert", STRECKE_2, 0.0, 51.0, TIEF),
+        ("Strecke 3", "Waldenberg – Gbf (ausgen.)",
+         "Nebenbahn · eingleisig · 80 km/h · elektrifiziert", STRECKE_3, 0.0, 29.5, STAHL),
+    ]
+
+
+def doppelblaetter():
+    a, b, c2, d = _abschnitte()
+    return [doppelblatt("db-1", a, b), doppelblatt("db-2", c2, d)]
 
 
 def einzelblaetter():
@@ -245,8 +292,10 @@ SEITE = """<!DOCTYPE html>
 <p class="sub">Übersichtsdarstellung der drei Strecken mit Kilometrierung · Strecke 1 in zwei Abschnitten ·
 LF 2 Jahresprojekt 2026 „Mitteltrasse", 5. Teilabschnitt</p>
 <div class="scroll">{svg}</div>
-<h2 style="font-size:19px;margin:36px 0 6px">Einzelblätter für die Präsentation</h2>
-<p class="sub" style="margin-bottom:16px">Je ein Abschnitt pro Blatt, Schrift für die Projektion vergrößert.</p>
+<h2 style="font-size:19px;margin:36px 0 6px">Für die Präsentation: zwei Blätter</h2>
+<p class="sub" style="margin-bottom:16px">Je zwei Abschnitte pro Blatt. Die Blattbreite bleibt gleich, deshalb bleibt die Schrift auf der Folie genauso lesbar wie bei den Einzelblättern.</p>
+{doppel}
+<h2 style="font-size:19px;margin:36px 0 6px">Alternativ: vier Einzelblätter</h2>
 {einzel}
 <footer>Kilometerangaben nach Aufgabenstellung; Zwischenbetriebsstellen nach den
 Fahrplandaten des Projekts.</footer>
@@ -255,7 +304,8 @@ Fahrplandaten des Projekts.</footer>
 
 if __name__ == "__main__":
     with open(REPO + "gleisband-los5.html", "w", encoding="utf-8") as f:
-        f.write(SEITE.format(svg=build(),
-                             einzel="\n".join(f'<div class="scroll" style="margin-bottom:26px">{b}</div>'
-                                               for b in einzelblaetter())))
+        def huellen(bl):
+            return "\n".join(f'<div class="scroll" style="margin-bottom:26px">{x}</div>' for x in bl)
+        f.write(SEITE.format(svg=build(), doppel=huellen(doppelblaetter()),
+                             einzel=huellen(einzelblaetter())))
     print("geschrieben")
