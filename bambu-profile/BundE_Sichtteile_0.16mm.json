@@ -1,0 +1,30 @@
+{
+    "name": "B&E Sichtteile 0.16mm",
+    "inherits": "0.16mm Optimal @BBL X1C",
+    "print_settings_id": "B&E Sichtteile 0.16mm",
+    "type": "process",
+    "from": "User",
+    "is_custom_defined": "0",
+    "version": "1.9.0.0",
+    "compatible_printers": [
+        "Bambu Lab P1S 0.4 nozzle"
+    ],
+    "wall_generator": "arachne",
+    "seam_position": "back",
+    "seam_slope_type": "external",
+    "precise_outer_wall": "1",
+    "only_one_wall_top": "1",
+    "reduce_crossing_wall": "1",
+    "wall_loops": "3",
+    "top_shell_layers": "7",
+    "top_shell_thickness": "1",
+    "bottom_shell_layers": "4",
+    "sparse_infill_density": "15%",
+    "sparse_infill_pattern": "gyroid",
+    "support_type": "tree(auto)",
+    "support_threshold_angle": "30",
+    "support_top_z_distance": "0.2",
+    "ironing_type": "no ironing",
+    "layer_height": "0.16",
+    "initial_layer_print_height": "0.2"
+}
