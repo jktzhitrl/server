@@ -698,7 +698,7 @@ function paintStreet(s){
 STREETS.forEach(paintStreet);
 // Weg über Land suchen (um Wasser, Mauern und Häuser herum) und als Gasse anlegen
 function roadTo(name,from,to){
-  const N=WX*WZ,dist=new Float32Array(N).fill(1e9),prev=new Int32Array(N).fill(-1),heap=[];
+  const N=WX*WZ,dist=new Float64Array(N).fill(1e9),prev=new Int32Array(N).fill(-1),heap=[];
   const ok=i=>!SEA[i]&&![3,4,5,9].includes(occ[i]);
   const push=(d,i)=>{heap.push([d,i]);let k=heap.length-1;while(k>0){const p=(k-1)>>1;if(heap[p][0]<=heap[k][0])break;[heap[p],heap[k]]=[heap[k],heap[p]];k=p}};
   const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<heap.length&&heap[l][0]<heap[m][0])m=l;if(r<heap.length&&heap[r][0]<heap[m][0])m=r;if(m===k)break;[heap[m],heap[k]]=[heap[k],heap[m]];k=m}}return top};
@@ -2378,7 +2378,7 @@ function renderBuilding(b,w,d,h){
   const body=document.getElementById('pBody');
   if(currentTab!=='guide')exitLayerMode();
   const total=Object.entries(b.counts).reduce((s,[k,n])=>s+(k==='water'?0:n),0);
-  const facts=`<div class="facts"><div><small>Grundfläche</small><b>${w} × ${d}</b></div><div><small>Höhe</small><b>${h}</b></div><div><small>Blöcke</small><b>${total.toLocaleString('de-DE')}</b></div></div>`;
+  const facts=`<div class="facts"><div><small>Grundfläche</small><b>${w} × ${d}</b></div><div><small>Höhe</small><b>${h}</b></div><div><small>Blöcke</small><b>${total.toLocaleString('de-DE')}</b></div></div><p class="desc" style="margin-top:6px"><b>Lage in deiner Welt:</b> X ${mcX(b.bb.x0)} bis ${mcX(b.bb.x1)}, Z ${mcZ(b.bb.z0)} bis ${mcZ(b.bb.z1)}, Y ${mcY(b.bb.y0)} bis ${mcY(b.bb.y1)} (Nordwestecke unten: X ${mcX(b.bb.x0)}, Y ${mcY(b.bb.y0)}, Z ${mcZ(b.bb.z0)})</p>`;
   if(currentTab==='mat'){
     body.innerHTML=`${facts}<p class="desc">${esc(b.desc||'')}</p>${b.auto?`<p class="note">Betrieb: <b>${esc(b.auto)}</b>${b.hostId!=null?` · gehört zu <button class="linkbtn" id="toHost">${esc(buildings[b.hostId].name)}</button>`:''}</p>`:''}<div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(b.counts,b.extras)}`;
     document.getElementById('cpy').onclick=e=>copyText(matText(b.counts,b.name),e.target);
@@ -2432,7 +2432,7 @@ function renderLayer(b){
   drawPlan(b,y);
   const cnt=countBlocks(b.voxels.filter(v=>v.y===y));
   const hgt=y-b.bb.y0;
-  document.getElementById('layerMats').innerHTML=`<h3>Material für Schicht ${layer+1} <span style="font:400 12px var(--f-body);color:var(--muted)">(Höhe +${hgt} über dem Fundament${b.bb.y0?`, Weltkoordinate y = ${y}`:''})</span></h3>`+(Object.keys(cnt).length?matTable(cnt):'<p class="desc">Diese Schicht ist leer.</p>');
+  document.getElementById('layerMats').innerHTML=`<h3>Material für Schicht ${layer+1} <span style="font:400 12px var(--f-body);color:var(--muted)">(Höhe +${hgt} über dem Fundament, Minecraft-Y = ${mcY(y)})</span></h3>`+(Object.keys(cnt).length?matTable(cnt):'<p class="desc">Diese Schicht ist leer.</p>');
 }
 const FACING_GLYPH=[0,1,2,3];
 function stateText(v){
@@ -2496,7 +2496,7 @@ function drawPlan(b,y){
   for(let x=0;x<w;x+=5)g.fillText(String(x+1),M+x*cs+cs/2,M/2);
   g.textAlign='right';for(let z=0;z<d;z+=5)g.fillText(String(z+1),M-4,M+z*cs+cs/2);
   g.fillStyle=ink;g.textAlign='left';g.font='bold 11px '+css.getPropertyValue('--f-mono');g.fillText('N↑',2,9);
-  cv.onmousemove=e=>{const r=cv.getBoundingClientRect();const cx=Math.floor((e.clientX-r.left-M)/cs),cz=Math.floor((e.clientY-r.top-M)/cs);const v=cur.get((cx+b.bb.x0)+','+(cz+b.bb.z0));document.getElementById('planCap').textContent=cx>=0&&cz>=0&&cx<w&&cz<d?`Spalte ${cx+1}, Reihe ${cz+1}: ${v?stateText(v):'leer'}`:'Norden ist oben.'};
+  cv.onmousemove=e=>{const r=cv.getBoundingClientRect();const cx=Math.floor((e.clientX-r.left-M)/cs),cz=Math.floor((e.clientY-r.top-M)/cs);const v=cur.get((cx+b.bb.x0)+','+(cz+b.bb.z0));document.getElementById('planCap').textContent=cx>=0&&cz>=0&&cx<w&&cz<d?`Spalte ${cx+1}, Reihe ${cz+1} (X ${mcX(cx+b.bb.x0)}, Z ${mcZ(cz+b.bb.z0)}): ${v?stateText(v):'leer'}`:'Norden ist oben.'};
 }
 async function copyText(t,btn){
   try{await navigator.clipboard.writeText(t);btn.textContent='Kopiert'}catch(e){
