@@ -235,9 +235,15 @@ const BLOCKS={
   carrots:{de:'Karotten',shape:'crop',tex:'carrots',cat:'Felder',note:'Karotten pflanzen'},
   potatoes:{de:'Kartoffeln',shape:'crop',tex:'potatoes',cat:'Felder',note:'Kartoffeln pflanzen'},
   beetroots:{de:'Rote Bete',shape:'crop',tex:'beetroots',cat:'Felder',note:'Rote-Bete-Samen pflanzen'},
-  vine:{de:'Ranken',shape:'vine',tex:'vine',cat:'Bäume',note:'mit der Schere ernten'}
+  vine:{de:'Ranken',shape:'vine',tex:'vine',cat:'Bäume',note:'mit der Schere ernten'},
+  iron_chain:{de:'Eisenkette',shape:'chain',tex:'chain',cat:'Details'},
+  azalea_leaves:{de:'Azaleenlaub',shape:'leaves',tex:'azalea_leaves',cat:'Bäume',note:'mit der Schere ernten'},
+  flowering_azalea_leaves:{de:'Blühendes Azaleenlaub',shape:'leaves',tex:'flowering_azalea_leaves',cat:'Bäume',note:'mit der Schere ernten'},
+  cave_vines:{de:'Leuchtbeerenranke',shape:'cross',tex:'cave_vines_lit',cat:'Bäume',note:'Leuchtbeeren unter einen Block pflanzen'},
+  moss_carpet:{de:'Moosteppich',shape:'carpet',tex:'moss_block',cat:'Wege'},
+  rooted_dirt:{de:'Wurzelerde',shape:'cube',tex:'rooted_dirt',cat:'Wege'}
 };
-const GLOW=new Set(['lantern','campfire','glowstone','glass_pane']);
+const GLOW=new Set(['lantern','campfire','glowstone','glass_pane','cave_vines']);
 const LIGHTS=new Set(['lantern','campfire','glowstone']);
 const FLOWERS=['poppy','dandelion','cornflower','allium','oxeye_daisy'];
 const blockName=b=>b==='plaster'?PLASTER[plasterChoice]:BLOCKS[b].de;
@@ -248,7 +254,7 @@ const FULL=new Set(Object.keys(BLOCKS).filter(k=>['cube','log'].includes(BLOCKS[
 const TILE_KEYS=['plaster','stripped_dark_oak_log','stripped_dark_oak_log_top','spruce_planks','dark_oak_planks','stone_bricks','mossy_stone_bricks','cracked_stone_bricks','cobblestone','mossy_cobblestone','stone','andesite','smooth_stone','bricks','gravel','dirt_path_top','dirt_path_side','dirt','grass_block_top','grass_block_side','glass','iron_bars','spruce_trapdoor','door_bottom','door_top','lantern','campfire_log','ladder','barrel_top','barrel_side','hay_block_top','hay_block_side','water_still',
   'coarse_dirt','packed_mud','polished_andesite','sand','oak_log','oak_log_top','oak_leaves','spruce_log','spruce_log_top','spruce_leaves',
   'red_wool','white_wool','blue_wool','yellow_wool','green_wool','orange_wool','pumpkin_side','pumpkin_top','melon_side','melon_top','glowstone',
-  'poppy','dandelion','cornflower','allium','oxeye_daisy','short_grass','fern','farmland_moist','wheat','carrots','potatoes','beetroots','vine'];
+  'poppy','dandelion','cornflower','allium','oxeye_daisy','short_grass','fern','farmland_moist','wheat','carrots','potatoes','beetroots','vine','chain','azalea_leaves','flowering_azalea_leaves','cave_vines_lit','moss_block','rooted_dirt'];
 let evening=false;
 const ATL_COLS=8, ATL_ROWS=Math.ceil(TILE_KEYS.length/ATL_COLS);
 const TILE={}; TILE_KEYS.forEach((k,i)=>TILE[k]={c:i%ATL_COLS,r:Math.floor(i/ATL_COLS)});
@@ -293,7 +299,7 @@ function texPainter(key){
     case 'spruce_trapdoor':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||y<2||x>13||y>13;const hole=(x>3&&x<7||x>8&&x<12)&&(y>3&&y<7||y>8&&y<12);put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)*(x%5===0?.8:1)),hole?0:255)}break;
     case 'door_bottom':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||x>13||y>13;put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)*(x%4===0?.8:1)))};put(12,2,[40,40,40]);put(12,3,[40,40,40]);break;
     case 'door_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||x>13||y<2;const win=y>3&&y<10&&(x>2&&x<7||x>8&&x<13);put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)),win?0:255)}break;
-    case 'lantern':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||x>13||y<3||y>13;put(x,y,fr?[52,56,66]:mul([255,214,120],1+(R()-.5)*.15))}break;
+    case 'lantern':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const win=x>=6&&x<=9&&y>=9&&y<=14,cap=y<9;put(x,y,win?mul([255,206,110],.9+R()*.25):mul(cap?[44,48,58]:[62,66,78],.85+R()*.3))}break;
     case 'campfire_log':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const glow=y>5&&y<10;put(x,y,glow?mul([255,150,40],.8+R()*.4):mul([82,62,40],1+(R()-.5)*.25))}break;
     case 'ladder':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const rail=x===2||x===3||x===12||x===13,rung=y%4===1&&x>1&&x<14;put(x,y,mul([140,106,62],rail?.85:1),rail||rung?255:0)}break;
     case 'barrel_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||y<2||x>13||y>13;put(x,y,fr?[64,64,66]:mul([120,88,52],1+(R()-.5)*.12))}break;
@@ -329,6 +335,11 @@ function texPainter(key){
         if(key==='wheat')for(let y=top;y<top+5;y++){put(x0-1,y,mul(tip,.8+R()*.3));put(x0,y,mul(tip,.9+R()*.3))}
         else{put(x0-1,top+1,mul(st,.9));put(x0+1,top+2,mul(st,.9));put(x0,15,mul(tip,1));put(x0-1,15,mul(tip,.85))}}
       break}
+    case 'chain':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const link=(y%6<3)?(x===7||x===8):(x===6||x===9||((y%6===3||y%6===5)&&(x===7||x===8)));put(x,y,link?mul([70,74,82],.9+R()*.3):[0,0,0],link?255:0)}break;
+    case 'azalea_leaves':case 'flowering_azalea_leaves':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();let c=mul([92,128,44],.75+R()*.45);if(key==='flowering_azalea_leaves'&&hash3(x>>1,y>>1,3)<.16)c=mul([200,110,190],.85+R()*.3);put(x,y,c,v<.1?0:255)}break;
+    case 'cave_vines_lit':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,[0,0,0],0);for(let y=0;y<16;y++){const x=7+Math.round(Math.sin(y*.7));put(x,y,[70,110,40]);if(y%3===0)put(x+1,y,[90,140,50])}for(const[x,y]of[[5,4],[10,8],[6,12],[9,2]]){put(x,y,[255,170,60]);put(x+1,y,[255,200,90]);put(x,y+1,[230,140,40])}break;
+    case 'moss_block':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([90,110,44],.8+R()*.35));break;
+    case 'rooted_dirt':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,v<.12?[150,110,80]:mul([134,96,67],1+(R()-.5)*.2))}break;
     case 'vine':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=hash3(x>>1,y>>1,9);put(x,y,mul([62,118,40],.7+R()*.5),v<.55?255:0)}break;
     case 'poppy':case 'dandelion':case 'cornflower':case 'allium':case 'oxeye_daisy':{
       for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,[0,0,0],0);
@@ -547,6 +558,7 @@ const STREETS=[
 ];
 const MARKET=[[76,128],[90,124],[106,127],[110,138],[107,152],[92,156],[78,151],[73,140]];
 const streetCell=new Map(); // Index -> Blockart
+const sideWalk=new Set(),sideCenter=new Set();
 function streetMat(kind,x,z){
   const h=hash3(x,7,z),n=vnoise(x,z,5,kind.length);
   if(kind==='main'||kind==='court'){if(n>.7)return h<.6?'packed_mud':'coarse_dirt';return h<.4?'cobblestone':h<.6?'andesite':h<.76?'stone_bricks':h<.86?'mossy_cobblestone':'gravel'}
@@ -563,7 +575,8 @@ for(const s of STREETS){
   for(let z=Math.floor(z0-r-1);z<=z1+r+1;z++)for(let x=Math.floor(x0-r-1);x<=x1+r+1;x++){
     if(x<0||z<0||x>=WX||z>=WZ)continue;const i=z*WX+x;
     if(moat[i]&&s.kind==='main')continue;
-    if(polyDist(x+.5,z+.5,s.pts)<=r+(s.w%2?0:.01)){if(!streetCell.has(i))streetCell.set(i,streetMat(s.kind,x,z));if(occ[i]!==2)occ[i]=1}
+    const sd=polyDist(x+.5,z+.5,s.pts);
+    if(sd<=r+(s.w%2?0:.01)){if(!streetCell.has(i))streetCell.set(i,streetMat(s.kind,x,z));if(occ[i]!==2)occ[i]=1;if(s.kind==='main'&&sd>r-1&&!sideCenter.has(i))sideWalk.add(i);if(sd<=r-1){sideCenter.add(i);sideWalk.delete(i)}}
   }
 }
 // Gelände-Belegung
@@ -1058,6 +1071,52 @@ function buildLamps(){
     desc:`${cnt} Laternenpfosten entlang der Hauptstraße, der Gassen und am Kai.`,
     steps:['Pfosten: 4 Fichtenholzzäune übereinander neben der Straße.','Oben einen Zaun seitlich zur Straße hin als Ausleger setzen.','Eine Laterne unter den Ausleger hängen (beim Setzen auf die Unterseite des Zauns klicken).']});
 }
+function buildArches(){
+  const used=new Set();for(const b of buildings)for(const v of b.voxels)used.add(K(v.x,v.y,v.z));
+  const m=new Model(),R=mulberry32(1212);let arches=0,planters=0;
+  const foliage=()=>R()<.45?'flowering_azalea_leaves':'azalea_leaves';
+  const put=(x,y,z,b,st,must)=>{const k=K(x,y,z);if(used.has(k)||m.get(x,y,z)){return!must}m.set(x,y,z,b,st);return true};
+  for(const s of STREETS){
+    if(!['main','lane','alley'].includes(s.kind))continue;
+    const off=Math.floor(s.w/2)+1,step=s.kind==='main'?24:17;let acc=Math.floor(step*.6);
+    for(let i=0;i<s.pts.length-1;i++){const a=s.pts[i],b=s.pts[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]),tx=(b[0]-a[0])/L,tz=(b[1]-a[1])/L;
+      const straight=Math.max(Math.abs(tx),Math.abs(tz))>.9,nx=Math.abs(tx)>Math.abs(tz)?0:1,nz=1-nx;
+      for(let t=1;t<L-1;t++){
+        const cx=Math.round(a[0]+tx*t),cz=Math.round(a[1]+tz*t);
+        // Pflanzkästen vor Hauswänden
+        for(const sg of[1,-1]){const px=cx+nx*off*sg,pz=cz+nz*off*sg,o=oAt(px,pz);
+          if((o!==0&&o!==4)||hAt(px,pz)!==0||used.has(K(px,0,pz))||used.has(K(px,1,pz))||m.get(px,0,pz))continue;
+          const wall=used.has(K(px+nx*sg,1,pz+nz*sg))||used.has(K(px+2*nx*sg,1,pz+2*nz*sg));
+          if(!wall||vnoise(px,pz,5,77)<.55)continue;
+          m.set(px,0,pz,'rooted_dirt');const r=R();m.set(px,1,pz,r<.5?FLOWERS[Math.floor(R()*5)]:r<.7?'fern':r<.85?'short_grass':'azalea_leaves');planters++;
+          const sx=px-nx*sg,sz=pz-nz*sg;if(!used.has(K(sx,0,sz))&&!m.get(sx,0,sz)&&!sideWalk.has(sz*WX+sx))m.set(sx,0,sz,'spruce_trapdoor',{f:nx?(sg>0?1:3):(sg>0?2:0),o:1});
+        }
+        if(!straight||++acc%step)continue;
+        const p1=[cx-nx*off,cz-nz*off],p2=[cx+nx*off,cz+nz*off];
+        const o1=oAt(p1[0],p1[1]),o2=oAt(p2[0],p2[1]);if(![0,4,6].includes(o1)||![0,4,6].includes(o2))continue;
+        const base=hAt(p1[0],p1[1]);if(hAt(p2[0],p2[1])!==base||hAt(cx,cz)>base)continue;
+        const top=base+6;let ok=true;
+        for(const[x,z]of[p1,p2])for(let y=base;y<=top+1&&ok;y++)if(used.has(K(x,y,z)))ok=false;
+        for(let k=-off;k<=off&&ok;k++)for(let y=top-2;y<=top+1;y++)if(used.has(K(cx+nx*k,y,cz+nz*k)))ok=false;
+        if(!ok)continue;arches++;
+        for(const[x,z]of[p1,p2])for(let y=base;y<=top;y++)m.set(x,y,z,y===base?'stone_bricks':stoneMix(x,y,z,.3,.15));
+        for(let k=-off+1;k<off;k++){const x=cx+nx*k,z=cz+nz*k;m.set(x,top,z,Math.abs(k)===off-1?'stone_brick_stairs':'stone_bricks',Math.abs(k)===off-1?{f:nx?(k<0?0:2):(k<0?3:1),h:1}:null);m.set(x,top+1,z,'stone_brick_slab',{h:0})}
+        // Laub, Ranken, Laterne an Kette
+        for(let k=-off;k<=off;k++){const x=cx+nx*k,z=cz+nz*k;
+          if(R()<.75)put(x,top+1+(Math.abs(k)===off?0:1),z,foliage());
+          for(const d of[-1,1]){const fx=x+nz*d,fz=z+nx*d;if(R()<.6)put(fx,top,fz,foliage());if(R()<.35)put(fx,top+1,fz,foliage());if(R()<.3)put(fx,top-1,fz,'cave_vines')}
+          if(Math.abs(k)>0&&Math.abs(k)<off&&R()<.4){put(x,top-1,z,'cave_vines');if(R()<.5)put(x,top-2,z,'cave_vines')}
+        }
+        for(const[x,z]of[p1,p2])for(let y=base+1;y<top;y++)for(const d of[-1,1])if(R()<.22)put(x+nz*d,y,z+nx*d,'vine',{f:nx?(d<0?2:0):(d<0?1:3)});
+        m.set(cx,top-1,cz,'iron_chain');m.set(cx,top-2,cz,'lantern',{h:1});
+        for(const[x,z]of[p1,p2]){oSet(x,z,8)}
+      }
+    }
+  }
+  addBuilding({name:'Torbögen & Pflanzkästen',group:'Plätze',kind:'deco',voxels:placeModel(m,0,0,0,0),label:false,
+    desc:`${arches} überwachsene Steinbögen über den Gassen mit Laterne an der Kette, dazu ${planters} Pflanzkästen vor den Hauswänden.`,
+    steps:['Bogen: zwei Pfeiler aus Steinziegeln (mit bemoosten und rissigen gemischt) 7 Blöcke hoch zu beiden Seiten der Gasse.','Oben quer einen Balken aus Steinziegeln, an den Enden umgedrehte Steinziegeltreppen als Bogenansatz, darauf Steinziegelstufen.','Azaleenlaub (auch blühendes) oben und seitlich auf den Bogen setzen, Leuchtbeerenranken nach unten hängen lassen, Ranken an die Pfeiler.','In die Mitte unter den Bogen eine Eisenkette und darunter eine Laterne hängen.','Pflanzkasten: ein Block Wurzelerde vor der Hauswand, darauf Blumen, Farn oder Azaleenlaub, zur Gasse hin eine offene Fichtenholzfalltür als Kastenwand.']});
+}
 function buildNature(){
   const vox=[],R=mulberry32(3131);
   const clear=(x,z,r,codes)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){const xx=x+dx,zz=z+dz;if(!codes.includes(oAt(xx,zz)))return false;if(xx>=0&&zz>=0&&xx<WX&&zz<WZ&&(moat[zz*WX+xx]||SEA[zz*WX+xx]))return false}return true};
@@ -1135,11 +1194,18 @@ function buildCity(){
   }
   buildFields();
   // Straßen & Plätze als eigener Posten
-  const sv=[];for(const[i,b]of streetCell){if(fieldIdx.has(i))continue;const x=i%WX,z=Math.floor(i/WX);sv.push({x,y:hAt(x,z)-1,z,b})}
+  const sv=[];for(const[i,b]of streetCell){if(fieldIdx.has(i))continue;const x=i%WX,z=Math.floor(i/WX),y=hAt(x,z);sv.push({x,y:y-1,z,b});
+    if(sideWalk.has(i)&&occ[i]===1&&!moat[i]&&y<PLAT){sv.push({x,y,z,b:'stone_brick_slab',h:0});continue}
+    if(occ[i]!==1&&occ[i]!==2)continue;
+    const h=hash3(x,77,z);
+    if(vnoise(x,z,4,61)>.66&&h<.45&&b!=='dirt_path')sv.push({x,y,z,b:'moss_carpet'});
+    else if(h<.004&&BLOCKS[b].shape==='cube')sv.push({x,y,z,b:'spruce_trapdoor',f:0,h:0,o:0});
+  }
   addBuilding({name:'Straßen & Plätze',group:'Plätze',kind:'street',voxels:sv,pickable:false,
     desc:'Hauptstraße vom Tor über den Markt zur Burg (Bruchstein und Kies), Gassen aus Trampelpfad und Kies, Marktplatz aus Steinziegeln, Bruchstein und Andesit.',
-    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, poliertem Andesit und Bruchstein, dazwischen Flecken aus festgetretenem Schlamm.','Kai am Hafen aus Steinziegeln und Bruchstein.']});
+    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, poliertem Andesit und Bruchstein, dazwischen Flecken aus festgetretenem Schlamm.','Kai am Hafen aus Steinziegeln und Bruchstein.','Hauptstraße: am Rand je eine Reihe Steinziegelstufen als erhöhter Gehweg.','Moosteppich in Flecken auf das Pflaster legen, hier und da eine geschlossene Falltür als Kellerluke.']});
   buildLamps();
+  buildArches();
   buildNature();
 }
 
@@ -1181,7 +1247,10 @@ function boxesOf(v,get){
     case 'slab':return v.h?[[0,.5,0,1,1,1]]:[[0,0,0,1,.5,1]];
     case 'stairs':{const lo=v.h?.5:0,hi=v.h?0:.5;const st=[[0,hi,0,1,hi+.5,.5],[.5,hi,0,1,hi+.5,1],[0,hi,.5,1,hi+.5,1],[0,hi,0,.5,hi+.5,1]][v.f||0];return[[0,lo,0,1,lo+.5,1],st]}
     case 'pane':return v.a==='z'?[[7*s16,0,0,9*s16,1,1]]:[[0,0,7*s16,1,1,9*s16]];
-    case 'trapdoor':case 'ladder':case 'door':{
+    case 'chain':return[[6.5*s16,0,6.5*s16,9.5*s16,1,9.5*s16]];
+    case 'carpet':return[[0,0,0,1,s16,1]];
+    case 'trapdoor':if(!v.o)return v.h?[[0,13*s16,0,1,1,1]]:[[0,0,0,1,3*s16,1]];
+    case 'ladder':case 'door':{
       const t=sh==='ladder'?s16:3*s16;const side=sh==='door'?((v.f+2)&3):v.f;
       return[[[0,0,0,1,1,t],[1-t,0,0,1,1,1],[0,0,1-t,1,1,1],[0,0,0,t,1,1]][side]]}
     case 'lantern':return v.h?[[5*s16,s16,5*s16,11*s16,8*s16,11*s16],[7*s16,8*s16,7*s16,9*s16,1,9*s16]]:[[5*s16,0,5*s16,11*s16,7*s16,11*s16],[6*s16,7*s16,6*s16,10*s16,9*s16,10*s16]];
@@ -1627,7 +1696,7 @@ function closePanel(){panel.hidden=true;if(selected){setBuildingMat(selected,nul
 
 // ---------- Texturen aus der Minecraft-.jar ----------
 // Die .jar ist ein ZIP-Archiv. Es wird nur im Browser gelesen, nichts wird hochgeladen.
-const JAR_NAMES={door_bottom:'spruce_door_bottom',door_top:'spruce_door_top',campfire_log:'campfire_log_lit',wheat:'wheat_stage7',carrots:'carrots_stage3',potatoes:'potatoes_stage3',beetroots:'beetroots_stage3'};
+const JAR_NAMES={chain:['iron_chain','chain'],door_bottom:'spruce_door_bottom',door_top:'spruce_door_top',campfire_log:'campfire_log_lit',wheat:'wheat_stage7',carrots:'carrots_stage3',potatoes:'potatoes_stage3',beetroots:'beetroots_stage3'};
 const JAR_TINT={short_grass:[121,192,90],fern:[104,170,80],vine:[89,174,48],grass_block_top:[121,192,90],oak_leaves:[89,174,48],spruce_leaves:[97,153,97],water_still:[63,118,228]};
 const JAR_SKIP=new Set(['lantern']); // Laterne ist in Minecraft ein Teilebogen, keine Blockfläche
 async function readJar(file){
@@ -1653,7 +1722,7 @@ async function loadTexturesFromJar(file){
   const read=await readJar(file);let ok=0,miss=[];
   const keys=TILE_KEYS.filter(k=>k!=='plaster').concat(Object.keys(PLASTER));
   for(const k of keys){if(JAR_SKIP.has(k))continue;
-    const bytes=await read('assets/minecraft/textures/block/'+(JAR_NAMES[k]||k)+'.png');
+    let bytes=null;for(const nm of[].concat(JAR_NAMES[k]||k)){bytes=await read('assets/minecraft/textures/block/'+nm+'.png');if(bytes)break}
     if(!bytes){miss.push(k);continue}
     jarTex.set(k,await pngTo16(bytes,JAR_TINT[k]));ok++}
   if(!ok)throw new Error('In dieser Datei wurden keine Blocktexturen gefunden. Bitte die Versions-.jar wählen, z. B. 26.3.jar.');
