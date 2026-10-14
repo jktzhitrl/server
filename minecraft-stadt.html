@@ -121,7 +121,7 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
   <canvas id="view" aria-label="3D-Ansicht der Stadt"></canvas>
   <div class="labels" id="labels"></div>
   <div class="bar">
-    <div class="brand"><h1>Burgstadt-Bauplan</h1><span class="stage">Java 26.3 · Etappe 1b</span></div>
+    <div class="brand"><h1>Burgstadt-Bauplan</h1><span class="stage">Java 26.3 · Etappe 1c</span></div>
     <div class="tools">
       <button id="btnTotal" class="primary">Gesamt-Materialliste</button>
       <button id="btnList">Gebäude</button>
@@ -241,7 +241,15 @@ const BLOCKS={
   flowering_azalea_leaves:{de:'Blühendes Azaleenlaub',shape:'leaves',tex:'flowering_azalea_leaves',cat:'Bäume',note:'mit der Schere ernten'},
   cave_vines:{de:'Leuchtbeerenranke',shape:'cross',tex:'cave_vines_lit',cat:'Bäume',note:'Leuchtbeeren unter einen Block pflanzen'},
   moss_carpet:{de:'Moosteppich',shape:'carpet',tex:'moss_block',cat:'Wege'},
-  rooted_dirt:{de:'Wurzelerde',shape:'cube',tex:'rooted_dirt',cat:'Wege'}
+  rooted_dirt:{de:'Wurzelerde',shape:'cube',tex:'rooted_dirt',cat:'Wege'},
+  cobblestone_slab:{de:'Bruchsteinstufe',shape:'slab',tex:'cobblestone',cat:'Wege'},
+  birch_log:{de:'Birkenstamm',shape:'log',tex:{end:'birch_log_top',side:'birch_log'},cat:'Bäume',note:'oder Birkensetzling pflanzen'},
+  birch_leaves:{de:'Birkenlaub',shape:'leaves',tex:'birch_leaves',cat:'Bäume',note:'wächst mit dem Setzling'},
+  dark_oak_log:{de:'Schwarzeichenstamm',shape:'log',tex:{end:'dark_oak_log_top',side:'dark_oak_log'},cat:'Bäume',note:'oder 4 Schwarzeichensetzlinge'},
+  dark_oak_leaves:{de:'Schwarzeichenlaub',shape:'leaves',tex:'dark_oak_leaves',cat:'Bäume',note:'wächst mit dem Setzling'},
+  cherry_log:{de:'Kirschholzstamm',shape:'log',tex:{end:'cherry_log_top',side:'cherry_log'},cat:'Bäume',note:'oder Kirschsetzling pflanzen'},
+  cherry_leaves:{de:'Kirschblätter',shape:'leaves',tex:'cherry_leaves',cat:'Bäume',note:'wächst mit dem Setzling'},
+  sweet_berry_bush:{de:'Süßbeerenstrauch',shape:'cross',tex:'sweet_berry_bush',cat:'Bäume',note:'Süße Beeren pflanzen'}
 };
 const GLOW=new Set(['lantern','campfire','glowstone','glass_pane','cave_vines']);
 const LIGHTS=new Set(['lantern','campfire','glowstone']);
@@ -254,7 +262,7 @@ const FULL=new Set(Object.keys(BLOCKS).filter(k=>['cube','log'].includes(BLOCKS[
 const TILE_KEYS=['plaster','stripped_dark_oak_log','stripped_dark_oak_log_top','spruce_planks','dark_oak_planks','stone_bricks','mossy_stone_bricks','cracked_stone_bricks','cobblestone','mossy_cobblestone','stone','andesite','smooth_stone','bricks','gravel','dirt_path_top','dirt_path_side','dirt','grass_block_top','grass_block_side','glass','iron_bars','spruce_trapdoor','door_bottom','door_top','lantern','campfire_log','ladder','barrel_top','barrel_side','hay_block_top','hay_block_side','water_still',
   'coarse_dirt','packed_mud','polished_andesite','sand','oak_log','oak_log_top','oak_leaves','spruce_log','spruce_log_top','spruce_leaves',
   'red_wool','white_wool','blue_wool','yellow_wool','green_wool','orange_wool','pumpkin_side','pumpkin_top','melon_side','melon_top','glowstone',
-  'poppy','dandelion','cornflower','allium','oxeye_daisy','short_grass','fern','farmland_moist','wheat','carrots','potatoes','beetroots','vine','chain','azalea_leaves','flowering_azalea_leaves','cave_vines_lit','moss_block','rooted_dirt'];
+  'poppy','dandelion','cornflower','allium','oxeye_daisy','short_grass','fern','farmland_moist','wheat','carrots','potatoes','beetroots','vine','chain','azalea_leaves','flowering_azalea_leaves','cave_vines_lit','moss_block','rooted_dirt','birch_log','birch_log_top','birch_leaves','dark_oak_log','dark_oak_log_top','dark_oak_leaves','cherry_log','cherry_log_top','cherry_leaves','sweet_berry_bush'];
 let evening=false;
 const ATL_COLS=8, ATL_ROWS=Math.ceil(TILE_KEYS.length/ATL_COLS);
 const TILE={}; TILE_KEYS.forEach((k,i)=>TILE[k]={c:i%ATL_COLS,r:Math.floor(i/ATL_COLS)});
@@ -338,6 +346,15 @@ function texPainter(key){
     case 'chain':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const link=(y%6<3)?(x===7||x===8):(x===6||x===9||((y%6===3||y%6===5)&&(x===7||x===8)));put(x,y,link?mul([70,74,82],.9+R()*.3):[0,0,0],link?255:0)}break;
     case 'azalea_leaves':case 'flowering_azalea_leaves':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();let c=mul([92,128,44],.75+R()*.45);if(key==='flowering_azalea_leaves'&&hash3(x>>1,y>>1,3)<.16)c=mul([200,110,190],.85+R()*.3);put(x,y,c,v<.1?0:255)}break;
     case 'cave_vines_lit':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,[0,0,0],0);for(let y=0;y<16;y++){const x=7+Math.round(Math.sin(y*.7));put(x,y,[70,110,40]);if(y%3===0)put(x+1,y,[90,140,50])}for(const[x,y]of[[5,4],[10,8],[6,12],[9,2]]){put(x,y,[255,170,60]);put(x+1,y,[255,200,90]);put(x,y+1,[230,140,40])}break;
+    case 'birch_log':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul([216,215,210],1+(R()-.5)*.1);if(hash3(x>>2,y,4)<.1||(y%5===2&&hash3(x>>1,y,6)<.4))c=[52,52,48];put(x,y,c)}break;
+    case 'birch_log_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);put(x,y,r>6.6?[216,215,210]:mul([193,170,120],.95+Math.sin(r*1.9)*.07))}break;
+    case 'dark_oak_log':{const cs=[];for(let x=0;x<16;x++)cs.push(1+(R()-.5)*.4);for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([62,48,30],cs[x]*(1+(R()-.5)*.12)));break}
+    case 'dark_oak_log_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);put(x,y,r>6.6?[62,48,30]:mul([90,66,40],.95+Math.sin(r*1.9)*.07))}break;
+    case 'cherry_log':{const cs=[];for(let x=0;x<16;x++)cs.push(1+(R()-.5)*.35);for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([60,34,38],cs[x]*(1+(R()-.5)*.12)));break}
+    case 'cherry_log_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);put(x,y,r>6.6?[60,34,38]:mul([210,150,140],.95+Math.sin(r*1.9)*.07))}break;
+    case 'birch_leaves':case 'dark_oak_leaves':case 'cherry_leaves':{const c={birch_leaves:[98,140,64],dark_oak_leaves:[52,98,30],cherry_leaves:[238,168,200]}[key];
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,mul(c,.75+R()*.4),v<.13?0:255)}break}
+    case 'sweet_berry_bush':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=hash3(x>>1,y>>1,11);put(x,y,v<.1?[200,30,40]:mul([50,96,48],.8+R()*.3),v<.62||y<3?(v<.1?255:255):0)}break;
     case 'moss_block':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([90,110,44],.8+R()*.35));break;
     case 'rooted_dirt':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,v<.12?[150,110,80]:mul([134,96,67],1+(R()-.5)*.2))}break;
     case 'vine':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=hash3(x>>1,y>>1,9);put(x,y,mul([62,118,40],.7+R()*.5),v<.55?255:0)}break;
@@ -506,16 +523,27 @@ const SEA=new Uint8Array(WX*WZ),ROCK=new Uint8Array(WX*WZ),SAND=new Uint8Array(W
 const hAt=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?0:Hm[z*WX+x];
 function vnoise(x,z,s,seed){const xi=Math.floor(x/s),zi=Math.floor(z/s),fx=x/s-xi,fz=z/s-zi;const g=(a,b)=>hash3(a,b,seed);const sm=t=>t*t*(3-2*t);const a=g(xi,zi),b=g(xi+1,zi),c=g(xi,zi+1),e=g(xi+1,zi+1);return(a+(b-a)*sm(fx))+((c+(e-c)*sm(fx))-(a+(b-a)*sm(fx)))*sm(fz)}
 const CASTLE={x0:76,x1:124,z0:18,z1:60};
-const PLAT=7;
+const PLAT=12;
+const HILL=new Uint8Array(WX*WZ);
+// Sanfte Hügel: die Stadt steigt von Süden zur Burg hin an, dazu Wellen im Gelände
+function liftAt(x,z){
+  const t=Math.max(0,Math.min(1,(205-z)/150));
+  let l=t*4.4+(vnoise(x,z,28,5)-.5)*4.6+(vnoise(x,z,12,6)-.5)*1.8;
+  if(x>182)l*=Math.max(0,(204-x)/22);
+  for(const[gx,gz,r]of[[100,232,16],[193,143,13]]){const d=Math.hypot(x-gx,z-gz);if(d<r)l*=Math.max(0,(d-r*.45)/(r*.55))}
+  return Math.max(0,Math.round(l));
+}
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
-  const dx=x-100,dz=z-40,rx=44,rz=38;
+  const dx=x-100,dz=z-40,rx=44,rz=38,i=z*WX+x;
   const e=Math.pow(Math.abs(dx)/rx,4)+Math.pow(Math.abs(dz)/rz,4);
-  let h=0;
-  if(e<=1)h=PLAT;else{const t=Math.pow(e,.25),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;h=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/11)))}
+  let hill=0;
+  if(e<=1)hill=PLAT;else{const t=Math.pow(e,.25),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;hill=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/15)))}
+  const lift=liftAt(x,z);let h=Math.max(lift,hill);
+  if(hill>0&&hill>=lift)HILL[i]=1;
   const cd=Math.max(CASTLE.x0-x,x-CASTLE.x1,CASTLE.z0-z,z-CASTLE.z1);
-  if(cd>=3&&cd<=6){h=PLAT-3;moat[z*WX+x]=1}
+  if(cd>=3&&cd<=6){h=PLAT-3;moat[i]=1;HILL[i]=1}
   // Küste im Osten, Landzunge mit Leuchtturm
-  const cx=coastX(z),i=z*WX+x;
+  const cx=coastX(z);
   const hd=segDist(x+.5,z+.5,[214,100],[242,106]),hr=5+vnoise(x,z,5,4)*2.5;
   if(hd<hr&&x>=cx-6){ROCK[i]=1;h=Math.max(1,Math.min(6,Math.round((x-cx+6)/4.5)+(hd<hr-2.5?1:0)))}
   else if(x>=cx){SEA[i]=1;h=x>cx+9?-5:-3}
@@ -557,6 +585,11 @@ const STREETS=[
   {name:'Kai',w:3,kind:'quay',pts:[[210,108],[209,126],[210,141],[210,158],[209,174]]}
 ];
 const MARKET=[[76,128],[90,124],[106,127],[110,138],[107,152],[92,156],[78,151],[73,140]];
+const PLAZA_Y=Hm[140*WX+92];
+for(let z=110;z<175;z++)for(let x=55;x<130;x++){
+  const i=z*WX+x;if(inPoly(x+.5,z+.5,MARKET)){Hm[i]=PLAZA_Y;continue}
+  const d=polyDist(x+.5,z+.5,MARKET.concat([MARKET[0]]));if(d<7)Hm[i]=Math.round(PLAZA_Y+(Hm[i]-PLAZA_Y)*d/7);
+}
 const streetCell=new Map(); // Index -> Blockart
 const sideWalk=new Set(),sideCenter=new Set();
 function streetMat(kind,x,z){
@@ -583,7 +616,7 @@ for(const s of STREETS){
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
   const i=z*WX+x;if(occ[i])continue;
   if(SEA[i])occ[i]=9;
-  else if(Hm[i]>0||moat[i]||ROCK[i])occ[i]=5;
+  else if(HILL[i]||moat[i]||ROCK[i])occ[i]=5;
   else if(polyDist(x+.5,z+.5,WALL)<(x>=196?3.5:5.5))occ[i]=3;
   else if(!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]])))occ[i]=(x>=196&&z>=106&&z<=178)?0:6; // Hafenviertel vor der Mauer
 }
@@ -604,9 +637,17 @@ function countBlocks(vox){const c={};for(const v of vox){if(BLOCKS[v.b].countHal
 
 function markOcc(vox,code){for(const v of vox){if(oAt(v.x,v.z)===0||oAt(v.x,v.z)===7)oSet(v.x,v.z,code)}}
 function fitsAt(m,r,ox,oz){
-  const bb=m.bboxRot(r);
-  for(let x=ox+bb.minX;x<=ox+bb.maxX;x++)for(let z=oz+bb.minZ;z<=oz+bb.maxZ;z++)if(oAt(x,z)!==0)return false;
-  return true;
+  const bb=m.bboxRot(r);let lo=1e9,hi=-1e9;
+  for(let x=ox+bb.minX;x<=ox+bb.maxX;x++)for(let z=oz+bb.minZ;z<=oz+bb.maxZ;z++){if(oAt(x,z)!==0)return false;const h=hAt(x,z);if(h<lo)lo=h;if(h>hi)hi=h}
+  return hi-lo<=3;
+}
+// Setzt ein Haus auf das Gelände: Sockel auf die höchste Stelle, darunter ein Fundament bis zum Boden
+function placeOnTerrain(m,r,ox,oz){
+  const vox=placeModel(m,r,ox,0,oz);let base=0;
+  for(const v of vox)if(v.y===0)base=Math.max(base,hAt(v.x,v.z));
+  const found=[];
+  for(const v of vox){if(v.y===0)for(let y=hAt(v.x,v.z);y<base;y++)found.push({x:v.x,y,z:v.z,b:hash3(v.x,y,v.z)<.55?'cobblestone':stoneMix(v.x,y,v.z,.3,.1)});v.y+=base}
+  return vox.concat(found);
 }
 function claim(m,r,ox,oz){
   const bb=m.bboxRot(r);
@@ -624,7 +665,7 @@ function placeNear(m,tx,tz,maxR=16){
     if(Math.max(Math.abs(dx),Math.abs(dz))!==rr)continue;
     const cx=tx+dx,cz=tz+dz;const sd=nearestStreetDir(cx,cz,14);if(sd<0)continue;
     const r=(sd-m.front+4)&3;const[ax,az]=rotP(m.ax,m.az,r);const ox=Math.round(cx-ax),oz=Math.round(cz-az);
-    if(fitsAt(m,r,ox,oz)){claim(m,r,ox,oz);return{r,ox,oz,vox:placeModel(m,r,ox,0,oz)}}
+    if(fitsAt(m,r,ox,oz)){claim(m,r,ox,oz);return{r,ox,oz,vox:placeOnTerrain(m,r,ox,oz)}}
   }
   return null;
 }
@@ -634,7 +675,8 @@ function houseSteps(m,r,extra){
   const i=m.info,fd=DIR_DE[(m.front+r)&3];
   const st=[
     `Grundriss abstecken: ${i.w} × ${i.d} Blöcke, die Haustür zeigt nach ${fd}. Den Boden ebnen.`,
-    `Schicht 1 – Sockel: Ein Ring aus Steinziegeln rundum, innen den Boden mit Fichtenholzbrettern auslegen.`,
+    `Am Hang zuerst das Fundament: Bruchstein mit Steinziegeln gemischt bis auf die Höhe der höchsten Ecke mauern (im Schichtplan die untersten Schichten).`,
+    `Sockel: Ein Ring aus Steinziegeln rundum, innen den Boden mit Fichtenholzbrettern auslegen.`,
     i.stone?`Erdgeschoss (3 Blöcke hoch) aus Stein: Ecken und Pfeiler aus Steinziegeln, dazwischen Bruchstein mit einzelnen Steinziegeln gemischt. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`:
     `Erdgeschoss (3 Blöcke hoch): Vor die Tür eine Steinziegeltreppe als Stufe, unter jedes Fenster außen eine umgedrehte Treppe als Fensterbank. Eckpfosten und Ständer aus entrindeten Schwarzeichenstämmen senkrecht setzen. Die Felder dazwischen (Gefache) mit ${PLASTER[plasterChoice]} füllen. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`,
     `Balkenlage: Liegende Stämme rundum als Rahmen (Stamm seitlich gegen den Nachbarstamm setzen, dann liegt er waagerecht), innen Fichtenholzbretter als Decke.`
@@ -814,16 +856,16 @@ function buildCastle(){
     desc:'Kleiner Ziehbrunnen mit Holzdach im Burghof.',steps:['3 × 3 Ring aus Steinziegeln, in die Mitte eine Wasserquelle.','Auf die Ecken je zwei Zaunpfosten, darauf ein Dach aus Schwarzeichenholzstufen.','Unter das Dach eine Laterne hängen.']});
   // Blumenbeete und Bäume im Burghof
   const used=new Set();for(const b of buildings)for(const v of b.voxels)if(v.y>=B-1&&v.y<=B+3)used.add(v.x+','+v.z);
-  const gv=[],Rg=mulberry32(99);
+  const gm=new Model(),Rg=mulberry32(99);
   for(let x=CASTLE.x0+3;x<=CASTLE.x1-3;x++)for(let z=CASTLE.z0+3;z<=CASTLE.z1-3;z++){
     if(used.has(x+','+z)||streetCell.has(z*WX+x))continue;
     let near=false;for(let a=-1;a<=1&&!near;a++)for(let c=-1;c<=1;c++)if(used.has((x+a)+','+(z+c))||streetCell.has((z+c)*WX+x+a))near=true;
     if(near)continue;
     const n=vnoise(x,z,4,21);
-    if(n>.6){const r=Rg();if(r<.55)gv.push({x,y:B,z,b:FLOWERS[Math.floor(Rg()*5)]});else if(r<.75)gv.push({x,y:B,z,b:'oak_leaves'})}
+    if(n>.6){const r=Rg();if(r<.55)gm.set(x,B,z,FLOWERS[Math.floor(Rg()*5)]);else if(r<.75)bush(gm,x,B,z,Rg)}
   }
-  for(const[tx,tz]of[[113,30],[84,55],[117,56]])if(!used.has(tx+','+tz))oakTree(gv,tx,tz,B,mulberry32(tx*7+tz));
-  addBuilding({name:'Burggarten',group:'Burg',kind:'deco',voxels:gv,pickable:false,
+  for(const[tx,tz]of[[113,30],[84,55],[117,56]])if(!used.has(tx+','+tz))(tx===84?cherryTree:oakTree)(gm,tx,tz,B,mulberry32(tx*7+tz));
+  addBuilding({name:'Burggarten',group:'Burg',kind:'deco',voxels:placeModel(gm,0,0,0,0),pickable:false,
     desc:'Blumenbeete, Büsche und Eichen im Burghof.',steps:['Beete frei auf dem Gras verteilen und Blumen setzen (Knochenmehl auf Gras erzeugt sie auch von selbst).','Büsche: einzelne Laubblöcke, die nicht verfallen sollen. Im Survival mit Schere abbauen, dann verfallen sie nicht.','Eichen aus Setzlingen wachsen lassen.']});
   // Burggraben (Wasser)
   const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){if(y===PLAT-1&&x>=97&&x<=103&&z>=CASTLE.z1+3&&z<=CASTLE.z1+6)continue;wv.push({x,y,z,b:'water'})}
@@ -887,7 +929,7 @@ function buildFountain(cx,cz){
   m.set(0,7,0,'stone_brick_wall');m.set(0,8,0,'lantern',{h:0});
   for(const[dx,dz]of[[-2,-2],[2,-2],[-2,2],[2,2]])m.set(dx,2,dz,'stone_brick_slab',{h:0});
   for(const[dx,dz]of[[-3,-3],[3,-3],[-3,3],[3,3]])m.set(dx,2,dz,'lantern',{h:0});
-  const vox=placeModel(m,0,cx,0,cz);
+  const vox=placeModel(m,0,cx,hAt(cx,cz),cz);
   addBuilding({name:'Marktbrunnen',group:'Plätze',kind:'fountain',voxels:vox,label:true,
     desc:'Großer Stufenbrunnen auf dem Marktplatz: achteckiges Becken, oberes Becken und eine Säule, an der das Wasser herabfällt. Vier Laternen auf dem Rand.',
     steps:['Achteck mit 11 Blöcken Durchmesser abstecken.','Außen ein Ring aus Steinziegeltreppen als Stufe zum Brunnen.','Beckenrand: Steinziegel, darauf Steinziegelstufen als Sitzkante. Becken mit Wasser füllen.','Oberes Becken: 5 × 5 Steinziegel zwei Lagen hoch, innen Wasser.','Mitte: Säule aus 6 Steinziegeln. An alle vier Seiten oben eine Wasserquelle setzen, das Wasser fällt dann an der Säule herab. Obendrauf eine Steinziegelmauer mit Laterne.','Laternen auf die vier Ecken des Beckenrands stellen.']});
@@ -917,22 +959,43 @@ function genStable(){
   m.set(4,3,-1,'lantern',{h:1});m.set(8,3,-1,'lantern',{h:1});
   m.ax=6;m.az=3;m.front=0;return m;
 }
-function oakTree(vox,x,z,base,R){
-  const h=4+Math.floor(R()*2);
-  for(let y=0;y<h;y++)vox.push({x,y:base+y,z,b:'oak_log',a:'y'});
-  const top=base+h-1;
-  for(let dy=-2;dy<=1;dy++){const r=dy<0?2:1;for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){
-    if(dx===0&&dz===0&&dy<1)continue;
-    if(Math.abs(dx)===r&&Math.abs(dz)===r&&(dy===1||R()<.5))continue;
-    vox.push({x:x+dx,y:top+dy,z:z+dz,b:'oak_leaves'})}}
+// Bäume: Laub als unregelmäßige Kugel, Stämme überschreiben Laub
+function canopy(T,cx,cy,cz,rx,ry,rz,leaf,R){
+  for(let dx=-Math.ceil(rx);dx<=Math.ceil(rx);dx++)for(let dy=-Math.ceil(ry);dy<=Math.ceil(ry);dy++)for(let dz=-Math.ceil(rz);dz<=Math.ceil(rz);dz++){
+    const d=(dx/rx)**2+(dy/ry)**2+(dz/rz)**2;if(d>1)continue;if(d>.55&&R()<.3)continue;
+    T.setIfEmpty(Math.round(cx+dx),Math.round(cy+dy),Math.round(cz+dz),leaf);
+  }
 }
-function spruceTree(vox,x,z,base,R){
-  const h=7+Math.floor(R()*3);
-  for(let y=0;y<h;y++)vox.push({x,y:base+y,z,b:'spruce_log',a:'y'});
-  const radii=[0,1,1,2,1,2,2,1,2,3,2];
-  vox.push({x,y:base+h,z,b:'spruce_leaves'});
-  for(let i=1;i<radii.length&&base+h-i>base+1;i++){const y=base+h-i,r=radii[i];
-    for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){if(!dx&&!dz)continue;if(r>1&&Math.abs(dx)===r&&Math.abs(dz)===r)continue;if(r===1&&dx&&dz&&i%2)continue;vox.push({x:x+dx,y,z:z+dz,b:'spruce_leaves'})}}
+function trunk(T,x,z,y0,h,log){for(let y=y0;y<y0+h;y++)T.set(x,y,z,log,{a:'y'})}
+function oakTree(T,x,z,b,R){const h=4+Math.floor(R()*2);canopy(T,x,b+h-.5,z,2.4+R()*.5,2,2.4+R()*.5,'oak_leaves',R);trunk(T,x,z,b,h,'oak_log')}
+function bigOakTree(T,x,z,b,R){
+  const h=6+Math.floor(R()*3);canopy(T,x,b+h,z,3.4,2.6,3.4,'oak_leaves',R);
+  for(let k=0;k<3;k++){const d=DIRS[Math.floor(R()*4)],y=b+h-2-k;for(let s2=1;s2<=2;s2++)T.set(x+d[0]*s2,y+(s2>1?1:0),z+d[1]*s2,'oak_log',{a:d[0]?'x':'z'});canopy(T,x+d[0]*3,y+2,z+d[1]*3,2,1.6,2,'oak_leaves',R)}
+  trunk(T,x,z,b,h+1,'oak_log');
+}
+function birchTree(T,x,z,b,R){const h=5+Math.floor(R()*3);canopy(T,x,b+h-1,z,1.8,2.4,1.8,'birch_leaves',R);T.setIfEmpty(x,b+h+1,z,'birch_leaves');trunk(T,x,z,b,h,'birch_log')}
+function spruceTree(T,x,z,b,R){
+  const h=7+Math.floor(R()*4);
+  const radii=[0,1,1,2,1,2,2,1,2,3,2,3];
+  T.setIfEmpty(x,b+h,z,'spruce_leaves');T.setIfEmpty(x,b+h+1,z,'spruce_leaves');
+  for(let i=1;i<radii.length&&b+h-i>b+1;i++){const y=b+h-i,r=radii[i];
+    for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){if(!dx&&!dz)continue;if(r>1&&Math.hypot(dx,dz)>r+.3)continue;if(r===1&&dx&&dz&&i%2)continue;T.setIfEmpty(x+dx,y,z+dz,'spruce_leaves')}}
+  trunk(T,x,z,b,h,'spruce_log');
+}
+function darkOakTree(T,x,z,b,R){
+  const h=5+Math.floor(R()*2);canopy(T,x+.5,b+h,z+.5,3.8,1.8,3.8,'dark_oak_leaves',R);canopy(T,x+.5,b+h+1.5,z+.5,2.2,1.2,2.2,'dark_oak_leaves',R);
+  for(const[a,c]of[[0,0],[1,0],[0,1],[1,1]])trunk(T,x+a,z+c,b,h,'dark_oak_log');
+}
+function cherryTree(T,x,z,b,R){
+  const h=4+Math.floor(R()*2);trunk(T,x,z,b,h,'cherry_log');
+  for(const d of[DIRS[Math.floor(R()*4)],DIRS[Math.floor(R()*4)]]){T.set(x+d[0],b+h-1,z+d[1],'cherry_log',{a:d[0]?'x':'z'});T.set(x+d[0]*2,b+h,z+d[1]*2,'cherry_log',{a:'y'})}
+  canopy(T,x,b+h+1.5,z,3.3,1.6,3.3,'cherry_leaves',R);
+  for(let k=0;k<10;k++){const a=R()*6.28,r=2+R()*1.3;T.setIfEmpty(Math.round(x+Math.cos(a)*r),b+h,Math.round(z+Math.sin(a)*r),'cherry_leaves')}
+}
+function bush(T,x,b,z,R,leaf){
+  const lf=leaf||['oak_leaves','oak_leaves','azalea_leaves','flowering_azalea_leaves','dark_oak_leaves','birch_leaves'][Math.floor(R()*6)];
+  const big=R()<.4;canopy(T,x,b+(big?.6:.2),z,big?1.8:1.1,big?1.2:.8,big?1.6:1.1,lf,R);
+  if(R()<.35)T.setIfEmpty(x+(R()<.5?2:-2),b,z,'sweet_berry_bush');
 }
 const STALL_SCHEMES=[['red_wool','white_wool'],['blue_wool','blue_wool'],['green_wool','yellow_wool'],['yellow_wool','yellow_wool'],['orange_wool','white_wool'],['red_wool','red_wool'],['blue_wool','white_wool']];
 const STALL_GOODS=[['pumpkin','melon','Gemüsestand'],['hay_block','hay_block','Kornstand'],['melon','melon','Obststand'],['barrel','barrel','Weinhändler'],['red_wool','blue_wool','Tuchhändler'],['pumpkin','hay_block','Bauernstand'],['barrel','pumpkin','Gewürzstand']];
@@ -950,35 +1013,47 @@ const HOUSE_NAMES=['Wohnhaus','Bürgerhaus','Giebelhaus','Handwerkerhaus','Häus
 // ---------- Felder & Gärten ----------
 const fieldIdx=new Set();
 function buildFields(){
-  const m=new Model(),R=mulberry32(707),CROPS=['wheat','wheat','wheat','carrots','potatoes','beetroots'];
-  const areas=[[3,6,48,70],[150,4,198,62],[60,236,86,249],[118,236,150,249]];let plots=0;
-  const groundOk=(x,z)=>{const i=z*WX+x;return x>=0&&z>=0&&x<WX&&z<WZ&&occ[i]===6&&Hm[i]===0&&!SAND[i]&&!SEA[i]};
-  const setGround=(x,z,b)=>{const i=z*WX+x;streetCell.set(i,b);fieldIdx.add(i);occ[i]=8;m.set(x,-1,z,b)};
-  for(const[ax0,az0,ax1,az1]of areas)for(let pz=az0;pz+8<=az1;pz+=10)for(let px=ax0;px+8<=ax1;px+=10){
-    let ok=true;for(let x=px-1;x<=px+9&&ok;x++)for(let z=pz-1;z<=pz+9;z++)if(!groundOk(x,z)&&occ[z*WX+x]!==8){ok=false;break}
-    if(!ok||polyDist(px+4.5,pz+4.5,WALL)<10)continue;
-    const crop=CROPS[Math.floor(R()*CROPS.length)];plots++;
-    for(let dx=0;dx<9;dx++)for(let dz=0;dz<9;dz++){const x=px+dx,z=pz+dz;
-      if(dx===4&&dz===4){setGround(x,z,'water');continue}
-      setGround(x,z,'farmland');m.set(x,0,z,crop)}
-    for(let k=-1;k<=9;k++)for(const[x,z]of[[px+k,pz-1],[px+k,pz+9],[px-1,pz+k],[px+9,pz+k]]){if(k===4&&z===pz+9)continue;m.set(x,0,z,'spruce_fence');occ[z*WX+x]=8}
-    if(R()<.4){m.set(px+2,0,pz+2,'spruce_fence');m.set(px+2,1,pz+2,'hay_block');m.set(px+2,2,pz+2,'pumpkin')}
-    if(R()<.5){m.set(px+4,0,pz+10,'hay_block');m.set(px+5,0,pz+10,'hay_block');m.set(px+4,1,pz+10,'hay_block');occ[(pz+10)*WX+px+4]=8;occ[(pz+10)*WX+px+5]=8}
+  const m=new Model(),R=mulberry32(707),CROPS=['wheat','wheat','wheat','carrots','potatoes','beetroots','wheat'];
+  const setGround=(x,z,b)=>{const i=z*WX+x,y=hAt(x,z);streetCell.set(i,b);fieldIdx.add(i);occ[i]=8;m.set(x,y-1,z,b)};
+  // Felder als runde, unregelmäßige Flächen vor der Mauer (Rauschen statt Rechtecke)
+  const isF=new Uint8Array(WX*WZ);let cells=0;
+  const okCell=(x,z)=>{if(x<1||z<1||x>=WX-1||z>=WZ-1)return false;const i=z*WX+x;return occ[i]===6&&!SAND[i]&&!SEA[i]&&!ROCK[i]&&!HILL[i]};
+  for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){
+    if(!okCell(x,z))continue;
+    const f=vnoise(x,z,16,41)*.75+vnoise(x,z,6,42)*.25;if(f<.6)continue;
+    if(polyDist(x+.5,z+.5,WALL)<10)continue;
+    let nearStreet=false;for(let a=-2;a<=2&&!nearStreet;a++)for(let c=-2;c<=2;c++){const o=oAt(x+a,z+c);if(o===1||o===2||o===9){nearStreet=true;break}}
+    if(nearStreet)continue;
+    isF[z*WX+x]=1;
+  }
+  for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){const i=z*WX+x;if(!isF[i])continue;cells++;
+    if(x%8===4&&z%8===4){setGround(x,z,'water');continue}
+    setGround(x,z,'farmland');const y=hAt(x,z);
+    if(hash3(x,3,z)<.004){m.set(x,y,z,'spruce_fence');m.set(x,y+1,z,'hay_block');m.set(x,y+2,z,'pumpkin');continue}
+    m.set(x,y,z,CROPS[Math.floor(vnoise(x,z,20,43)*CROPS.length)]);
+  }
+  // Ränder: Hecken aus Laub, dazwischen Zaunstücke und Lücken
+  for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){const i=z*WX+x;if(isF[i]||!okCell(x,z)||occ[i]!==6)continue;
+    let edge=false;for(const[a,c]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])if(isF[(z+c)*WX+x+a]){edge=true;break}
+    if(!edge)continue;const y=hAt(x,z),n=vnoise(x,z,7,45),h=hash3(x,9,z);
+    if(n>.62)m.set(x,y,z,'spruce_fence');else if(n>.2&&h>.08){m.set(x,y,z,h<.5?'oak_leaves':'birch_leaves');if(h<.15)m.set(x,y+1,z,'oak_leaves')}
+    else if(h<.04)m.set(x,y,z,'hay_block');
+    occ[i]=8;
   }
   // Gemüsegärten in den Hinterhöfen
   let gardens=0;
-  for(let gz=60;gz<WZ&&gardens<28;gz+=7)for(let gx=10;gx<WX&&gardens<28;gx+=7){
-    const x0=gx+Math.floor(R()*3),z0=gz+Math.floor(R()*3),wide=R()<.5,W=wide?5:3,D=wide?3:5;
-    let ok=true;for(let x=x0-1;x<=x0+W&&ok;x++)for(let z=z0-1;z<=z0+D;z++){const o=oAt(x,z);if(o!==0||SAND[z*WX+x]||hAt(x,z)!==0){ok=false;break}}
+  for(let gz=60;gz<WZ&&gardens<30;gz+=7)for(let gx=10;gx<WX&&gardens<30;gx+=7){
+    const x0=gx+Math.floor(R()*3),z0=gz+Math.floor(R()*3),wide=R()<.5,W=wide?5:3,D=wide?3:5,g0=hAt(x0,z0);
+    let ok=true;for(let x=x0-1;x<=x0+W&&ok;x++)for(let z=z0-1;z<=z0+D;z++){const o=oAt(x,z);if(o!==0||SAND[z*WX+x]||hAt(x,z)!==g0){ok=false;break}}
     if(!ok)continue;gardens++;
     const crop=['carrots','potatoes','beetroots','wheat'][Math.floor(R()*4)];
-    for(let x=x0;x<x0+W;x++)for(let z=z0;z<z0+D;z++){if(x===x0+(W>>1)&&z===z0+(D>>1)){setGround(x,z,'water');continue}setGround(x,z,'farmland');m.set(x,0,z,crop)}
-    for(let x=x0-1;x<=x0+W;x++)for(const z of[z0-1,z0+D]){m.set(x,0,z,'spruce_fence');oSet(x,z,8)}
-    for(let z=z0;z<z0+D;z++)for(const x of[x0-1,x0+W]){if(z===z0+(D>>1)&&x===x0-1)continue;m.set(x,0,z,'spruce_fence');oSet(x,z,8)}
+    for(let x=x0;x<x0+W;x++)for(let z=z0;z<z0+D;z++){if(x===x0+(W>>1)&&z===z0+(D>>1)){setGround(x,z,'water');continue}setGround(x,z,'farmland');m.set(x,g0,z,crop)}
+    for(let x=x0-1;x<=x0+W;x++)for(const z of[z0-1,z0+D]){m.set(x,g0,z,'spruce_fence');oSet(x,z,8)}
+    for(let z=z0;z<z0+D;z++)for(const x of[x0-1,x0+W]){if(z===z0+(D>>1)&&x===x0-1)continue;m.set(x,g0,z,'spruce_fence');oSet(x,z,8)}
   }
   addBuilding({name:'Felder & Gärten',group:'Felder',kind:'deco',voxels:placeModel(m,0,0,0,0),pickable:false,farm:'Weizen für die Windmühle (Etappe 2)',
-    desc:`${plots} umzäunte Felder vor der Mauer (je 9 × 9 mit Wasserloch in der Mitte) und ${gardens} kleine Gemüsegärten in den Hinterhöfen.`,
-    steps:['Feld 9 × 9 abstecken. Genau in die Mitte einen Block Wasser setzen: Wasser bewässert 4 Blöcke in jede Richtung, so wird das ganze Feld feucht.','Erde mit der Hacke zu Ackerboden machen und Weizen, Karotten, Kartoffeln oder Rote Bete pflanzen.','Fichtenholzzaun rundherum, an einer Seite eine Lücke als Eingang.','Vogelscheuche: Zaun, darauf ein Heuballen und ein Kürbis.','Gärten in den Höfen: 5 × 3 oder 3 × 5 Beet mit einem Wasserblock in der Mitte und Zaun rundherum.']});
+    desc:`Rund geschwungene Felder vor der Mauer (${cells} Ackerblöcke) mit Hecken und Zaunstücken als Rand, dazu ${gardens} kleine Gemüsegärten in den Hinterhöfen.`,
+    steps:['Feldform frei und rund abstecken, gern dem Gelände folgend.','Alle 8 Blöcke in beide Richtungen einen Block Wasser setzen: Wasser bewässert 4 Blöcke in jede Richtung, so bleibt der ganze Acker feucht.','Erde mit der Hacke zu Ackerboden machen und Weizen, Karotten, Kartoffeln oder Rote Bete in Flecken pflanzen.','Rand: Laubhecken (mit der Schere abgebautes Laub verfällt nicht), dazwischen kurze Zaunstücke und Lücken als Durchgang.','Vogelscheuche: Zaun, darauf Heuballen und Kürbis.','Gärten in den Höfen: 5 × 3 oder 3 × 5 Beet mit einem Wasserblock in der Mitte und Zaun rundherum.']});
 }
 
 // ---------- Hafen ----------
@@ -1046,7 +1121,7 @@ function placeStalls(){
     if(!ok)continue;
     for(let xx=ox+bb.minX;xx<=ox+bb.maxX;xx++)for(let zz=oz+bb.minZ;zz<=oz+bb.maxZ;zz++)oSet(xx,zz,4);
     n++;
-    addBuilding({name:`Marktstand: ${m.title}`,group:'Markt',kind:'stall',voxels:placeModel(m,r,ox,0,oz),
+    addBuilding({name:`Marktstand: ${m.title}`,group:'Markt',kind:'stall',voxels:placeModel(m,r,ox,PLAZA_Y,oz),
       desc:'Offener Marktstand: vier Zaunpfosten, buntes Stoffdach aus Wolle mit herabhängender Kante, Ladentisch mit Waren, Fässer dahinter.',
       steps:['Vier Fichtenholzzäune 3 hoch als Pfosten (4 × 3 Grundfläche).','Dach: eine Lage Wolle auf die Pfosten, die Farben streifenweise abwechseln. Vorne eine Reihe eine Lage tiefer als Kante.','Ladentisch aus zwei Fichtenholzbrettern, darauf die Waren.','Hinten zwei Fässer, unter das Dach eine Laterne hängen.']});
   }
@@ -1085,11 +1160,12 @@ function buildArches(){
         const cx=Math.round(a[0]+tx*t),cz=Math.round(a[1]+tz*t);
         // Pflanzkästen vor Hauswänden
         for(const sg of[1,-1]){const px=cx+nx*off*sg,pz=cz+nz*off*sg,o=oAt(px,pz);
-          if((o!==0&&o!==4)||hAt(px,pz)!==0||used.has(K(px,0,pz))||used.has(K(px,1,pz))||m.get(px,0,pz))continue;
-          const wall=used.has(K(px+nx*sg,1,pz+nz*sg))||used.has(K(px+2*nx*sg,1,pz+2*nz*sg));
+          const gy=hAt(px,pz);
+          if((o!==0&&o!==4)||used.has(K(px,gy,pz))||used.has(K(px,gy+1,pz))||m.get(px,gy,pz))continue;
+          const wall=used.has(K(px+nx*sg,gy+1,pz+nz*sg))||used.has(K(px+2*nx*sg,gy+1,pz+2*nz*sg));
           if(!wall||vnoise(px,pz,5,77)<.55)continue;
-          m.set(px,0,pz,'rooted_dirt');const r=R();m.set(px,1,pz,r<.5?FLOWERS[Math.floor(R()*5)]:r<.7?'fern':r<.85?'short_grass':'azalea_leaves');planters++;
-          const sx=px-nx*sg,sz=pz-nz*sg;if(!used.has(K(sx,0,sz))&&!m.get(sx,0,sz)&&!sideWalk.has(sz*WX+sx))m.set(sx,0,sz,'spruce_trapdoor',{f:nx?(sg>0?1:3):(sg>0?2:0),o:1});
+          m.set(px,gy,pz,'rooted_dirt');const r=R();m.set(px,gy+1,pz,r<.5?FLOWERS[Math.floor(R()*5)]:r<.7?'fern':r<.85?'short_grass':'azalea_leaves');planters++;
+          const sx=px-nx*sg,sz=pz-nz*sg;if(hAt(sx,sz)===gy&&!used.has(K(sx,gy,sz))&&!m.get(sx,gy,sz)&&!sideWalk.has(sz*WX+sx))m.set(sx,gy,sz,'spruce_trapdoor',{f:nx?(sg>0?1:3):(sg>0?2:0),o:1});
         }
         if(!straight||++acc%step)continue;
         const p1=[cx-nx*off,cz-nz*off],p2=[cx+nx*off,cz+nz*off];
@@ -1118,31 +1194,45 @@ function buildArches(){
     steps:['Bogen: zwei Pfeiler aus Steinziegeln (mit bemoosten und rissigen gemischt) 7 Blöcke hoch zu beiden Seiten der Gasse.','Oben quer einen Balken aus Steinziegeln, an den Enden umgedrehte Steinziegeltreppen als Bogenansatz, darauf Steinziegelstufen.','Azaleenlaub (auch blühendes) oben und seitlich auf den Bogen setzen, Leuchtbeerenranken nach unten hängen lassen, Ranken an die Pfeiler.','In die Mitte unter den Bogen eine Eisenkette und darunter eine Laterne hängen.','Pflanzkasten: ein Block Wurzelerde vor der Hauswand, darauf Blumen, Farn oder Azaleenlaub, zur Gasse hin eine offene Fichtenholzfalltür als Kastenwand.']});
 }
 function buildNature(){
-  const vox=[],R=mulberry32(3131);
-  const clear=(x,z,r,codes)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){const xx=x+dx,zz=z+dz;if(!codes.includes(oAt(xx,zz)))return false;if(xx>=0&&zz>=0&&xx<WX&&zz<WZ&&(moat[zz*WX+xx]||SEA[zz*WX+xx]))return false}return true};
+  const T=new Model(),R=mulberry32(3131);let trees=0,bushes=0;
+  const clear=(x,z,r,codes)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){const xx=x+dx,zz=z+dz;if(!codes.includes(oAt(xx,zz)))return false;if(xx>=0&&zz>=0&&xx<WX&&zz<WZ&&(moat[zz*WX+xx]||SEA[zz*WX+xx]||SAND[zz*WX+xx]))return false}return true};
   const mark=(x,z,r)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++)oSet(x+dx,z+dz,8)};
-  for(let gz=0;gz<WZ;gz+=6)for(let gx=0;gx<WX;gx+=6){
-    const x=gx+Math.floor(R()*5),z=gz+Math.floor(R()*5),p=R(),kind=R();
+  const forest=(x,z)=>vnoise(x,z,26,8)*.8+vnoise(x,z,9,10)*.2;
+  // Wälder und Wiesen vor der Mauer und am Burghügel
+  for(let gz=0;gz<WZ;gz+=4)for(let gx=0;gx<WX;gx+=4){
+    const x=gx+Math.floor(R()*4),z=gz+Math.floor(R()*4),p=R(),k=R();
     if(x>=WX||z>=WZ)continue;const o=oAt(x,z),i=z*WX+x;
-    if(o===6){if(p>.5||SAND[i]||!clear(x,z,2,[6])||polyDist(x+.5,z+.5,WALL)<9)continue;(kind<.5?spruceTree:oakTree)(vox,x,z,hAt(x,z),R);mark(x,z,2)}
-    else if(o===5&&!ROCK[i]&&Hm[i]>0&&Hm[i]<PLAT){if(p>.4||!clear(x,z,2,[5]))continue;oakTree(vox,x,z,hAt(x,z),R);mark(x,z,2)}
+    const onHill=o===5&&HILL[i]&&!moat[i]&&Hm[i]<PLAT&&!ROCK[i];
+    if(!(o===6||onHill))continue;
+    if(o===6&&polyDist(x+.5,z+.5,WALL)<7)continue;
+    const dens=forest(x,z),prob=dens>.56?.62:dens>.44?.24:.07;
+    if(p>prob){ if(p<prob+.16&&clear(x,z,1,[o])){bush(T,x,hAt(x,z),z,R);mark(x,z,1);bushes++} continue }
+    const big=dens>.56&&k<.55;
+    if(!clear(x,z,big?3:2,[o]))continue;
+    const b=hAt(x,z),sp=vnoise(x,z,40,19);
+    if(onHill)(k<.45?spruceTree:k<.75?oakTree:birchTree)(T,x,z,b,R);
+    else if(dens>.56)(k<.3?darkOakTree:k<.55?bigOakTree:k<.75?spruceTree:k<.88?oakTree:birchTree)(T,x,z,b,R);
+    else if(sp>.68&&k<.5)cherryTree(T,x,z,b,R);
+    else (k<.4?oakTree:k<.7?birchTree:k<.85?bigOakTree:spruceTree)(T,x,z,b,R);
+    mark(x,z,big?3:2);trees++;
   }
-  for(let gz=0;gz<WZ;gz+=8)for(let gx=0;gx<WX;gx+=8){
-    const x=gx+Math.floor(R()*6),z=gz+Math.floor(R()*6),p=R();
-    if(oAt(x,z)!==0||SAND[z*WX+x]||p>.4||!clear(x,z,2,[0]))continue;
-    if(p<.12){vox.push({x,y:0,z,b:'oak_leaves'});if(R()<.5)vox.push({x:x+1,y:0,z,b:'oak_leaves'});mark(x,z,1)}
-    else{oakTree(vox,x,z,0,R);mark(x,z,2)}
+  // Höfe in der Stadt: einzelne Bäume und viele Büsche
+  for(let gz=0;gz<WZ;gz+=6)for(let gx=0;gx<WX;gx+=6){
+    const x=gx+Math.floor(R()*5),z=gz+Math.floor(R()*5),p=R();
+    if(x>=WX||z>=WZ||oAt(x,z)!==0||SAND[z*WX+x])continue;
+    if(p<.3&&clear(x,z,2,[0])){const k=R();(k<.45?oakTree:k<.75?birchTree:cherryTree)(T,x,z,hAt(x,z),R);mark(x,z,2);trees++}
+    else if(p<.75&&clear(x,z,1,[0,7].concat([]))&&oAt(x,z)===0){bush(T,x,hAt(x,z),z,R);mark(x,z,1);bushes++}
   }
+  // Blumen, Gras und Farn
   for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
-    const o=oAt(x,z),i=z*WX+x,h=hash3(x,31,z);if(SAND[i]||ROCK[i])continue;
-    if((o===0&&h<.035)||(o===6&&h<.014))vox.push({x,y:hAt(x,z),z,b:FLOWERS[Math.floor(hash3(z,5,x)*5)]});
-    else if((o===0||o===6||(o===5&&!moat[i]&&Hm[i]<PLAT))&&h<(o===6?.2:.12)*(.4+vnoise(x,z,7,13)*1.2))vox.push({x,y:hAt(x,z),z,b:h<.03?'fern':'short_grass'});
+    const o=oAt(x,z),i=z*WX+x,h=hash3(x,31,z);if(SAND[i]||ROCK[i]||SEA[i])continue;const y=hAt(x,z);
+    if((o===0&&h<.035)||(o===6&&h<.016)||(o===8&&h<.01))T.setIfEmpty(x,y,z,FLOWERS[Math.floor(hash3(z,5,x)*5)]);
+    else if((o===0||o===6||o===8||(o===5&&!moat[i]&&Hm[i]<PLAT))&&h<(o===6||o===8?.24:.12)*(.4+vnoise(x,z,7,13)*1.2))T.setIfEmpty(x,y,z,h<.035?'fern':'short_grass');
   }
-  addBuilding({name:'Bäume & Blumen',group:'Bäume & Deko',kind:'deco',voxels:vox,pickable:false,
-    desc:'Eichen und Fichten vor der Mauer und am Burghügel, einzelne Bäume und Büsche in den Hinterhöfen, Blumen im Gras.',
-    steps:['Bäume am einfachsten aus Setzlingen ziehen und mit Knochenmehl wachsen lassen.','Büsche: einzelne Laubblöcke (mit der Schere abgebaut, dann verfallen sie nicht).','Blumen: Knochenmehl auf Gras streuen oder einzeln setzen.']});
+  addBuilding({name:'Bäume & Blumen',group:'Bäume & Deko',kind:'deco',voxels:placeModel(T,0,0,0,0),pickable:false,
+    desc:`${trees} Bäume (Eiche, große Eiche, Birke, Fichte, Schwarzeiche, Kirsche) in Wäldern und Wiesen, ${bushes} Büsche aus verschiedenem Laub, dazu Blumen, Gras und Farn.`,
+    steps:['Bäume am einfachsten aus Setzlingen ziehen und mit Knochenmehl wachsen lassen. Schwarzeichen brauchen 4 Setzlinge im Quadrat.','Wälder dicht setzen, Wiesen nur mit einzelnen Bäumen, so wirkt es natürlich.','Büsche: kleine Laubhaufen (mit der Schere abgebaut verfallen sie nicht), dazwischen Süßbeerensträucher.','Blumen, Gras und Farn: Knochenmehl auf Grasblöcke streuen.']});
 }
-
 function buildCity(){
   buildCityWall();
   buildCastle();
@@ -1184,7 +1274,7 @@ function buildCity(){
         if(fitsAt(m,r,ox,oz)){
           claim(m,r,ox,oz);count++;
           const kind=o.floors===1?'Häuschen':o.gableFront?'Giebelhaus':o.floors===3?'Bürgerhaus':'Wohnhaus';
-          addBuilding({name:`${kind} ${count}`,group:'Wohnhäuser',kind:'house',voxels:placeModel(m,r,ox,0,oz),model:m,rot:r,
+          addBuilding({name:`${kind} ${count}`,group:'Wohnhäuser',kind:'house',voxels:placeOnTerrain(m,r,ox,oz),model:m,rot:r,
             desc:`Leeres Fachwerkhaus an der ${s.name}: ${o.w} × ${o.d} Blöcke, ${o.floors} Stockwerk${o.floors>1?'e':''}${o.over?' mit Überhang':''}, ${o.roof==='spruce'?'Fichten':'Schwarzeichen'}dach${o.gableFront?', Giebel zur Gasse':''}.`,
             steps:houseSteps(m,r)});
           t+=(r&1?bb.maxZ-bb.minZ:bb.maxX-bb.minX)+1+Math.floor(R()*2);
@@ -1197,13 +1287,15 @@ function buildCity(){
   const sv=[];for(const[i,b]of streetCell){if(fieldIdx.has(i))continue;const x=i%WX,z=Math.floor(i/WX),y=hAt(x,z);sv.push({x,y:y-1,z,b});
     if(sideWalk.has(i)&&occ[i]===1&&!moat[i]&&y<PLAT){sv.push({x,y,z,b:'stone_brick_slab',h:0});continue}
     if(occ[i]!==1&&occ[i]!==2)continue;
+    let up=false;for(const[a,c]of DIRS){const j=(z+c)*WX+x+a;if(streetCell.has(j)&&!fieldIdx.has(j)&&hAt(x+a,z+c)===y+1)up=true}
+    if(up&&!moat[i]){sv.push({x,y,z,b:b==='stone_bricks'||b==='polished_andesite'?'stone_brick_slab':'cobblestone_slab',h:0});continue}
     const h=hash3(x,77,z);
     if(vnoise(x,z,4,61)>.66&&h<.45&&b!=='dirt_path')sv.push({x,y,z,b:'moss_carpet'});
     else if(h<.004&&BLOCKS[b].shape==='cube')sv.push({x,y,z,b:'spruce_trapdoor',f:0,h:0,o:0});
   }
   addBuilding({name:'Straßen & Plätze',group:'Plätze',kind:'street',voxels:sv,pickable:false,
     desc:'Hauptstraße vom Tor über den Markt zur Burg (Bruchstein und Kies), Gassen aus Trampelpfad und Kies, Marktplatz aus Steinziegeln, Bruchstein und Andesit.',
-    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, poliertem Andesit und Bruchstein, dazwischen Flecken aus festgetretenem Schlamm.','Kai am Hafen aus Steinziegeln und Bruchstein.','Hauptstraße: am Rand je eine Reihe Steinziegelstufen als erhöhter Gehweg.','Moosteppich in Flecken auf das Pflaster legen, hier und da eine geschlossene Falltür als Kellerluke.']});
+    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, poliertem Andesit und Bruchstein, dazwischen Flecken aus festgetretenem Schlamm.','Kai am Hafen aus Steinziegeln und Bruchstein.','Hauptstraße: am Rand je eine Reihe Steinziegelstufen als erhöhter Gehweg.','Wo die Straße einen Block ansteigt, eine Stufe davor legen, dann gibt es nur halbe Absätze.','Moosteppich in Flecken auf das Pflaster legen, hier und da eine geschlossene Falltür als Kellerluke.']});
   buildLamps();
   buildArches();
   buildNature();
@@ -1421,7 +1513,7 @@ function stepSmoke(now){
   for(let i=0;i<src.length;i++)for(let k=0;k<N;k++){
     const ph=((t*.22+k/N+hash3(i,k,1))%1),j=(i*N+k)*3,v=src[i];
     pos[j]=v.x+.5+Math.sin(t*.7+i)*ph*.8+ph*1.2;pos[j+1]=v.y+.6+ph*7;pos[j+2]=v.z+.5+Math.cos(t*.5+i)*ph*.6;
-    const a=(1-ph)*(ph<.1?ph*10:1)*(evening?.32:.5);col[j]=col[j+1]=col[j+2]=a;
+    const a=(1-ph)*(ph<.1?ph*10:1)*(evening?.3:.22);col[j]=col[j+1]=col[j+2]=a;
   }
   smoke.geo.attributes.position.needsUpdate=true;smoke.geo.attributes.color.needsUpdate=true;
   smoke.pts.visible=!layerMode;
@@ -1696,8 +1788,8 @@ function closePanel(){panel.hidden=true;if(selected){setBuildingMat(selected,nul
 
 // ---------- Texturen aus der Minecraft-.jar ----------
 // Die .jar ist ein ZIP-Archiv. Es wird nur im Browser gelesen, nichts wird hochgeladen.
-const JAR_NAMES={chain:['iron_chain','chain'],door_bottom:'spruce_door_bottom',door_top:'spruce_door_top',campfire_log:'campfire_log_lit',wheat:'wheat_stage7',carrots:'carrots_stage3',potatoes:'potatoes_stage3',beetroots:'beetroots_stage3'};
-const JAR_TINT={short_grass:[121,192,90],fern:[104,170,80],vine:[89,174,48],grass_block_top:[121,192,90],oak_leaves:[89,174,48],spruce_leaves:[97,153,97],water_still:[63,118,228]};
+const JAR_NAMES={chain:['iron_chain','chain'],sweet_berry_bush:'sweet_berry_bush_stage3',door_bottom:'spruce_door_bottom',door_top:'spruce_door_top',campfire_log:'campfire_log_lit',wheat:'wheat_stage7',carrots:'carrots_stage3',potatoes:'potatoes_stage3',beetroots:'beetroots_stage3'};
+const JAR_TINT={birch_leaves:[128,167,85],dark_oak_leaves:[89,174,48],short_grass:[121,192,90],fern:[104,170,80],vine:[89,174,48],grass_block_top:[121,192,90],oak_leaves:[89,174,48],spruce_leaves:[97,153,97],water_still:[63,118,228]};
 const JAR_SKIP=new Set(['lantern']); // Laterne ist in Minecraft ein Teilebogen, keine Blockfläche
 async function readJar(file){
   const buf=new Uint8Array(await file.arrayBuffer()),dv=new DataView(buf.buffer);
