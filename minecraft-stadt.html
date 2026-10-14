@@ -129,9 +129,11 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
       <button id="btnEve" class="toggle" aria-pressed="false">Abendstimmung</button>
       <button id="btnTex">Texturen aus Minecraft laden</button>
       <select id="selPlaster" aria-label="Putz für die Gefache">
+        <option value="calcite">Putz: Calcit</option>
+        <option value="diorite">Putz: Diorit</option>
+        <option value="birch_planks">Putz: Birkenholzbretter</option>
+        <option value="mud_bricks">Putz: Lehmziegel</option>
         <option value="white_terracotta">Putz: Weiße Keramik</option>
-        <option value="calcite">Putz: Calcit (Survival)</option>
-        <option value="diorite">Putz: Diorit (Survival)</option>
       </select>
     </div>
   </div>
@@ -171,8 +173,9 @@ function rotP(x,z,r){switch(r&3){case 0:return[x,z];case 1:return[-z,x];case 2:r
 function dirIndex(dx,dz){if(Math.abs(dx)>=Math.abs(dz))return dx>=0?1:3;return dz>=0?2:0}
 
 // ---------- Blöcke (deutsche Namen wie im Spiel) ----------
-const PLASTER={white_terracotta:'Weiße Keramik',calcite:'Calcit',diorite:'Diorit'};
-let plasterChoice='white_terracotta';
+const PLASTER={calcite:'Calcit',diorite:'Diorit',birch_planks:'Birkenholzbretter',mud_bricks:'Lehmziegel',white_terracotta:'Weiße Keramik'};
+let plasterChoice='calcite';
+try{const c=localStorage.getItem('burgstadt-putz');if(c&&PLASTER[c])plasterChoice=c}catch(e){}
 const BLOCKS={
   plaster:{shape:'cube',tex:'plaster',cat:'Putz'},
   stripped_dark_oak_log:{de:'Entrindeter Schwarzeichenstamm',shape:'log',tex:{end:'stripped_dark_oak_log_top',side:'stripped_dark_oak_log'},cat:'Holz'},
@@ -280,8 +283,11 @@ function texPainter(key){
   const bricks=(c)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++){const row=y>>2,off=row%2?4:0;let col=mul(c,1+(R()-.5)*.18);if(y%4===3||(x+off)%8===7)col=[178,170,160];put(x,y,col)}};
   const cobble=(c,moss)=>{const pts=[];for(let i=0;i<11;i++)pts.push([R()*16,R()*16,.75+R()*.45]);for(let y=0;y<16;y++)for(let x=0;x<16;x++){let a=1e9,b=1e9,ia=0;pts.forEach((p,i)=>{for(const ox of[-16,0,16])for(const oy of[-16,0,16]){const dd=(x-p[0]-ox)**2+(y-p[1]-oy)**2;if(dd<a){b=a;a=dd;ia=i}else if(dd<b)b=dd}});let col=mul(c,pts[ia][2]*(1+(R()-.5)*.1));if(Math.sqrt(b)-Math.sqrt(a)<1.1)col=mul(c,.45);if(moss&&hash3(x>>1,y>>1,ia)<.33)col=mul([86,118,52],.9+R()*.25);put(x,y,col)}};
   switch(key){
-    case 'plaster':{const base={white_terracotta:[209,178,161],calcite:[223,224,220],diorite:[190,190,192]}[plasterChoice];
-      for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul(base,1+(R()-.5)*(plasterChoice==='white_terracotta'?.07:.1));if(plasterChoice==='diorite'&&R()<.18)c=mul(base,R()<.5?.55:1.18);if(plasterChoice==='calcite'&&R()<.06)c=mul(base,.8);put(x,y,c)}break}
+    case 'plaster':{const pc=plasterChoice;
+      if(pc==='birch_planks'){planks([196,178,123]);break}
+      if(pc==='mud_bricks'){for(let y=0;y<16;y++)for(let x=0;x<16;x++){const row=y>>2,off=row%2?4:0;let f=1+(R()-.5)*.14;if(y%4===3||(x+off)%8===7)f=.8;put(x,y,mul([137,104,79],f))}break}
+      const base={white_terracotta:[209,178,161],calcite:[223,224,220],diorite:[190,190,192]}[pc];
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul(base,1+(R()-.5)*(pc==='white_terracotta'?.07:.1));if(pc==='diorite'&&R()<.18)c=mul(base,R()<.5?.55:1.18);if(pc==='calcite'&&R()<.06)c=mul(base,.8);put(x,y,c)}break}
     case 'stripped_dark_oak_log':{const cs=[];for(let x=0;x<16;x++)cs.push(1+(R()-.5)*.25);for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([96,74,50],cs[x]*(1+(R()-.5)*.08)));break}
     case 'stripped_dark_oak_log_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);let f=.95+Math.sin(r*1.9)*.08+(R()-.5)*.06;if(x===0||y===0||x===15||y===15)f=.72;put(x,y,mul([112,88,60],f))}break;
     case 'spruce_planks':planks([114,84,49]);break;
@@ -522,7 +528,12 @@ const moat=new Uint8Array(WX*WZ);
 const SEA=new Uint8Array(WX*WZ),ROCK=new Uint8Array(WX*WZ),SAND=new Uint8Array(WX*WZ);
 const hAt=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?0:Hm[z*WX+x];
 function vnoise(x,z,s,seed){const xi=Math.floor(x/s),zi=Math.floor(z/s),fx=x/s-xi,fz=z/s-zi;const g=(a,b)=>hash3(a,b,seed);const sm=t=>t*t*(3-2*t);const a=g(xi,zi),b=g(xi+1,zi),c=g(xi,zi+1),e=g(xi+1,zi+1);return(a+(b-a)*sm(fx))+((c+(e-c)*sm(fx))-(a+(b-a)*sm(fx)))*sm(fz)}
-const CASTLE={x0:76,x1:124,z0:18,z1:60};
+const CASTLE={x0:72,x1:128,z0:8,z1:76};
+// Hauptburg (oben) und Vorburg (davor), beide folgen dem Hügel
+const HAUPT=[[76,16],[92,8],[110,8],[124,16],[128,32],[122,48],[78,48],[72,32]];
+const VOR=[[78,48],[70,58],[76,72],[92,76],[108,76],[124,72],[130,58],[122,48]];
+const OUTER=[[76,16],[92,8],[110,8],[124,16],[128,32],[122,48],[130,58],[124,72],[108,76],[92,76],[76,72],[70,58],[78,48],[72,32]];
+const OUTER_C=OUTER.concat([OUTER[0]]),HAUPT_C=HAUPT.concat([HAUPT[0]]);
 const PLAT=12;
 const HILL=new Uint8Array(WX*WZ);
 // Sanfte Hügel: die Stadt steigt von Süden zur Burg hin an, dazu Wellen im Gelände
@@ -534,14 +545,13 @@ function liftAt(x,z){
   return Math.max(0,Math.round(l));
 }
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
-  const dx=x-100,dz=z-40,rx=44,rz=38,i=z*WX+x;
-  const e=Math.pow(Math.abs(dx)/rx,4)+Math.pow(Math.abs(dz)/rz,4);
+  const dx=x-100,dz=z-42,rx=47,rz=45,i=z*WX+x;
+  const e=Math.pow(Math.abs(dx)/rx,6)+Math.pow(Math.abs(dz)/rz,6);
   let hill=0;
-  if(e<=1)hill=PLAT;else{const t=Math.pow(e,.25),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;hill=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/15)))}
+  if(e<=1)hill=PLAT;else{const t=Math.pow(e,1/6),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;hill=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/15)))}
   const lift=liftAt(x,z);let h=Math.max(lift,hill);
   if(hill>0&&hill>=lift)HILL[i]=1;
-  const cd=Math.max(CASTLE.x0-x,x-CASTLE.x1,CASTLE.z0-z,z-CASTLE.z1);
-  if(cd>=3&&cd<=6){h=PLAT-3;moat[i]=1;HILL[i]=1}
+  if(x>=56&&x<=144&&z<=90&&!inPoly(x+.5,z+.5,OUTER)){const d=polyDist(x+.5,z+.5,OUTER_C);if(d>3.5&&d<=7.5){h=PLAT-3;moat[i]=1;HILL[i]=1}}
   // Küste im Osten, Landzunge mit Leuchtturm
   const cx=coastX(z);
   const hd=segDist(x+.5,z+.5,[214,100],[242,106]),hr=5+vnoise(x,z,5,4)*2.5;
@@ -553,7 +563,7 @@ for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
 function coastX(z){return 217+Math.round((vnoise(3,z,13,9)-.5)*7)}
 
 // Stadtmauer-Verlauf (offen, die Burg schließt den Ring im Norden)
-const WALL=[[62,70],[24,84],[12,150],[32,214],[88,232],[112,232],[166,222],[192,166],[194,120],[176,86],[138,70]];
+const WALL=[[58,76],[24,86],[12,150],[32,214],[88,232],[112,232],[166,222],[192,166],[194,120],[176,88],[142,76]];
 const HARBOR_GATE_Z=143;
 const CITY_POLY=WALL.slice();
 function inPoly(x,z,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,zi]=poly[i],[xj,zj]=poly[j];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c}return c}
@@ -567,7 +577,7 @@ const oSet=(x,z,v)=>{if(x>=0&&z>=0&&x<WX&&z<WZ)occ[z*WX+x]=v};
 
 // ---------- Straßen & Plätze ----------
 const STREETS=[
-  {name:'Hauptstraße',w:5,kind:'main',pts:[[100,249],[100,236],[101,226],[98,212],[94,196],[96,180],[93,166],[92,150],[92,140],[92,128],[95,116],[99,104],[101,94],[100,86],[100,76],[100,67]]},
+  {name:'Hauptstraße',w:5,kind:'main',pts:[[100,249],[100,236],[101,226],[98,212],[94,196],[96,180],[93,166],[92,150],[92,140],[92,128],[95,116],[99,104],[101,94],[100,88],[100,84]]},
   {name:'Westgasse',w:3,kind:'lane',pts:[[76,138],[64,134],[50,138],[36,146],[22,150]]},
   {name:'Ostgasse',w:3,kind:'lane',pts:[[109,142],[124,137],[140,141],[158,146],[178,150]]},
   {name:'Bäckergasse',w:3,kind:'lane',pts:[[95,184],[80,190],[64,194],[50,202],[40,208]]},
@@ -580,7 +590,7 @@ const STREETS=[
   {name:'Hafengasse',w:3,kind:'lane',pts:[[130,206],[140,176],[140,141]]},
   {name:'Hintergasse',w:2,kind:'alley',pts:[[93,168],[78,162],[66,166],[58,170]]},
   {name:'Kesselgasse',w:2,kind:'alley',pts:[[96,174],[112,168],[126,172],[140,176]]},
-  {name:'Burghof',w:3,kind:'court',pts:[[100,62],[100,50],[100,40]]},
+  {name:'Burghof',w:3,kind:'court',pts:[[100,79],[100,52],[100,44],[95,36],[91,28]]},
   {name:'Hafenweg',w:3,kind:'lane',pts:[[178,150],[186,147],[193,143],[202,142],[210,141]]},
   {name:'Kai',w:3,kind:'quay',pts:[[210,108],[209,126],[210,141],[210,158],[209,174]]}
 ];
@@ -618,7 +628,7 @@ for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
   if(SEA[i])occ[i]=9;
   else if(HILL[i]||moat[i]||ROCK[i])occ[i]=5;
   else if(polyDist(x+.5,z+.5,WALL)<(x>=196?3.5:5.5))occ[i]=3;
-  else if(!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]])))occ[i]=(x>=196&&z>=106&&z<=178)?0:6; // Hafenviertel vor der Mauer
+  else if(!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,80]])))occ[i]=(x>=196&&z>=106&&z<=178)?0:6; // Hafenviertel vor der Mauer
 }
 const inHarbor=(x,z)=>x>=196&&z>=106&&z<=178;
 
@@ -678,12 +688,12 @@ function houseSteps(m,r,extra){
     `Am Hang zuerst das Fundament: Bruchstein mit Steinziegeln gemischt bis auf die Höhe der höchsten Ecke mauern (im Schichtplan die untersten Schichten).`,
     `Sockel: Ein Ring aus Steinziegeln rundum, innen den Boden mit Fichtenholzbrettern auslegen.`,
     i.stone?`Erdgeschoss (3 Blöcke hoch) aus Stein: Ecken und Pfeiler aus Steinziegeln, dazwischen Bruchstein mit einzelnen Steinziegeln gemischt. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`:
-    `Erdgeschoss (3 Blöcke hoch): Vor die Tür eine Steinziegeltreppe als Stufe, unter jedes Fenster außen eine umgedrehte Treppe als Fensterbank. Eckpfosten und Ständer aus entrindeten Schwarzeichenstämmen senkrecht setzen. Die Felder dazwischen (Gefache) mit ${PLASTER[plasterChoice]} füllen. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`,
+    `Erdgeschoss (3 Blöcke hoch): Vor die Tür eine Steinziegeltreppe als Stufe, unter jedes Fenster außen eine umgedrehte Treppe als Fensterbank. Eckpfosten und Ständer aus entrindeten Schwarzeichenstämmen senkrecht setzen. Die Felder dazwischen (Gefache) mit %PUTZ% füllen. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`,
     `Balkenlage: Liegende Stämme rundum als Rahmen (Stamm seitlich gegen den Nachbarstamm setzen, dann liegt er waagerecht), innen Fichtenholzbretter als Decke.`
   ];
   if(i.F>1)st.push(i.over?`Obergeschoss${i.F>2?'e':''}: Die Balkenlage ragt vorne und hinten je 1 Block über (Überhang). Darunter an jedem Ständer eine umgedrehte Treppe als Konsole. Wände wie im Erdgeschoss aufbauen.`:`Obergeschoss${i.F>2?'e':''}: Wände wie im Erdgeschoss aufbauen, Ständer genau über den unteren Ständern.`);
   st.push(`Dach: Reihe für Reihe von der Traufe zum First mit ${i.roof==='spruce'?'Fichtenholztreppen':'Schwarzeichenholztreppen'}, etwa jede fünfte Treppe aus der anderen Holzart, das belebt die Dachfläche. Unter Traufe und Giebelkante je eine Reihe umgedrehter Treppen, damit das Dach dicker wirkt. Jede Reihe steht einen Block weiter innen und höher. Das Dach steht an jeder Seite 1 Block über. Ganz oben eine Reihe Stufen als First.`);
-  st.push(`Giebel: Die dreieckigen Giebelwände mit ${PLASTER[plasterChoice]} füllen, in der Mitte ein senkrechter Stamm.`);
+  st.push(`Giebel: Die dreieckigen Giebelwände mit %PUTZ% füllen, in der Mitte ein senkrechter Stamm.`);
   st.push(`Schornstein aus Ziegelsteinen vom Erdgeschoss bis über den First, oben ein Lagerfeuer (Rauch). Laternen neben der Tür aufhängen.`);
   if(extra)st.push(...extra);
   return st;
@@ -783,96 +793,166 @@ function roundTower(m,cx,cz,r,h,spire){
   for(let y=base+1;y<base+h-1;y++)m.set(cx,y,cz-r+1,'ladder',{f:0});
 }
 
+function gableRoofZ(m,x0,x1,z0,z1,y0,wood,fill){
+  // Satteldach mit First entlang z, Giebel an z0 und z1
+  let k=0,a=x0-1,b=x1+1;
+  while(a<=b){const y=y0+k;
+    for(let z=z0-1;z<=z1+1;z++){if(a===b)m.set(a,y,z,wood+'_slab',{h:0});else{m.set(a,y,z,wood+'_stairs',{f:1,h:0});m.set(b,y,z,wood+'_stairs',{f:3,h:0})}}
+    if(k>=1&&a<b)for(const gz of[z0,z1])for(let x=a+1;x<b;x++)m.set(x,y,gz,fill);
+    if(a===b)break;a++;b--;k++}
+  return y0+k;
+}
+function castleWall(m,pts,closed,H,lanternEvery){
+  const P=closed?pts.concat([pts[0]]):pts,B=PLAT;
+  let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;P.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
+  for(let z=z0-4;z<=z1+4;z++)for(let x=x0-4;x<=x1+4;x++){
+    const d=polyDist(x+.5,z+.5,P),out=!inPoly(x+.5,z+.5,OUTER);
+    if(d<=1.5){for(let y=Math.min(hAt(x,z),B);y<B+H;y++)m.set(x,y,z,stoneMix(x,y,z,y-B<3?.3:.13,.12));
+      if(out&&d>.6&&((x+z)&1)===0)m.set(x,B+H,z,stoneMix(x,B+H,z));
+      if(!out&&d>.6&&lanternEvery&&hash3(x,5,z)<1/lanternEvery)m.set(x,B+H,z,'lantern',{h:0});
+    }else if(d<=2.5&&out){
+      let best=0,bd=1e9;DIRS.forEach(([a,c],i)=>{const dd=polyDist(x+a+.5,z+c+.5,P);if(dd<bd){bd=dd;best=i}});
+      m.set(x,B+H-1,z,'stone_brick_stairs',{f:best,h:1});
+    }
+  }
+}
+function towerLanterns(m,cx,cz,r,top){for(const[dx,dz]of[[r,0],[-r,0],[0,r],[0,-r]]){let y=top;while(m.get(cx+dx,y,cz+dz))y++;m.set(cx+dx,y,cz+dz,'spruce_fence');m.set(cx+dx,y+1,cz+dz,'lantern',{h:0})}}
+function banner(m,x,y,z,len,c1='blue_wool',c2='yellow_wool'){for(let k=0;k<len;k++)m.set(x,y-k,z,k%2?c2:c1)}
+
 function buildCastle(){
   const B=PLAT;
-  // Ringmauer + Ecktürme
-  const ring=new Model();
-  for(let x=CASTLE.x0;x<=CASTLE.x1;x++)for(let z=CASTLE.z0;z<=CASTLE.z1;z++){
-    const d=Math.min(x-CASTLE.x0,CASTLE.x1-x,z-CASTLE.z0,CASTLE.z1-z);if(d>2)continue;
-    for(let y=B;y<B+9;y++)ring.set(x,y,z,stoneMix(x,y,z));
-    if(d===0&&((x+z)&1)===0)ring.set(x,B+9,z,stoneMix(x,B+9,z));
-    if(d===0){const ox=x===CASTLE.x0?-1:x===CASTLE.x1?1:0,oz=z===CASTLE.z0?-1:z===CASTLE.z1?1:0;
-      if(ox)ring.set(x+ox,B+8,z,'stone_brick_stairs',{f:ox<0?1:3,h:1});if(oz)ring.set(x,B+8,z+oz,'stone_brick_stairs',{f:oz<0?2:0,h:1})}
+  // ---- Befestigung: alles in einem Modell, danach nach Bauteil aufgeteilt
+  const F=new Model();
+  castleWall(F,HAUPT,true,12,9);
+  castleWall(F,VOR,false,8,11);
+  const HT=[[[76,16],4,21,'dark_oak'],[[92,8],3,17,null],[[110,8],3,17,null],[[124,16],4,21,'dark_oak'],[[128,32],4,18,'spruce'],[[72,32],4,18,null],[[122,48],4,23,'dark_oak'],[[78,48],4,23,'dark_oak']];
+  const VT=[[[70,58],3,13,'spruce'],[[76,72],3,12,null],[[124,72],3,12,null],[[130,58],3,13,'spruce']];
+  for(const[[cx,cz],r,h,sp]of HT.concat(VT)){roundTower(F,cx,cz,r,h,sp);if(!sp)towerLanterns(F,cx,cz,r,B+h)}
+  // Haupttor: zwei Türme, Torbau dazwischen, Fallgatter, Zugbrücke
+  squareTower(F,91,73,97,79,B,16,{spire:'dark_oak'});squareTower(F,103,73,109,79,B,16,{spire:'dark_oak'});
+  for(let x=98;x<=102;x++)for(let z=72;z<=79;z++){
+    for(let y=hAt(x,z)-1;y<B+12;y++)F.set(x,y,z,y<B?'cobblestone':y<B+5?null:stoneMix(x,y,z));
+    if((z===74||z===79)&&((x+z)&1)===0)F.set(x,B+12,z,stoneMix(x,B+12,z));
   }
-  for(const[cx,cz]of[[CASTLE.x0,CASTLE.z0],[CASTLE.x1,CASTLE.z0],[CASTLE.x0,CASTLE.z1],[CASTLE.x1,CASTLE.z1]])squareTower(ring,cx-4,cz-4,cx+4,cz+4,B,16,{spire:'dark_oak'});
-  // Lücke fürs Torhaus
-  for(let x=93;x<=107;x++)for(let z=CASTLE.z1-3;z<=CASTLE.z1;z++)for(let y=B;y<=B+9;y++)ring.set(x,y,z,null);
-  addVines(ring,.62);
-  const ringVox=placeModel(ring,0,0,0,0);
-  addBuilding({name:'Burg: Ringmauer & Ecktürme',group:'Burg',kind:'castle',voxels:ringVox,
-    desc:'Drei Blöcke dicke Ringmauer mit Wehrgang und Zinnen, vier quadratische Ecktürme (9 × 9) mit Leitern, Holzböden und Schießscharten.',
-    steps:['Grundlinie abstecken: Mauerrechteck 49 × 43 Blöcke auf dem Hügelplateau.','Ecktürme zuerst bis zur vollen Höhe hochziehen, alle 6 Blöcke einen Fichtenholzboden, Leiter in der Ecke.','Turmhelme: Ein Treppenring steht 1 Block über die Mauer. Jeder nächste Ring liegt einen Block weiter innen und zwei Blöcke höher (erst ein Brett, darauf eine Treppe). So wird der Helm schön steil. Oben ein Zaun als Fahnenmast mit Wolle als Fahne.','Mauer zwischen den Türmen drei Blöcke dick und 9 hoch mauern. Steinziegel mit etwa 15 % bemoosten und 12 % rissigen Steinziegeln mischen, das wirkt alt.','Zinnen: Auf der Außenkante jeden zweiten Block eine Lage höher setzen.','Im Süden eine Lücke für das Torhaus lassen.'],
-    farm:'Wasserfarm im Graben (Etappe 2)'});
-  // Torhaus + Zugbrücke
-  const gate=new Model();
-  squareTower(gate,93,CASTLE.z1-4,107,CASTLE.z1+2,B,15,{ladder:true});
-  for(let x=98;x<=102;x++)for(let z=CASTLE.z1-4;z<=CASTLE.z1+2;z++)for(let y=B;y<B+5;y++)gate.set(x,y,z,y===B?null:null);
-  for(let x=98;x<=102;x++)for(let z=CASTLE.z1-4;z<=CASTLE.z1+2;z++)gate.set(x,B-1,z,'cobblestone');
-  for(let z=CASTLE.z1-4;z<=CASTLE.z1+2;z++){gate.set(98,B+4,z,'stone_brick_stairs',{f:3,h:1});gate.set(102,B+4,z,'stone_brick_stairs',{f:1,h:1})}
-  for(let x=98;x<=102;x++){gate.set(x,B+3,CASTLE.z1+1,'iron_bars',{a:'x'});gate.set(x,B+4,CASTLE.z1+1,'iron_bars',{a:'x'})}
-  // Zugbrücke (abgesenkt) über dem Graben
-  for(let z=CASTLE.z1+3;z<=CASTLE.z1+6;z++){for(let x=98;x<=102;x++)gate.set(x,B-1,z,'spruce_planks');gate.set(97,B-1,z,'stripped_dark_oak_log',{a:'z'});gate.set(103,B-1,z,'stripped_dark_oak_log',{a:'z'});gate.set(97,B,z,'spruce_fence');gate.set(103,B,z,'spruce_fence')}
-  gate.set(97,B+1,CASTLE.z1+6,'lantern',{h:0});gate.set(103,B+1,CASTLE.z1+6,'lantern',{h:0});
-  addBuilding({name:'Burg: Torhaus & Zugbrücke',group:'Burg',kind:'castle',voxels:placeModel(gate,0,0,0,0),
-    desc:'Torhaus mit fünf Blöcke breiter Durchfahrt, halb hochgezogenem Fallgatter aus Eisengittern und abgesenkter Zugbrücke über dem Wassergraben.',
-    steps:['Torhaus als hohlen Turm 15 × 7 Blöcke, 15 hoch, bauen. Böden alle 6 Blöcke.','Durchfahrt 5 breit und 4 hoch ausschlagen, oben mit umgedrehten Steinziegeltreppen einen flachen Bogen formen.','Fallgatter: Eisengitter in der äußeren Torlaibung, zwei Reihen hoch (halb hochgezogen).','Zugbrücke: Fichtenholzbretter auf Höhe des Plateaus über den Graben, seitlich liegende Stämme und ein Zaun als Geländer, Laternen am Ende.']});
-  // Bergfried
-  const keep=new Model();
-  squareTower(keep,95,26,105,36,B,30,{spire:'dark_oak'});
-  // kleine Ecktürmchen am Bergfried
-  for(const[cx,cz]of[[95,26],[105,26],[95,36],[105,36]]){for(let y=B+24;y<B+31;y++){keep.set(cx,y,cz,stoneMix(cx,y,cz));}
-    const ox=cx===95?-1:1,oz=cz===26?-1:1;
-    for(let y=B+26;y<B+31;y++){keep.set(cx+ox,y,cz,stoneMix(cx+ox,y,cz));keep.set(cx,y,cz+oz,stoneMix(cx,y,cz+oz));keep.set(cx+ox,y,cz+oz,stoneMix(cx+ox,y,cz+oz))}
-    keep.set(cx+ox,B+25,cz+oz,'stone_brick_stairs',{f:ox>0?3:1,h:1});
-    squareSpire(keep,Math.min(cx,cx+ox),Math.min(cz,cz+oz),Math.max(cx,cx+ox),Math.max(cz,cz+oz),B+31,'dark_oak',false);}
-  keep.set(100,B+1,36,'spruce_door',{f:2,h:0});keep.set(100,B+2,36,'spruce_door',{f:2,h:1});
-  for(let y=B+4;y<B+30;y+=6){keep.set(100,y,26,'glass_pane',{a:'x'});keep.set(95,y,31,'glass_pane',{a:'z'});keep.set(105,y,31,'glass_pane',{a:'z'})}
-  keep.set(99,B+3,37,'stripped_dark_oak_log',{a:'z'});keep.set(99,B+2,37,'lantern',{h:1});keep.set(101,B+3,37,'stripped_dark_oak_log',{a:'z'});keep.set(101,B+2,37,'lantern',{h:1});
+  for(let z=72;z<=79;z++){F.set(98,B+4,z,'stone_brick_stairs',{f:3,h:1});F.set(102,B+4,z,'stone_brick_stairs',{f:1,h:1})}
+  for(let x=99;x<=101;x++){F.set(x,B+3,79,'iron_bars',{a:'x'});F.set(x,B+4,79,'iron_bars',{a:'x'})}
+  for(const x of[93,95,105,107])banner(F,x,B+12,80,4,x<100?'blue_wool':'yellow_wool',x<100?'yellow_wool':'blue_wool');
+  for(const x of[97,103]){F.set(x,B+4,80,'stripped_dark_oak_log',{a:'z'});F.set(x,B+3,80,'lantern',{h:1})}
+  for(let z=80;z<=83;z++){for(let x=98;x<=102;x++)F.set(x,B-1,z,'spruce_planks');for(const x of[97,103]){F.set(x,B-1,z,'stripped_dark_oak_log',{a:'z'});F.set(x,B,z,'spruce_fence')}}
+  for(const x of[97,103]){F.set(x,B+1,83,'spruce_fence');F.set(x,B+2,83,'lantern',{h:0});for(let y=B+1;y<=B+3;y++)F.set(x,y,80,'iron_chain')}
+  // Inneres Tor zwischen Vor- und Hauptburg
+  squareTower(F,95,44,105,51,B,18,{spire:'spruce'});
+  for(let x=98;x<=102;x++)for(let z=43;z<=52;z++){for(let y=B;y<B+5;y++)F.set(x,y,z,null);F.set(x,B-1,z,'cobblestone')}
+  for(let z=43;z<=52;z++){F.set(98,B+4,z,'stone_brick_stairs',{f:3,h:1});F.set(102,B+4,z,'stone_brick_stairs',{f:1,h:1})}
+  for(const x of[96,104])banner(F,x,B+14,52,4);
+  addVines(F,.6);
+  // aufteilen
+  const parts={gate:[],inner:[],haupt:[],vor:[]};
+  for(const v of placeModel(F,0,0,0,0)){
+    if(v.x>=89&&v.x<=111&&v.z>=71&&v.z<=86)parts.gate.push(v);
+    else if(v.x>=93&&v.x<=107&&v.z>=42&&v.z<=53)parts.inner.push(v);
+    else if(polyDist(v.x+.5,v.z+.5,HAUPT_C)<=polyDist(v.x+.5,v.z+.5,VOR)+.01)parts.haupt.push(v);
+    else parts.vor.push(v);
+  }
+  addBuilding({name:'Burg: Hauptburg-Mauer & Türme',group:'Burg',kind:'castle',voxels:parts.haupt,
+    desc:'Ringmauer der Hauptburg: 3 Blöcke dick, 12 hoch, mit Zinnen, vorkragender Konsolenreihe und Laternen auf dem Wehrgang. Acht runde Türme bis 23 Blöcke hoch, teils mit steilen Helmen und Fahnen, teils mit Zinnen und Laternenpfosten.',
+    steps:['Grundriss als unregelmäßiges Achteck abstecken (siehe Schichtplan), er folgt der Hügelkuppe.','Runde Türme zuerst: Radius 3 oder 4, innen hohl mit Leiter und Holzböden alle 6 Blöcke, Schießscharten.','Mauer zwischen den Türmen 3 dick und 12 hoch. Unten mehr bemooste Steinziegel, oben mehr rissige.','Unter dem Wehrgang außen eine Reihe umgedrehter Steinziegeltreppen als Konsolen, darüber auf der Außenkante jeden zweiten Block eine Zinne.','Turmhelme: Treppenring mit 1 Block Überstand, dann pro Ring einen Block nach innen und zwei höher (Brett, darauf Treppe). Türme ohne Helm bekommen Zaunpfosten mit Laternen auf den Zinnen.','Ranken an den Außenwänden wachsen lassen.']});
+  addBuilding({name:'Burg: Vorburg-Mauer & Türme',group:'Burg',kind:'castle',voxels:parts.vor,
+    desc:'Niedrigere Mauer der Vorburg (8 hoch) mit vier kleineren Rundtürmen.',
+    steps:['Mauerverlauf von den beiden großen Türmen am inneren Tor im Bogen nach Süden abstecken.','Mauer 3 dick und 8 hoch, Konsolen und Zinnen wie an der Hauptburg.','Vier Rundtürme mit Radius 3, zwei mit Fichtenhelm.']});
+  addBuilding({name:'Burg: Torhaus & Zugbrücke',group:'Burg',kind:'castle',voxels:parts.gate,label:true,
+    desc:'Doppelturm-Torhaus mit Torbau, halb hochgezogenem Fallgatter, blau-gelben Wandbehängen, Laternen und abgesenkter Zugbrücke an Eisenketten.',
+    steps:['Zwei quadratische Tortürme 7 × 7, 16 hoch, mit Schwarzeichenhelm.','Dazwischen der Torbau: Durchfahrt 5 breit und 4 hoch, oben Bogen aus umgedrehten Steinziegeltreppen, darüber Steinziegel bis Höhe 12 mit Zinnen.','Fallgatter aus Eisengittern außen in der Durchfahrt.','Wandbehänge: senkrechte Streifen aus blauer und gelber Wolle an der Außenseite der Türme.','Zugbrücke aus Fichtenholzbrettern über den Graben, liegende Stämme am Rand, Zaungeländer, Eisenketten und Laternen.']});
+  addBuilding({name:'Burg: Inneres Tor',group:'Burg',kind:'castle',voxels:parts.inner,
+    desc:'Torturm zwischen Vorburg und Hauptburg mit Durchfahrt und Fichtenhelm.',
+    steps:['Torturm 11 × 8, 18 hoch, in die Mauer zwischen Vor- und Hauptburg setzen.','Durchfahrt 5 breit und 4 hoch mit Treppenbogen.','Helm aus Fichtenholz, Wandbehänge an der Südseite.']});
+
+  // ---- Bergfried mit Ecktürmchen
+  const keep=new Model(),kx0=86,kz0=16,kx1=96,kz1=26,kxm=91;
+  squareTower(keep,kx0,kz0,kx1,kz1,B,32,{spire:'dark_oak'});
+  for(const[cx,cz]of[[kx0,kz0],[kx1,kz0],[kx0,kz1],[kx1,kz1]]){
+    const ox=cx===kx0?-1:1,oz=cz===kz0?-1:1;
+    for(let y=B+26;y<B+33;y++){keep.set(cx,y,cz,stoneMix(cx,y,cz));keep.set(cx+ox,y,cz,stoneMix(cx+ox,y,cz));keep.set(cx,y,cz+oz,stoneMix(cx,y,cz+oz));keep.set(cx+ox,y,cz+oz,stoneMix(cx+ox,y,cz+oz))}
+    keep.set(cx+ox,B+25,cz+oz,'stone_brick_stairs',{f:ox>0?3:1,h:1});keep.set(cx+ox,B+25,cz,'stone_brick_stairs',{f:ox>0?3:1,h:1});keep.set(cx,B+25,cz+oz,'stone_brick_stairs',{f:oz>0?0:2,h:1});
+    squareSpire(keep,Math.min(cx,cx+ox),Math.min(cz,cz+oz),Math.max(cx,cx+ox),Math.max(cz,cz+oz),B+33,'dark_oak',false);
+  }
+  for(let y=B+4;y<B+30;y+=6){keep.set(kxm,y,kz0,'glass_pane',{a:'x'});keep.set(kxm,y+1,kz0,'glass_pane',{a:'x'});keep.set(kx0,y,21,'glass_pane',{a:'z'});keep.set(kx1,y,21,'glass_pane',{a:'z'});keep.set(kx1,y+1,21,'glass_pane',{a:'z'});keep.set(kx0,y+1,21,'glass_pane',{a:'z'})}
+  keep.set(kxm,B+1,kz1,'spruce_door',{f:2,h:0});keep.set(kxm,B+2,kz1,'spruce_door',{f:2,h:1});
+  for(const x of[kxm-1,kxm+1]){keep.set(x,B+3,kz1+1,'stripped_dark_oak_log',{a:'z'});keep.set(x,B+2,kz1+1,'lantern',{h:1})}
+  banner(keep,kxm,B+20,kz1+1,5);
   addBuilding({name:'Bergfried',group:'Burg',kind:'castle',voxels:placeModel(keep,0,0,0,0),
-    desc:'Der Hauptturm der Burg: 11 × 11 Blöcke, 30 hoch, fünf Stockwerke mit Holzböden und Leiter, darüber ein steiler Schwarzeichenhelm mit Fahne und vier Ecktürmchen.',
-    farm:'Xp-Farm (Etappe 2)',
-    steps:['Grundfläche 11 × 11 auf dem Burghof markieren, Eingang nach Süden.','Wände einen Block dick aus Steinziegel-Mischung hochziehen. Alle 6 Blöcke einen Fichtenholzboden einziehen, eine Ecke für die Leiter frei lassen.','Fenster: je Stockwerk Glasscheiben in drei Wänden.','Ecktürmchen: an jeder Ecke ab Höhe 26 ein 2 × 2 Erker, unten mit einer umgedrehten Treppe abgestützt, oben ein kleiner Helm.','Hauptturmhelm: Treppenring mit 1 Block Überstand, dann pro Ring einen Block nach innen und zwei Blöcke höher. Oben Fahnenmast aus Zaun mit blau-gelber Wollfahne.']});
-  // Palas als Fachwerkbau mit steinernem Erdgeschoss
-  const palas=genHouse({w:15,d:9,floors:2,over:true,roof:'dark_oak',stoneGround:true,chimneys:2,seed:777});
-  const r=1; // Front nach Osten
-  const[ax,az]=rotP(palas.ax,palas.az,r);const ox=Math.round(86-ax),oz=Math.round(42-az);
-  const pv=placeModel(palas,r,ox,B,oz);
-  addBuilding({name:'Palas',group:'Burg',kind:'house',voxels:pv,model:palas,rot:r,
-    desc:'Wohnbau der Burg: steinernes Erdgeschoss, Fachwerk-Obergeschoss mit Überhang, Schwarzeichendach und zwei Schornsteinen.',
-    farm:'Kerker mit Mob-Grinder darunter (Etappe 2)',
-    steps:houseSteps(palas,r)});
-  // Stall im Burghof (offene Boxen, Tierzucht folgt in Etappe 2)
-  const st=genStable();const sr=3;const[sax,saz]=rotP(st.ax,st.az,sr);
-  addBuilding({name:'Stall',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(st,sr,Math.round(116-sax),B,Math.round(44-saz)),farm:'Tierzucht (Etappe 2)',label:true,
-    desc:'Offener Pferde- und Viehstall im Burghof: Steinrückwand, vier Boxen mit Zäunen, Heuboden unter dem Satteldach.',
-    steps:['Grundriss 13 × 7 an der Ostmauer des Burghofs, offene Seite nach Westen.','Rückwand aus Bruchstein und Steinziegeln, Seitenwände aus Fichtenholzbrettern, Ecken aus entrindeten Schwarzeichenstämmen.','Vorne alle 3 Blöcke ein Stammpfosten, dazwischen Zäune als Boxentüren. Innen Zäune als Trennwände.','Balkenlage auf Höhe 5 mit Brettern als Heuboden, darauf Heuballen.','Satteldach aus Fichtenholztreppen mit Stufen als First, Giebel mit Brettern schließen.']});
-  // Brunnen im Burghof
+    desc:'Hauptturm der Burg: 11 × 11 Blöcke, 32 hoch, fünf Stockwerke mit Holzböden und Leiter, Doppelfenster, Wandbehang, vier Ecktürmchen und ein steiler Schwarzeichenhelm mit Fahne.',
+    farm:'Xp-Farm, darunter der Kerker mit Mob-Grinder (Etappe 2)',
+    steps:['Grundfläche 11 × 11 in der Nordwestecke der Hauptburg, Eingang nach Süden.','Wände einen Block dick aus Steinziegel-Mischung 32 hoch. Alle 6 Blöcke einen Fichtenholzboden, eine Ecke für die Leiter frei lassen.','Doppelfenster aus Glasscheiben in jedem Stockwerk.','Ecktürmchen: ab Höhe 26 an jeder Ecke ein 2 × 2 Erker, unten mit umgedrehten Treppen abgestützt, oben ein kleiner Helm.','Hauptturmhelm: Treppenring mit Überstand, pro Ring einen Block nach innen und zwei höher. Oben Fahnenmast aus Zaun mit Wollfahne.','Wandbehang über der Tür aus blauer und gelber Wolle, Laternen neben der Tür.']});
+
+  // ---- Palas: großer Saalbau mit Steinsockel und Fachwerk
+  const palas=genHouse({w:17,d:11,floors:3,over:true,roof:'dark_oak',stoneGround:true,chimneys:2,seed:777});
+  const pr=2,[pax,paz]=rotP(palas.ax,palas.az,pr);
+  addBuilding({name:'Palas',group:'Burg',kind:'house',voxels:placeModel(palas,pr,Math.round(109-pax),B,Math.round(27-paz)),model:palas,rot:pr,label:true,
+    desc:'Wohn- und Saalbau der Burg: steinernes Erdgeschoss, zwei Fachwerk-Obergeschosse mit Überhang, Schwarzeichendach und zwei Schornsteine.',
+    steps:houseSteps(palas,pr)});
+
+  // ---- Burgkapelle mit Glockenturm
+  const ch=new Model(),cx0=78,cx1=86,cz0=31,cz1=43;
+  for(let x=cx0;x<=cx1;x++)for(let z=cz0;z<=cz1;z++){
+    const edge=x===cx0||x===cx1||z===cz0||z===cz1;
+    ch.set(x,B-1,z,edge?'stone_bricks':'polished_andesite');
+    if(edge)for(let y=B;y<B+7;y++)ch.set(x,y,z,(x===cx0||x===cx1)&&(z===cz0||z===cz1)?'stone_bricks':stoneMix(x,y,z,.18,.1));
+  }
+  for(const z of[33,36,39,42])for(const x of[cx0,cx1]){for(let y=B+2;y<=B+4;y++)ch.set(x,y,z,'glass_pane',{a:'z'});ch.set(x,B+5,z,'stone_brick_stairs',{f:x===cx0?1:3,h:1})}
+  for(let x=cx0+2;x<=cx1-2;x++)for(let y=B+7;y<=B+9;y++)if(Math.abs(x-82)+(y-B-7)<=2)ch.set(x,y,cz1,'glass_pane',{a:'x'});
+  ch.set(81,B,cz1,'spruce_door',{f:2,h:0});ch.set(81,B+1,cz1,'spruce_door',{f:2,h:1});ch.set(83,B,cz1,'spruce_door',{f:2,h:0});ch.set(83,B+1,cz1,'spruce_door',{f:2,h:1});ch.set(82,B,cz1,'stone_bricks');ch.set(82,B+1,cz1,'stone_bricks');
+  for(const x of[81,82,83])ch.set(x,B-1,cz1+1,'stone_brick_stairs',{f:0,h:0});
+  for(let x=cx0+1;x<cx1;x++)for(let z=cz0+2;z<cz1-1;z+=2)if(x!==82)ch.set(x,B,z,'spruce_stairs',{f:2,h:0});
+  ch.set(82,B,cz0+1,'stone_bricks');ch.set(82,B+1,cz0+1,'lantern',{h:0});
+  gableRoofZ(ch,cx0,cx1,cz0,cz1,B+7,'dark_oak','stone_bricks');
+  squareTower(ch,80,26,84,30,B,16,{spire:'spruce'});
+  for(const[x,z,a]of[[82,26,'x'],[82,30,'x'],[80,28,'z'],[84,28,'z']]){ch.set(x,B+12,z,null);ch.set(x,B+13,z,null);ch.set(x,B+11,z,'stone_brick_slab',{h:1})}
+  ch.set(82,B+13,28,'lantern',{h:1});
+  addBuilding({name:'Burgkapelle',group:'Burg',kind:'castle',voxels:placeModel(ch,0,0,0,0),label:true,
+    desc:'Kleine Steinkapelle mit hohen Spitzbogenfenstern, Rosettenfenster über der Doppeltür, Bänken aus Treppen und einem Glockenturm mit Fichtenhelm.',
+    steps:['Rechteck 9 × 13 abstecken, Eingang nach Süden. Boden aus poliertem Andesit, Rand aus Steinziegeln.','Wände 7 hoch aus Steinziegel-Mischung.','Hohe Fenster: je 3 Glasscheiben übereinander, oben eine umgedrehte Treppe als Spitzbogen.','Doppeltür mit Steinpfeiler in der Mitte, davor drei Steinziegeltreppen als Stufe. Darüber ein Rautenfenster aus Glasscheiben im Giebel.','Bänke aus Fichtenholztreppen in Reihen, vorne ein Altar aus Steinziegel mit Laterne.','Satteldach aus Schwarzeichenholztreppen, Giebel mit Steinziegeln schließen.','Glockenturm 5 × 5 an der Nordseite, 16 hoch, Schallöffnungen oben, Fichtenhelm.']});
+
+  // ---- Vorburg: Stall und Wirtschaftshaus
+  const st=genStable(),sr=1,[sax,saz]=rotP(st.ax,st.az,sr);
+  addBuilding({name:'Stall',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(st,sr,Math.round(81-sax),B,Math.round(62-saz)),farm:'Tierzucht (Etappe 2)',label:true,
+    desc:'Offener Stall in der Vorburg: Steinrückwand, vier Boxen mit Zäunen, Heuboden unter dem Satteldach.',
+    steps:['Grundriss 13 × 7 an der Westmauer der Vorburg, offene Seite nach Osten.','Rückwand aus Bruchstein und Steinziegeln, Seitenwände aus Fichtenholzbrettern, Ecken aus entrindeten Schwarzeichenstämmen.','Vorne alle 3 Blöcke ein Stammpfosten, dazwischen Zäune als Boxentüren. Innen Zäune als Trennwände.','Balkenlage auf Höhe 5 mit Brettern als Heuboden, darauf Heuballen.','Satteldach aus Fichtenholztreppen mit Stufen als First.']});
+  const wh=genHouse({w:11,d:7,floors:2,over:true,roof:'spruce',stoneGround:true,chimneys:2,seed:778}),wr=3,[wax,waz]=rotP(wh.ax,wh.az,wr);
+  addBuilding({name:'Wirtschaftshaus',group:'Burg',kind:'house',voxels:placeModel(wh,wr,Math.round(118-wax),B,Math.round(61-waz)),model:wh,rot:wr,
+    desc:'Küche und Vorratshaus der Burg in der Vorburg, mit zwei Schornsteinen.',steps:houseSteps(wh,wr)});
+
+  // ---- Brunnen in der Hauptburg
   const well=new Model();
   for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){if(dx||dz)well.set(dx,0,dz,'stone_bricks');else well.set(0,0,0,'water')}
   for(const[dx,dz]of[[-1,-1],[1,-1],[-1,1],[1,1]]){well.set(dx,1,dz,'spruce_fence');well.set(dx,2,dz,'spruce_fence')}
   for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)well.set(dx,3,dz,'dark_oak_slab',{h:0});
   well.set(0,2,0,'lantern',{h:1});
-  addBuilding({name:'Burgbrunnen',group:'Burg',kind:'fountain',voxels:placeModel(well,0,87,B,27),
-    desc:'Kleiner Ziehbrunnen mit Holzdach im Burghof.',steps:['3 × 3 Ring aus Steinziegeln, in die Mitte eine Wasserquelle.','Auf die Ecken je zwei Zaunpfosten, darauf ein Dach aus Schwarzeichenholzstufen.','Unter das Dach eine Laterne hängen.']});
-  // Blumenbeete und Bäume im Burghof
-  const used=new Set();for(const b of buildings)for(const v of b.voxels)if(v.y>=B-1&&v.y<=B+3)used.add(v.x+','+v.z);
+  addBuilding({name:'Burgbrunnen',group:'Burg',kind:'fountain',voxels:placeModel(well,0,113,B,41),
+    desc:'Ziehbrunnen mit Holzdach im Hof der Hauptburg.',steps:['3 × 3 Ring aus Steinziegeln, in die Mitte eine Wasserquelle.','Auf die Ecken je zwei Zaunpfosten, darauf ein Dach aus Schwarzeichenholzstufen.','Unter das Dach eine Laterne hängen.']});
+
+  // ---- Gärten, Büsche und Bäume in beiden Höfen
+  const used=new Set();for(const b of buildings)for(const v of b.voxels)if(v.y>=B-1&&v.y<=B+4)used.add(v.x+','+v.z);
   const gm=new Model(),Rg=mulberry32(99);
-  for(let x=CASTLE.x0+3;x<=CASTLE.x1-3;x++)for(let z=CASTLE.z0+3;z<=CASTLE.z1-3;z++){
-    if(used.has(x+','+z)||streetCell.has(z*WX+x))continue;
+  for(let x=CASTLE.x0;x<=CASTLE.x1;x++)for(let z=CASTLE.z0;z<=CASTLE.z1;z++){
+    if(!inPoly(x+.5,z+.5,OUTER)||used.has(x+','+z)||streetCell.has(z*WX+x))continue;
     let near=false;for(let a=-1;a<=1&&!near;a++)for(let c=-1;c<=1;c++)if(used.has((x+a)+','+(z+c))||streetCell.has((z+c)*WX+x+a))near=true;
     if(near)continue;
     const n=vnoise(x,z,4,21);
-    if(n>.6){const r=Rg();if(r<.55)gm.set(x,B,z,FLOWERS[Math.floor(Rg()*5)]);else if(r<.75)bush(gm,x,B,z,Rg)}
+    if(n>.58){const r=Rg();if(r<.5)gm.setIfEmpty(x,B,z,FLOWERS[Math.floor(Rg()*5)]);else if(r<.68)bush(gm,x,B,z,Rg)}
+    else if(Rg()<.12)gm.setIfEmpty(x,B,z,'short_grass');
   }
-  for(const[tx,tz]of[[113,30],[84,55],[117,56]])if(!used.has(tx+','+tz))(tx===84?cherryTree:oakTree)(gm,tx,tz,B,mulberry32(tx*7+tz));
+  for(const[tx,tz,f]of[[118,42,cherryTree],[86,58,oakTree],[112,66,birchTree],[90,68,oakTree]])if(!used.has(tx+','+tz))f(gm,tx,tz,B,mulberry32(tx*7+tz));
+  for(const[x,z]of[[108,58],[109,58],[108,59],[92,56],[93,56]])gm.setIfEmpty(x,B,z,hash3(x,1,z)<.5?'hay_block':'barrel');
   addBuilding({name:'Burggarten',group:'Burg',kind:'deco',voxels:placeModel(gm,0,0,0,0),pickable:false,
-    desc:'Blumenbeete, Büsche und Eichen im Burghof.',steps:['Beete frei auf dem Gras verteilen und Blumen setzen (Knochenmehl auf Gras erzeugt sie auch von selbst).','Büsche: einzelne Laubblöcke, die nicht verfallen sollen. Im Survival mit Schere abbauen, dann verfallen sie nicht.','Eichen aus Setzlingen wachsen lassen.']});
-  // Burggraben (Wasser)
-  const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){if(y===PLAT-1&&x>=97&&x<=103&&z>=CASTLE.z1+3&&z<=CASTLE.z1+6)continue;wv.push({x,y,z,b:'water'})}
+    desc:'Blumenbeete, Büsche und Bäume in Haupt- und Vorburg, dazu Heuballen und Fässer.',steps:['Beete frei auf dem Gras verteilen und Blumen setzen (Knochenmehl auf Gras erzeugt sie auch von selbst).','Büsche aus Laub (mit der Schere abgebaut verfällt es nicht).','Bäume aus Setzlingen wachsen lassen.']});
+
+  // ---- Burggraben
+  const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){if(y===PLAT-1&&x>=97&&x<=103&&z>=80&&z<=83)continue;wv.push({x,y,z,b:'water'})}
   addBuilding({name:'Burggraben',group:'Burg',kind:'water',voxels:wv,
-    desc:'Vier Blöcke breiter, drei Blöcke tiefer Wassergraben rund um die Burg.',
+    desc:'Vier Blöcke breiter, drei Blöcke tiefer Wassergraben rund um Haupt- und Vorburg.',
     farm:'Wasserfarm (Etappe 2)',
-    steps:['Graben 4 breit und 3 tief rund um die Ringmauer ausheben, 2 Blöcke Abstand zur Mauer lassen.','Mit Eimern füllen: Zwei Wasserquellen nebeneinander ergeben eine unendliche Quelle. Jede Ecke einzeln füllen, damit keine Fließwasser-Blöcke bleiben.']});
+    steps:['Graben 4 breit und 3 tief rund um die ganze Burg ausheben, gut 3 Blöcke Abstand zur Mauer lassen.','Mit Eimern füllen: Zwei Wasserquellen nebeneinander ergeben eine unendliche Quelle. Jede Ecke einzeln füllen, damit kein Fließwasser bleibt.']});
 }
 
 // ---------- Stadtmauer ----------
@@ -884,7 +964,7 @@ function buildCityWall(){
     const d=polyDist(x+.5,z+.5,WALL);if(d>1.5)continue;
     const base=hAt(x,z);
     for(let y=base;y<base+WH;y++)m.set(x,y,z,stoneMix(x,y,z,y-base<2?.3:.12,.12));
-    const outside=!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]]));
+    const outside=!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,80]]));
     if(outside&&d>.6&&((x+z)&1)===0)m.set(x,base+WH,z,stoneMix(x,base+WH,z));
   }
   towersAt.forEach(([cx,cz],i)=>roundTower(m,cx,cz,4,12,i%2===0?'dark_oak':(i%4===1?'spruce':null)));
@@ -1597,8 +1677,9 @@ function initLabels(){
     const el=document.createElement('div');el.className='lbl'+(b.farm?' farm':'');el.textContent=b.name.replace('Burg: ','');host.appendChild(el);
     let ax=(b.bb.x0+b.bb.x1)/2,az=(b.bb.z0+b.bb.z1)/2;
     if(b.kind==='wall'){ax=100;az=238}
-    if(b.name.startsWith('Burg: Ring')){ax=CASTLE.x0;az=CASTLE.z0}
-    if(b.name.startsWith('Burg: Tor')){az=CASTLE.z1+4}
+    if(b.name.startsWith('Burg: Haupt')){ax=124;az=16}
+    if(b.name.startsWith('Burg: Vor')){ax=70;az=58}
+    if(b.name.startsWith('Burg: Tor')){ax=100;az=82}
     labelEls.push({el,b,p:new THREE.Vector3(ax+.5-WX/2,b.bb.y1+2,az+.5-WZ/2)})}
 }
 const tmpV=new THREE.Vector3();
@@ -1654,7 +1735,7 @@ function renderBuilding(b,w,d,h){
     document.getElementById('cpy').onclick=e=>copyText(matText(b.counts,b.name),e.target);
   }else if(currentTab==='guide'){
     const nL=b.bb.y1-b.bb.y0+1;if(!layerMode)layer=0;
-    body.innerHTML=`<h3>Schritte</h3><ol class="steps">${(b.steps||[]).map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    body.innerHTML=`<h3>Schritte</h3><ol class="steps">${(b.steps||[]).map(s=>`<li>${esc(s.split('%PUTZ%').join(PLASTER[plasterChoice]))}</li>`).join('')}</ol>
       <h3>Schicht für Schicht</h3>
       <div class="layerbar"><button id="lPrev" aria-label="Schicht tiefer">◀</button><input type="range" id="lRange" min="0" max="${nL-1}" value="${layer}" aria-label="Schicht"><button id="lNext" aria-label="Schicht höher">▶</button><span class="lnum" id="lNum"></span></div>
       <label class="chk"><input type="checkbox" id="lIso" checked> In 3D nur dieses Gebäude bis zu dieser Schicht zeigen</label>
@@ -1864,7 +1945,8 @@ function start(){
   document.getElementById('pClose').onclick=closePanel;
   const be=document.getElementById('btnEve');be.onclick=()=>{setEvening(!evening);be.setAttribute('aria-pressed',evening)};
   const bn=document.getElementById('btnNames');bn.onclick=()=>{showNames=!showNames;bn.setAttribute('aria-pressed',showNames)};
-  document.getElementById('selPlaster').onchange=e=>{plasterChoice=e.target.value;applyAtlas();if(!panel.hidden){if(selected)select(selected);else if(currentTab==='tot'||currentTab==='by')showTotal()}};
+  const sp=document.getElementById('selPlaster');sp.value=plasterChoice;
+  sp.onchange=e=>{plasterChoice=e.target.value;try{localStorage.setItem('burgstadt-putz',plasterChoice)}catch(_){}applyAtlas();if(!panel.hidden){if(selected)select(selected);else if(currentTab==='tot'||currentTab==='by')showTotal()}};
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
   new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   document.getElementById('loading').remove();
