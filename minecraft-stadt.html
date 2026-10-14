@@ -121,11 +121,13 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
   <canvas id="view" aria-label="3D-Ansicht der Stadt"></canvas>
   <div class="labels" id="labels"></div>
   <div class="bar">
-    <div class="brand"><h1>Burgstadt-Bauplan</h1><span class="stage">Java 1.21 · Etappe 1</span></div>
+    <div class="brand"><h1>Burgstadt-Bauplan</h1><span class="stage">Java 26.3 · Etappe 1b</span></div>
     <div class="tools">
       <button id="btnTotal" class="primary">Gesamt-Materialliste</button>
       <button id="btnList">Gebäude</button>
       <button id="btnNames" class="toggle" aria-pressed="true">Namen</button>
+      <button id="btnEve" class="toggle" aria-pressed="false">Abendstimmung</button>
+      <button id="btnTex">Texturen aus Minecraft laden</button>
       <select id="selPlaster" aria-label="Putz für die Gefache">
         <option value="white_terracotta">Putz: Weiße Keramik</option>
         <option value="calcite">Putz: Calcit (Survival)</option>
@@ -143,6 +145,7 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
     <div class="tabs" id="pTabs" role="tablist"></div>
     <div class="panel-body" id="pBody"></div>
   </aside>
+  <input type="file" id="jarFile" accept=".jar,.zip" hidden>
   <div id="loading">Stadt wird gebaut …</div>
 </div>
 
@@ -203,14 +206,42 @@ const BLOCKS={
   ladder:{de:'Leiter',shape:'ladder',tex:'ladder',cat:'Details'},
   barrel:{de:'Fass',shape:'cube',tex:{top:'barrel_top',bottom:'barrel_top',side:'barrel_side'},cat:'Details'},
   hay_block:{de:'Heuballen',shape:'cube',tex:{top:'hay_block_top',bottom:'hay_block_top',side:'hay_block_side'},cat:'Details'},
-  water:{de:'Wasser',shape:'water',tex:'water_still',cat:'Wasser',transparent:true,note:'Quellblöcke – mit Eimern füllen (unendliche Quelle aus 2 Eimern)'}
+  water:{de:'Wasser',shape:'water',tex:'water_still',cat:'Wasser',transparent:true,note:'Quellblöcke – mit Eimern füllen (unendliche Quelle aus 2 Eimern)'},
+  coarse_dirt:{de:'Grobe Erde',shape:'cube',tex:'coarse_dirt',cat:'Wege'},
+  packed_mud:{de:'Festgetretener Schlamm',shape:'cube',tex:'packed_mud',cat:'Wege'},
+  polished_andesite:{de:'Polierter Andesit',shape:'cube',tex:'polished_andesite',cat:'Stein'},
+  oak_log:{de:'Eichenstamm',shape:'log',tex:{end:'oak_log_top',side:'oak_log'},cat:'Bäume',note:'oder Eichensetzling pflanzen'},
+  oak_leaves:{de:'Eichenlaub',shape:'leaves',tex:'oak_leaves',cat:'Bäume',note:'wächst mit dem Setzling'},
+  spruce_log:{de:'Fichtenstamm',shape:'log',tex:{end:'spruce_log_top',side:'spruce_log'},cat:'Bäume',note:'oder Fichtensetzling pflanzen'},
+  spruce_leaves:{de:'Fichtennadeln',shape:'leaves',tex:'spruce_leaves',cat:'Bäume',note:'wächst mit dem Setzling'},
+  red_wool:{de:'Rote Wolle',shape:'cube',tex:'red_wool',cat:'Details'},
+  white_wool:{de:'Weiße Wolle',shape:'cube',tex:'white_wool',cat:'Details'},
+  blue_wool:{de:'Blaue Wolle',shape:'cube',tex:'blue_wool',cat:'Details'},
+  yellow_wool:{de:'Gelbe Wolle',shape:'cube',tex:'yellow_wool',cat:'Details'},
+  green_wool:{de:'Grüne Wolle',shape:'cube',tex:'green_wool',cat:'Details'},
+  orange_wool:{de:'Orange Wolle',shape:'cube',tex:'orange_wool',cat:'Details'},
+  pumpkin:{de:'Kürbis',shape:'cube',tex:{top:'pumpkin_top',bottom:'pumpkin_top',side:'pumpkin_side'},cat:'Details'},
+  melon:{de:'Melone',shape:'cube',tex:{top:'melon_top',bottom:'melon_top',side:'melon_side'},cat:'Details'},
+  glowstone:{de:'Leuchtstein',shape:'cube',tex:'glowstone',cat:'Details'},
+  poppy:{de:'Mohn',shape:'cross',tex:'poppy',cat:'Blumen'},
+  dandelion:{de:'Löwenzahn',shape:'cross',tex:'dandelion',cat:'Blumen'},
+  cornflower:{de:'Kornblume',shape:'cross',tex:'cornflower',cat:'Blumen'},
+  allium:{de:'Sternlauch',shape:'cross',tex:'allium',cat:'Blumen'},
+  oxeye_daisy:{de:'Margerite',shape:'cross',tex:'oxeye_daisy',cat:'Blumen'}
 };
+const GLOW=new Set(['lantern','campfire','glowstone','glass_pane']);
+const LIGHTS=new Set(['lantern','campfire','glowstone']);
+const FLOWERS=['poppy','dandelion','cornflower','allium','oxeye_daisy'];
 const blockName=b=>b==='plaster'?PLASTER[plasterChoice]:BLOCKS[b].de;
 const blockId=b=>'minecraft:'+(b==='plaster'?plasterChoice:b);
 const FULL=new Set(Object.keys(BLOCKS).filter(k=>['cube','log'].includes(BLOCKS[k].shape)));
 
 // ---------- Texturen im Minecraft-Stil (nachgebaut, 16×16) ----------
-const TILE_KEYS=['plaster','stripped_dark_oak_log','stripped_dark_oak_log_top','spruce_planks','dark_oak_planks','stone_bricks','mossy_stone_bricks','cracked_stone_bricks','cobblestone','mossy_cobblestone','stone','andesite','smooth_stone','bricks','gravel','dirt_path_top','dirt_path_side','dirt','grass_block_top','grass_block_side','glass','iron_bars','spruce_trapdoor','door_bottom','door_top','lantern','campfire_log','ladder','barrel_top','barrel_side','hay_block_top','hay_block_side','water_still'];
+const TILE_KEYS=['plaster','stripped_dark_oak_log','stripped_dark_oak_log_top','spruce_planks','dark_oak_planks','stone_bricks','mossy_stone_bricks','cracked_stone_bricks','cobblestone','mossy_cobblestone','stone','andesite','smooth_stone','bricks','gravel','dirt_path_top','dirt_path_side','dirt','grass_block_top','grass_block_side','glass','iron_bars','spruce_trapdoor','door_bottom','door_top','lantern','campfire_log','ladder','barrel_top','barrel_side','hay_block_top','hay_block_side','water_still',
+  'coarse_dirt','packed_mud','polished_andesite','sand','oak_log','oak_log_top','oak_leaves','spruce_log','spruce_log_top','spruce_leaves',
+  'red_wool','white_wool','blue_wool','yellow_wool','green_wool','orange_wool','pumpkin_side','pumpkin_top','melon_side','melon_top','glowstone',
+  'poppy','dandelion','cornflower','allium','oxeye_daisy'];
+let evening=false;
 const ATL_COLS=8, ATL_ROWS=Math.ceil(TILE_KEYS.length/ATL_COLS);
 const TILE={}; TILE_KEYS.forEach((k,i)=>TILE[k]={c:i%ATL_COLS,r:Math.floor(i/ATL_COLS)});
 const atlas=document.createElement('canvas'); atlas.width=ATL_COLS*16; atlas.height=ATL_ROWS*16;
@@ -248,7 +279,8 @@ function texPainter(key){
     case 'dirt_path_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,y<3?mul([148,121,65],1+(R()-.5)*.2):mul([134,96,67],1+(R()-.5)*.2));break;
     case 'grass_block_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([104,158,64],1+(R()-.5)*.22));break;
     case 'grass_block_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const edge=3+((x*7)%3===0?1:0);put(x,y,y<edge?mul([104,158,64],1+(R()-.5)*.2):mul([134,96,67],1+(R()-.5)*.2))}break;
-    case 'glass':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x===0||y===0||x===15||y===15;const shine=(x-y===3||x-y===4)&&x>3&&x<11;put(x,y,fr?[208,226,232]:shine?[240,248,250]:[200,225,235],fr?255:shine?200:0)}break;
+    case 'glass':if(evening){for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x===0||y===0||x===15||y===15||x===7||y===7;put(x,y,fr?[86,62,40]:mul([255,190,105],.85+R()*.25+(y<7?.08:0)))}break}
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x===0||y===0||x===15||y===15;const shine=(x-y===3||x-y===4)&&x>3&&x<11;put(x,y,fr?[208,226,232]:shine?[240,248,250]:[200,225,235],fr?255:shine?200:0)}break;
     case 'iron_bars':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const bar=x%5===1||x%5===2,rail=y===1||y===14;put(x,y,mul([110,112,114],bar||rail?(x%5===1?1.2:.9):1),bar||rail?255:0)}break;
     case 'spruce_trapdoor':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||y<2||x>13||y>13;const hole=(x>3&&x<7||x>8&&x<12)&&(y>3&&y<7||y>8&&y<12);put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)*(x%5===0?.8:1)),hole?0:255)}break;
     case 'door_bottom':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||x>13||y>13;put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)*(x%4===0?.8:1)))};put(12,2,[40,40,40]);put(12,3,[40,40,40]);break;
@@ -261,11 +293,40 @@ function texPainter(key){
     case 'hay_block_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);put(x,y,mul([196,160,40],(r>7?.8:1)*(1+(R()-.5)*.25)))}break;
     case 'hay_block_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const band=y===4||y===11;put(x,y,band?[150,60,40]:mul([196,160,40],1+(R()-.5)*.3))}break;
     case 'water_still':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([52,96,196],1+Math.sin((x+y*.6)*.8)*.07+(R()-.5)*.08));break;
+    case 'coarse_dirt':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,v<.2?[96,66,44]:v<.32?[120,114,110]:mul([122,86,58],1+(R()-.5)*.2))}break;
+    case 'packed_mud':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let f=1+(R()-.5)*.12;if(y%8===0||(x+(y>>3)*5)%16===0)f=.86;put(x,y,mul([142,106,79],f))}break;
+    case 'polished_andesite':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let f=1+(R()-.5)*.08;if(x===0||y===0)f=1.12;if(x===15||y===15)f=.82;put(x,y,mul([132,135,134],f))}break;
+    case 'sand':noise([219,207,163],.12);break;
+    case 'oak_log':{const cs=[];for(let x=0;x<16;x++)cs.push(1+(R()-.5)*.35);for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([109,85,50],cs[x]*(1+(R()-.5)*.1)));break}
+    case 'oak_log_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);let c=r>6.6?[109,85,50]:mul([176,140,90],.95+Math.sin(r*1.9)*.07);put(x,y,mul(c,1+(R()-.5)*.06))}break;
+    case 'spruce_log':{const cs=[];for(let x=0;x<16;x++)cs.push(1+(R()-.5)*.35);for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([58,38,18],cs[x]*(1+(R()-.5)*.1)));break}
+    case 'spruce_log_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);let c=r>6.6?[58,38,18]:mul([112,84,50],.95+Math.sin(r*1.9)*.07);put(x,y,c)}break;
+    case 'oak_leaves':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,mul([62,122,38],.75+R()*.45),v<.14?0:255)}break;
+    case 'spruce_leaves':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,mul([44,82,50],.75+R()*.4),v<.12?0:255)}break;
+    case 'red_wool':case 'white_wool':case 'blue_wool':case 'yellow_wool':case 'green_wool':case 'orange_wool':{
+      const c={red_wool:[160,39,34],white_wool:[233,236,236],blue_wool:[53,57,157],yellow_wool:[248,197,39],green_wool:[84,109,27],orange_wool:[240,118,19]}[key];
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul(c,1+((x+y*3)%5===0?-.07:0)+(R()-.5)*.08));break}
+    case 'pumpkin_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([198,118,24],(x%4===0?.78:1)*(1+(R()-.5)*.1)));break;
+    case 'pumpkin_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);put(x,y,r<2?[96,70,30]:mul([198,118,24],1-r*.015+(R()-.5)*.1))}break;
+    case 'melon_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([111,145,30],((x+(y>>2))%4===0?1.25:1)*(1+(R()-.5)*.1)));break;
+    case 'melon_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);put(x,y,mul([111,145,30],(Math.floor(r)%3===0?1.2:1)*(1+(R()-.5)*.1)))}break;
+    case 'glowstone':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=hash3(x>>2,y>>2,5);put(x,y,mul(v<.5?[255,214,130]:[200,150,80],.9+R()*.25))}break;
+    case 'poppy':case 'dandelion':case 'cornflower':case 'allium':case 'oxeye_daisy':{
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,[0,0,0],0);
+      for(let y=7;y<16;y++){put(7,y,[56,110,32]);if(y===11){put(6,y,[56,110,32]);put(5,y-1,[70,130,40])}if(y===13){put(8,y,[56,110,32]);put(9,y-1,[70,130,40])}}
+      const pc={poppy:[200,30,30],dandelion:[250,215,40],cornflower:[70,100,230],allium:[180,100,220],oxeye_daisy:[240,240,235]}[key];
+      for(let y=2;y<9;y++)for(let x=4;x<11;x++){const r=Math.hypot(x-7,y-5);if(r<(key==='dandelion'?2.3:3.2))put(x,y,mul(pc,.85+R()*.3))}
+      if(key==='oxeye_daisy'){put(7,5,[240,200,40]);put(7,4,[240,200,40])}
+      break}
     default:noise([255,0,255],.2);
   }
   return img;
 }
-function paintAtlas(){TILE_KEYS.forEach(k=>{actx.putImageData(texPainter(k),TILE[k].c*16,TILE[k].r*16)})}
+const jarTex=new Map(); // Texturen aus der eigenen Minecraft-.jar (bleiben nur in diesem Browser)
+function paintAtlas(){TILE_KEYS.forEach(k=>{
+  const jk=k==='plaster'?plasterChoice:k;
+  const img=(k==='glass'&&evening)?null:jarTex.get(jk);
+  actx.putImageData(img||texPainter(k),TILE[k].c*16,TILE[k].r*16)})}
 paintAtlas();
 const swatchCache={};
 function swatch(key){
@@ -395,14 +456,15 @@ function genHouse(o){
       else if(!m.get(ox,3,oz)&&!m.get(ox,2,oz)){m.set(ox,3,oz,'stripped_dark_oak_log',{a:s.dir%2?'x':'z'});m.set(ox,2,oz,'lantern',{h:1});placed++}
     }}
   m.ax=(w-1)/2;m.az=(d-1)/2;m.meta=meta;m.front=frontSide;
-  m.info={w,d,F,over:o.over,roof:o.roof};
+  m.info={w,d,F,over:o.over,roof:o.roof,stone:!!o.stoneGround};
   return m;
 }
 
 // ---------- Welt & Gelände ----------
-const WX=200,WZ=250;
+const WX=262,WZ=250;
 const Hm=new Int16Array(WX*WZ);
 const moat=new Uint8Array(WX*WZ);
+const SEA=new Uint8Array(WX*WZ),ROCK=new Uint8Array(WX*WZ),SAND=new Uint8Array(WX*WZ);
 const hAt=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?0:Hm[z*WX+x];
 function vnoise(x,z,s,seed){const xi=Math.floor(x/s),zi=Math.floor(z/s),fx=x/s-xi,fz=z/s-zi;const g=(a,b)=>hash3(a,b,seed);const sm=t=>t*t*(3-2*t);const a=g(xi,zi),b=g(xi+1,zi),c=g(xi,zi+1),e=g(xi+1,zi+1);return(a+(b-a)*sm(fx))+((c+(e-c)*sm(fx))-(a+(b-a)*sm(fx)))*sm(fz)}
 const CASTLE={x0:76,x1:124,z0:18,z1:60};
@@ -414,11 +476,19 @@ for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
   if(e<=1)h=PLAT;else{const t=Math.pow(e,.25),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;h=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/11)))}
   const cd=Math.max(CASTLE.x0-x,x-CASTLE.x1,CASTLE.z0-z,z-CASTLE.z1);
   if(cd>=3&&cd<=6){h=PLAT-3;moat[z*WX+x]=1}
-  Hm[z*WX+x]=h;
+  // Küste im Osten, Landzunge mit Leuchtturm
+  const cx=coastX(z),i=z*WX+x;
+  const hd=segDist(x+.5,z+.5,[214,100],[242,106]),hr=5+vnoise(x,z,5,4)*2.5;
+  if(hd<hr&&x>=cx-6){ROCK[i]=1;h=Math.max(1,Math.min(6,Math.round((x-cx+6)/4.5)+(hd<hr-2.5?1:0)))}
+  else if(x>=cx){SEA[i]=1;h=x>cx+9?-5:-3}
+  else if(x>=cx-3)SAND[i]=1;
+  Hm[i]=h;
 }
+function coastX(z){return 217+Math.round((vnoise(3,z,13,9)-.5)*7)}
 
 // Stadtmauer-Verlauf (offen, die Burg schließt den Ring im Norden)
-const WALL=[[62,70],[24,84],[12,150],[32,214],[88,232],[112,232],[166,222],[190,152],[176,86],[138,70]];
+const WALL=[[62,70],[24,84],[12,150],[32,214],[88,232],[112,232],[166,222],[192,166],[194,120],[176,86],[138,70]];
+const HARBOR_GATE_Z=143;
 const CITY_POLY=WALL.slice();
 function inPoly(x,z,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,zi]=poly[i],[xj,zj]=poly[j];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c}return c}
 function segDist(px,pz,a,b){const vx=b[0]-a[0],vz=b[1]-a[1];const t=Math.max(0,Math.min(1,((px-a[0])*vx+(pz-a[1])*vz)/(vx*vx+vz*vz)));return Math.hypot(px-a[0]-vx*t,pz-a[1]-vz*t)}
@@ -444,16 +514,20 @@ const STREETS=[
   {name:'Hafengasse',w:3,kind:'lane',pts:[[130,206],[140,176],[140,141]]},
   {name:'Hintergasse',w:2,kind:'alley',pts:[[93,168],[78,162],[66,166],[58,170]]},
   {name:'Kesselgasse',w:2,kind:'alley',pts:[[96,174],[112,168],[126,172],[140,176]]},
-  {name:'Burghof',w:3,kind:'court',pts:[[100,62],[100,50],[100,40]]}
+  {name:'Burghof',w:3,kind:'court',pts:[[100,62],[100,50],[100,40]]},
+  {name:'Hafenweg',w:3,kind:'lane',pts:[[178,150],[186,147],[193,143],[202,142],[210,141]]},
+  {name:'Kai',w:3,kind:'quay',pts:[[210,108],[209,126],[210,141],[210,158],[209,174]]}
 ];
 const MARKET=[[76,128],[90,124],[106,127],[110,138],[107,152],[92,156],[78,151],[73,140]];
 const streetCell=new Map(); // Index -> Blockart
 function streetMat(kind,x,z){
-  const h=hash3(x,7,z);
-  if(kind==='main'||kind==='court')return h<.62?'cobblestone':h<.74?'mossy_cobblestone':'gravel';
-  if(kind==='plaza')return h<.5?'stone_bricks':h<.78?'cobblestone':'andesite';
-  if(kind==='alley')return h<.65?'dirt_path':'gravel';
-  return h<.55?'dirt_path':h<.85?'gravel':'cobblestone';
+  const h=hash3(x,7,z),n=vnoise(x,z,5,kind.length);
+  if(kind==='main'||kind==='court'){if(n>.7)return h<.6?'packed_mud':'coarse_dirt';return h<.4?'cobblestone':h<.6?'andesite':h<.76?'stone_bricks':h<.86?'mossy_cobblestone':'gravel'}
+  if(kind==='plaza'){if(n>.74)return h<.7?'packed_mud':'coarse_dirt';return h<.36?'stone_bricks':h<.58?'polished_andesite':h<.78?'cobblestone':h<.9?'andesite':'cracked_stone_bricks'}
+  if(kind==='quay')return h<.45?'stone_bricks':h<.75?'cobblestone':h<.88?'mossy_stone_bricks':'andesite';
+  if(kind==='alley')return n>.6?'coarse_dirt':h<.6?'dirt_path':'gravel';
+  if(n>.66)return h<.5?'coarse_dirt':'dirt_path';
+  return h<.5?'dirt_path':h<.78?'gravel':'cobblestone';
 }
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(inPoly(x+.5,z+.5,MARKET)){streetCell.set(z*WX+x,streetMat('plaza',x,z));occ[z*WX+x]=2}
 for(const s of STREETS){
@@ -468,10 +542,12 @@ for(const s of STREETS){
 // Gelände-Belegung
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
   const i=z*WX+x;if(occ[i])continue;
-  if(Hm[i]>0||moat[i])occ[i]=5;
-  else if(!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]])))occ[i]=6;
-  else if(polyDist(x+.5,z+.5,WALL)<5.5)occ[i]=3;
+  if(SEA[i])occ[i]=9;
+  else if(Hm[i]>0||moat[i]||ROCK[i])occ[i]=5;
+  else if(polyDist(x+.5,z+.5,WALL)<(x>=196?3.5:5.5))occ[i]=3;
+  else if(!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]])))occ[i]=(x>=196&&z>=106&&z<=178)?0:6; // Hafenviertel vor der Mauer
 }
+const inHarbor=(x,z)=>x>=196&&z>=106&&z<=178;
 
 // ---------- Gebäude-Registry ----------
 const buildings=[];
@@ -519,6 +595,7 @@ function houseSteps(m,r,extra){
   const st=[
     `Grundriss abstecken: ${i.w} × ${i.d} Blöcke, die Haustür zeigt nach ${fd}. Den Boden ebnen.`,
     `Schicht 1 – Sockel: Ein Ring aus Steinziegeln rundum, innen den Boden mit Fichtenholzbrettern auslegen.`,
+    i.stone?`Erdgeschoss (3 Blöcke hoch) aus Stein: Ecken und Pfeiler aus Steinziegeln, dazwischen Bruchstein mit einzelnen Steinziegeln gemischt. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`:
     `Erdgeschoss (3 Blöcke hoch): Eckpfosten und Ständer aus entrindeten Schwarzeichenstämmen senkrecht setzen. Die Felder dazwischen (Gefache) mit ${PLASTER[plasterChoice]} füllen. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`,
     `Balkenlage: Liegende Stämme rundum als Rahmen (Stamm seitlich gegen den Nachbarstamm setzen, dann liegt er waagerecht), innen Fichtenholzbretter als Decke.`
   ];
@@ -528,6 +605,48 @@ function houseSteps(m,r,extra){
   st.push(`Schornstein aus Ziegelsteinen vom Erdgeschoss bis über den First, oben ein Lagerfeuer (Rauch). Laternen neben der Tür aufhängen.`);
   if(extra)st.push(...extra);
   return st;
+}
+
+// ---------- Turmhelme & Fahnen ----------
+// Steiler Helm: pro Ring nach innen zwei Blöcke höher (Brett, darüber Treppe).
+function flag(m,x,y,z,c1='blue_wool',c2='yellow_wool'){
+  for(let k=0;k<4;k++)m.set(x,y+k,z,'spruce_fence');
+  m.set(x+1,y+3,z,c1);m.set(x+2,y+3,z,c2);m.set(x+1,y+2,z,c2);m.set(x+2,y+2,z,c1);
+}
+function squareSpire(m,x0,z0,x1,z1,y0,wood,withFlag=true){
+  const S=wood+'_stairs',P=wood+'_planks';let top=y0;
+  for(let k=0;;k++){
+    const a=x0-1+k,b=x1+1-k,c=z0-1+k,d=z1+1-k,yS=y0+2*k,yP=yS-1;
+    if(a>b||c>d)break;
+    if(a===b||c===d){for(let x=a;x<=b;x++)for(let z=c;z<=d;z++){m.set(x,yP,z,P);m.set(x,yS,z,P)}top=yS;break}
+    for(let x=a;x<=b;x++)for(let z=c;z<=d;z++){
+      if(x!==a&&x!==b&&z!==c&&z!==d)continue;
+      const f=z===c?2:z===d?0:x===a?1:3;
+      if(k>0)m.set(x,yP,z,P);
+      m.set(x,yS,z,S,{f,h:0});
+    }
+    top=yS;
+  }
+  const px=Math.round((x0+x1)/2),pz=Math.round((z0+z1)/2);
+  m.set(px,top,pz,P);m.set(px,top+1,pz,P);
+  if(withFlag)flag(m,px,top+2,pz);
+  return top;
+}
+function roundSpire(m,cx,cz,r,y0,wood,withFlag=true){
+  const S=wood+'_stairs',P=wood+'_planks',R=r+1.5;let top=y0;
+  for(let k=0;;k++){
+    const ro=R-k,ri=ro-1;if(ro<=.6)break;
+    const yS=y0+2*k,yP=yS-1;
+    for(let dz=-r-2;dz<=r+2;dz++)for(let dx=-r-2;dx<=r+2;dx++){
+      const d=Math.hypot(dx,dz);if(d>ro||d<=ri)continue;
+      if(k>0)m.set(cx+dx,yP,cz+dz,P);
+      m.set(cx+dx,yS,cz+dz,S,{f:dirIndex(-dx,-dz),h:0});
+    }
+    top=yS;
+  }
+  m.set(cx,top,cz,P);m.set(cx,top+1,cz,P);
+  if(withFlag)flag(m,cx,top+2,cz);
+  return top;
 }
 
 // ---------- Burg ----------
@@ -541,16 +660,18 @@ function squareTower(m,x0,z0,x1,z1,baseY,h,opt={}){
       else if(y<baseY)m.set(x,y,z,'stone_bricks');
       else m.set(x,y,z,null);
     }
-    if(edge&&((x+z)&1)===0)m.set(x,baseY+h,z,stoneMix(x,baseY+h,z));
+    if(!opt.spire&&edge&&((x+z)&1)===0)m.set(x,baseY+h,z,stoneMix(x,baseY+h,z));
   }
+  if(opt.spire)squareSpire(m,x0,z0,x1,z1,baseY+h,opt.spire,opt.flag!==false);
   // Schießscharten
   const cx=Math.round((x0+x1)/2),cz=Math.round((z0+z1)/2);
   for(let y=baseY+3;y<baseY+h-2;y+=6){m.set(cx,y,z0,null);m.set(cx,y+1,z0,null);m.set(cx,y,z1,null);m.set(cx,y+1,z1,null);m.set(x0,y,cz,null);m.set(x0,y+1,cz,null);m.set(x1,y,cz,null);m.set(x1,y+1,cz,null)}
   // Leiter innen
   if(opt.ladder!==false)for(let y=baseY+1;y<baseY+h;y++)m.set(x0+1,y,z0+1,'ladder',{f:0});
 }
-function roundTower(m,cx,cz,r,h){
+function roundTower(m,cx,cz,r,h,spire){
   const base=hAt(cx,cz);
+  if(spire)roundSpire(m,cx,cz,r,base+h,spire);
   for(let dz=-r-1;dz<=r+1;dz++)for(let dx=-r-1;dx<=r+1;dx++){
     const dist=Math.hypot(dx,dz);if(dist>r+.5)continue;
     const x=cx+dx,z=cz+dz,ring=dist>r-.6;const col=Math.min(base,hAt(x,z));
@@ -560,7 +681,7 @@ function roundTower(m,cx,cz,r,h){
       else if(y<base)m.set(x,y,z,'stone_bricks');
       else m.set(x,y,z,null);
     }
-    if(ring&&((dx+dz)&1)===0)m.set(x,base+h,z,stoneMix(x,base+h,z));
+    if(!spire&&ring&&((dx+dz)&1)===0)m.set(x,base+h,z,stoneMix(x,base+h,z));
   }
   for(const[dx,dz]of[[r,0],[-r,0],[0,r],[0,-r]])for(const y of[base+3,base+4,base+9,base+10])m.set(cx+dx,y,cz+dz,null);
   for(let y=base+1;y<base+h-1;y++)m.set(cx,y,cz-r+1,'ladder',{f:0});
@@ -575,13 +696,13 @@ function buildCastle(){
     for(let y=B;y<B+9;y++)ring.set(x,y,z,stoneMix(x,y,z));
     if(d===0&&((x+z)&1)===0)ring.set(x,B+9,z,stoneMix(x,B+9,z));
   }
-  for(const[cx,cz]of[[CASTLE.x0,CASTLE.z0],[CASTLE.x1,CASTLE.z0],[CASTLE.x0,CASTLE.z1],[CASTLE.x1,CASTLE.z1]])squareTower(ring,cx-4,cz-4,cx+4,cz+4,B,14);
+  for(const[cx,cz]of[[CASTLE.x0,CASTLE.z0],[CASTLE.x1,CASTLE.z0],[CASTLE.x0,CASTLE.z1],[CASTLE.x1,CASTLE.z1]])squareTower(ring,cx-4,cz-4,cx+4,cz+4,B,16,{spire:'dark_oak'});
   // Lücke fürs Torhaus
   for(let x=93;x<=107;x++)for(let z=CASTLE.z1-3;z<=CASTLE.z1;z++)for(let y=B;y<=B+9;y++)ring.set(x,y,z,null);
   const ringVox=placeModel(ring,0,0,0,0);
   addBuilding({name:'Burg: Ringmauer & Ecktürme',group:'Burg',kind:'castle',voxels:ringVox,
     desc:'Drei Blöcke dicke Ringmauer mit Wehrgang und Zinnen, vier quadratische Ecktürme (9 × 9) mit Leitern, Holzböden und Schießscharten.',
-    steps:['Grundlinie abstecken: Mauerrechteck 49 × 43 Blöcke auf dem Hügelplateau.','Ecktürme zuerst bis zur vollen Höhe hochziehen, alle 6 Blöcke einen Fichtenholzboden, Leiter in der Ecke.','Mauer zwischen den Türmen drei Blöcke dick und 9 hoch mauern. Steinziegel mit etwa 15 % bemoosten und 12 % rissigen Steinziegeln mischen, das wirkt alt.','Zinnen: Auf der Außenkante jeden zweiten Block eine Lage höher setzen.','Im Süden eine Lücke für das Torhaus lassen.'],
+    steps:['Grundlinie abstecken: Mauerrechteck 49 × 43 Blöcke auf dem Hügelplateau.','Ecktürme zuerst bis zur vollen Höhe hochziehen, alle 6 Blöcke einen Fichtenholzboden, Leiter in der Ecke.','Turmhelme: Ein Treppenring steht 1 Block über die Mauer. Jeder nächste Ring liegt einen Block weiter innen und zwei Blöcke höher (erst ein Brett, darauf eine Treppe). So wird der Helm schön steil. Oben ein Zaun als Fahnenmast mit Wolle als Fahne.','Mauer zwischen den Türmen drei Blöcke dick und 9 hoch mauern. Steinziegel mit etwa 15 % bemoosten und 12 % rissigen Steinziegeln mischen, das wirkt alt.','Zinnen: Auf der Außenkante jeden zweiten Block eine Lage höher setzen.','Im Süden eine Lücke für das Torhaus lassen.'],
     farm:'Wasserfarm im Graben (Etappe 2)'});
   // Torhaus + Zugbrücke
   const gate=new Model();
@@ -598,14 +719,20 @@ function buildCastle(){
     steps:['Torhaus als hohlen Turm 15 × 7 Blöcke, 15 hoch, bauen. Böden alle 6 Blöcke.','Durchfahrt 5 breit und 4 hoch ausschlagen, oben mit umgedrehten Steinziegeltreppen einen flachen Bogen formen.','Fallgatter: Eisengitter in der äußeren Torlaibung, zwei Reihen hoch (halb hochgezogen).','Zugbrücke: Fichtenholzbretter auf Höhe des Plateaus über den Graben, seitlich liegende Stämme und ein Zaun als Geländer, Laternen am Ende.']});
   // Bergfried
   const keep=new Model();
-  squareTower(keep,95,26,105,36,B,30);
+  squareTower(keep,95,26,105,36,B,30,{spire:'dark_oak'});
+  // kleine Ecktürmchen am Bergfried
+  for(const[cx,cz]of[[95,26],[105,26],[95,36],[105,36]]){for(let y=B+24;y<B+31;y++){keep.set(cx,y,cz,stoneMix(cx,y,cz));}
+    const ox=cx===95?-1:1,oz=cz===26?-1:1;
+    for(let y=B+26;y<B+31;y++){keep.set(cx+ox,y,cz,stoneMix(cx+ox,y,cz));keep.set(cx,y,cz+oz,stoneMix(cx,y,cz+oz));keep.set(cx+ox,y,cz+oz,stoneMix(cx+ox,y,cz+oz))}
+    keep.set(cx+ox,B+25,cz+oz,'stone_brick_stairs',{f:ox>0?3:1,h:1});
+    squareSpire(keep,Math.min(cx,cx+ox),Math.min(cz,cz+oz),Math.max(cx,cx+ox),Math.max(cz,cz+oz),B+31,'dark_oak',false);}
   keep.set(100,B+1,36,'spruce_door',{f:2,h:0});keep.set(100,B+2,36,'spruce_door',{f:2,h:1});
   for(let y=B+4;y<B+30;y+=6){keep.set(100,y,26,'glass_pane',{a:'x'});keep.set(95,y,31,'glass_pane',{a:'z'});keep.set(105,y,31,'glass_pane',{a:'z'})}
   keep.set(99,B+3,37,'stripped_dark_oak_log',{a:'z'});keep.set(99,B+2,37,'lantern',{h:1});keep.set(101,B+3,37,'stripped_dark_oak_log',{a:'z'});keep.set(101,B+2,37,'lantern',{h:1});
   addBuilding({name:'Bergfried',group:'Burg',kind:'castle',voxels:placeModel(keep,0,0,0,0),
-    desc:'Der Hauptturm der Burg: 11 × 11 Blöcke, 30 hoch, fünf Stockwerke mit Holzböden, Leiter bis zur Wehrplattform mit Zinnen.',
+    desc:'Der Hauptturm der Burg: 11 × 11 Blöcke, 30 hoch, fünf Stockwerke mit Holzböden und Leiter, darüber ein steiler Schwarzeichenhelm mit Fahne und vier Ecktürmchen.',
     farm:'Xp-Farm (Etappe 2)',
-    steps:['Grundfläche 11 × 11 auf dem Burghof markieren, Eingang nach Süden.','Wände einen Block dick aus Steinziegel-Mischung hochziehen. Alle 6 Blöcke einen Fichtenholzboden einziehen, eine Ecke für die Leiter frei lassen.','Fenster: je Stockwerk Glasscheiben in drei Wänden.','Oben: Zinnen auf jedem zweiten Randblock.']});
+    steps:['Grundfläche 11 × 11 auf dem Burghof markieren, Eingang nach Süden.','Wände einen Block dick aus Steinziegel-Mischung hochziehen. Alle 6 Blöcke einen Fichtenholzboden einziehen, eine Ecke für die Leiter frei lassen.','Fenster: je Stockwerk Glasscheiben in drei Wänden.','Ecktürmchen: an jeder Ecke ab Höhe 26 ein 2 × 2 Erker, unten mit einer umgedrehten Treppe abgestützt, oben ein kleiner Helm.','Hauptturmhelm: Treppenring mit 1 Block Überstand, dann pro Ring einen Block nach innen und zwei Blöcke höher. Oben Fahnenmast aus Zaun mit blau-gelber Wollfahne.']});
   // Palas als Fachwerkbau mit steinernem Erdgeschoss
   const palas=genHouse({w:15,d:9,floors:2,over:true,roof:'dark_oak',stoneGround:true,chimneys:2,seed:777});
   const r=1; // Front nach Osten
@@ -615,6 +742,32 @@ function buildCastle(){
     desc:'Wohnbau der Burg: steinernes Erdgeschoss, Fachwerk-Obergeschoss mit Überhang, Schwarzeichendach und zwei Schornsteinen.',
     farm:'Kerker mit Mob-Grinder darunter (Etappe 2)',
     steps:houseSteps(palas,r)});
+  // Stall im Burghof (offene Boxen, Tierzucht folgt in Etappe 2)
+  const st=genStable();const sr=3;const[sax,saz]=rotP(st.ax,st.az,sr);
+  addBuilding({name:'Stall',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(st,sr,Math.round(116-sax),B,Math.round(44-saz)),farm:'Tierzucht (Etappe 2)',label:true,
+    desc:'Offener Pferde- und Viehstall im Burghof: Steinrückwand, vier Boxen mit Zäunen, Heuboden unter dem Satteldach.',
+    steps:['Grundriss 13 × 7 an der Ostmauer des Burghofs, offene Seite nach Westen.','Rückwand aus Bruchstein und Steinziegeln, Seitenwände aus Fichtenholzbrettern, Ecken aus entrindeten Schwarzeichenstämmen.','Vorne alle 3 Blöcke ein Stammpfosten, dazwischen Zäune als Boxentüren. Innen Zäune als Trennwände.','Balkenlage auf Höhe 5 mit Brettern als Heuboden, darauf Heuballen.','Satteldach aus Fichtenholztreppen mit Stufen als First, Giebel mit Brettern schließen.']});
+  // Brunnen im Burghof
+  const well=new Model();
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){if(dx||dz)well.set(dx,0,dz,'stone_bricks');else well.set(0,0,0,'water')}
+  for(const[dx,dz]of[[-1,-1],[1,-1],[-1,1],[1,1]]){well.set(dx,1,dz,'spruce_fence');well.set(dx,2,dz,'spruce_fence')}
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)well.set(dx,3,dz,'dark_oak_slab',{h:0});
+  well.set(0,2,0,'lantern',{h:1});
+  addBuilding({name:'Burgbrunnen',group:'Burg',kind:'fountain',voxels:placeModel(well,0,87,B,27),
+    desc:'Kleiner Ziehbrunnen mit Holzdach im Burghof.',steps:['3 × 3 Ring aus Steinziegeln, in die Mitte eine Wasserquelle.','Auf die Ecken je zwei Zaunpfosten, darauf ein Dach aus Schwarzeichenholzstufen.','Unter das Dach eine Laterne hängen.']});
+  // Blumenbeete und Bäume im Burghof
+  const used=new Set();for(const b of buildings)for(const v of b.voxels)if(v.y>=B-1&&v.y<=B+3)used.add(v.x+','+v.z);
+  const gv=[],Rg=mulberry32(99);
+  for(let x=CASTLE.x0+3;x<=CASTLE.x1-3;x++)for(let z=CASTLE.z0+3;z<=CASTLE.z1-3;z++){
+    if(used.has(x+','+z)||streetCell.has(z*WX+x))continue;
+    let near=false;for(let a=-1;a<=1&&!near;a++)for(let c=-1;c<=1;c++)if(used.has((x+a)+','+(z+c))||streetCell.has((z+c)*WX+x+a))near=true;
+    if(near)continue;
+    const n=vnoise(x,z,4,21);
+    if(n>.6){const r=Rg();if(r<.55)gv.push({x,y:B,z,b:FLOWERS[Math.floor(Rg()*5)]});else if(r<.75)gv.push({x,y:B,z,b:'oak_leaves'})}
+  }
+  for(const[tx,tz]of[[113,30],[84,55],[117,56]])if(!used.has(tx+','+tz))oakTree(gv,tx,tz,B,mulberry32(tx*7+tz));
+  addBuilding({name:'Burggarten',group:'Burg',kind:'deco',voxels:gv,pickable:false,
+    desc:'Blumenbeete, Büsche und Eichen im Burghof.',steps:['Beete frei auf dem Gras verteilen und Blumen setzen (Knochenmehl auf Gras erzeugt sie auch von selbst).','Büsche: einzelne Laubblöcke, die nicht verfallen sollen. Im Survival mit Schere abbauen, dann verfallen sie nicht.','Eichen aus Setzlingen wachsen lassen.']});
   // Burggraben (Wasser)
   const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){if(y===PLAT-1&&x>=97&&x<=103&&z>=CASTLE.z1+3&&z<=CASTLE.z1+6)continue;wv.push({x,y,z,b:'water'})}
   addBuilding({name:'Burggraben',group:'Burg',kind:'water',voxels:wv,
@@ -635,7 +788,16 @@ function buildCityWall(){
     const outside=!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]]));
     if(outside&&d>.6&&((x+z)&1)===0)m.set(x,base+WH,z,stoneMix(x,base+WH,z));
   }
-  for(const[cx,cz]of towersAt)roundTower(m,cx,cz,4,12);
+  towersAt.forEach(([cx,cz],i)=>roundTower(m,cx,cz,4,12,i%2===0?'dark_oak':(i%4===1?'spruce':null)));
+  // Hafentor im Osten
+  const gz=HARBOR_GATE_Z;
+  squareTower(m,190,gz-8,196,gz-4,0,11,{spire:'spruce'});squareTower(m,190,gz+4,196,gz+8,0,11,{spire:'spruce'});
+  for(let x=186;x<=200;x++)for(let z=gz-2;z<=gz+2;z++){
+    if(!m.get(x,5,z))continue;
+    for(let y=0;y<4;y++)m.set(x,y,z,null);
+    if(Math.abs(z-gz)===2)m.set(x,4,z,'stone_brick_stairs',{f:z<gz?0:2,h:1});else m.set(x,4,z,null);
+  }
+  for(const z of[gz-4,gz+4]){m.set(197,3,z,'stripped_dark_oak_log',{a:'x'});m.set(197,2,z,'lantern',{h:1})}
   // Haupttor im Süden
   squareTower(m,89,228,95,236,0,12);squareTower(m,105,228,111,236,0,12);
   for(let x=96;x<=104;x++)for(let z=229;z<=235;z++){for(let y=0;y<11;y++)m.set(x,y,z,y>=6?stoneMix(x,y,z):null);if((x+z)%2===0&&(z===229||z===235))m.set(x,11,z,stoneMix(x,11,z))}
@@ -645,39 +807,215 @@ function buildCityWall(){
   for(const x of[96,104]){m.set(x,4,237,'lantern',{h:1});m.set(x,5,237,'stripped_dark_oak_log',{a:'z'})}
   const vox=placeModel(m,0,0,0,0);
   addBuilding({name:'Stadtmauer & Haupttor',group:'Stadtbefestigung',kind:'wall',voxels:vox,
-    desc:`Krumme Stadtmauer, 3 Blöcke dick und 7 hoch, mit ${towersAt.length} runden Ecktürmen und dem Haupttor im Süden (Doppelturm-Torhaus mit Fallgatter).`,
-    steps:['Verlauf abstecken: Die Mauer folgt dem Gelände in schrägen Abschnitten, das gibt die typischen Treppenkanten.','Runde Ecktürme zuerst: Kreis mit Radius 4, 12 hoch, innen Holzböden auf Höhe 1, 7 und 12 und eine Leiter.','Mauer 3 dick, 7 hoch. Unten mehr bemooste Steinziegel mischen.','Zinnen auf der Außenseite: jeder zweite Block eine Lage höher.','Haupttor: zwei quadratische Tortürme (7 × 9), dazwischen eine 7 breite und 5 hohe Durchfahrt mit Bogen aus Treppen, Fallgatter aus Eisengittern, Laternen außen.']});
+    desc:`Krumme Stadtmauer, 3 Blöcke dick und 7 hoch, mit ${towersAt.length} runden Ecktürmen (teils mit spitzen Helmen und Fahnen), dem Haupttor im Süden und dem kleinen Hafentor im Osten.`,
+    steps:['Verlauf abstecken: Die Mauer folgt dem Gelände in schrägen Abschnitten, das gibt die typischen Treppenkanten.','Runde Ecktürme zuerst: Kreis mit Radius 4, 12 hoch, innen Holzböden auf Höhe 1, 7 und 12 und eine Leiter.','Mauer 3 dick, 7 hoch. Unten mehr bemooste Steinziegel mischen.','Zinnen auf der Außenseite: jeder zweite Block eine Lage höher.','Haupttor: zwei quadratische Tortürme (7 × 9), dazwischen eine 7 breite und 5 hohe Durchfahrt mit Bogen aus Treppen, Fallgatter aus Eisengittern, Laternen außen.','Turmhelme: Ring aus Treppen mit 1 Block Überstand, dann jeder Ring einen Block nach innen und zwei höher (Brett, darauf Treppe). Oben ein Zaun als Fahnenmast mit blau-gelber Wolle.','Hafentor im Osten: 5 breite Durchfahrt mit Treppenbogen zwischen zwei kleinen Tortürmen mit Fichtenhelm.']});
   markOcc(vox,3);
 }
 
 // ---------- Marktbrunnen ----------
 function buildFountain(cx,cz){
   const m=new Model();
-  for(let dz=-4;dz<=4;dz++)for(let dx=-4;dx<=4;dx++){
-    const d=Math.max(Math.abs(dx),Math.abs(dz))+Math.min(Math.abs(dx),Math.abs(dz))*.42;
-    if(d>4.3)continue;
-    if(d>3.3){m.set(dx,0,dz,'stone_bricks');m.set(dx,1,dz,'stone_brick_slab',{h:0})}
+  for(let dz=-6;dz<=6;dz++)for(let dx=-6;dx<=6;dx++){
+    const ax=Math.abs(dx),az=Math.abs(dz);
+    const d=Math.max(ax,az)+Math.min(ax,az)*.42;
+    if(d>5.3)continue;
+    if(d>4.3)m.set(dx,0,dz,'stone_brick_stairs',{f:dirIndex(-dx,-dz),h:0});
+    else if(d>3.3){m.set(dx,0,dz,'stone_bricks');m.set(dx,1,dz,'stone_brick_slab',{h:0})}
+    else if(ax<=2&&az<=2){m.set(dx,0,dz,'stone_bricks');if(ax===2||az===2)m.set(dx,1,dz,'stone_bricks');else m.set(dx,1,dz,'water')}
     else m.set(dx,0,dz,'water');
   }
-  m.fill(0,0,0,0,2,0,'stone_bricks');m.set(0,3,0,'water');
-  for(const[dx,dz]of[[-4,-4],[4,-4],[-4,4],[4,4]]){m.set(dx,0,dz,'spruce_fence');m.set(dx,1,dz,'spruce_fence');m.set(dx,2,dz,'lantern',{h:0})}
+  for(let y=1;y<=6;y++)m.set(0,y,0,'stone_bricks');
+  for(const[dx,dz]of DIRS)for(let y=2;y<=5;y++)m.set(dx,y,dz,'water');
+  m.set(0,7,0,'stone_brick_wall');m.set(0,8,0,'lantern',{h:0});
+  for(const[dx,dz]of[[-2,-2],[2,-2],[-2,2],[2,2]])m.set(dx,2,dz,'stone_brick_slab',{h:0});
+  for(const[dx,dz]of[[-3,-3],[3,-3],[-3,3],[3,3]])m.set(dx,2,dz,'lantern',{h:0});
   const vox=placeModel(m,0,cx,0,cz);
-  addBuilding({name:'Marktbrunnen',group:'Plätze',kind:'fountain',voxels:vox,
-    desc:'Achteckiges Brunnenbecken auf dem Marktplatz mit Wassersäule und vier Laternenpfosten.',
-    steps:['Achteck mit 9 Blöcken Durchmesser abstecken.','Beckenrand: Steinziegel, darauf Steinziegelstufen als Sitzkante.','Becken mit Wasser füllen.','Mitte: Säule aus 3 Steinziegeln, oben eine Wasserquelle. Das Wasser fließt an der Säule herab.','An den vier Ecken Zaunpfosten mit Laterne.']});
+  addBuilding({name:'Marktbrunnen',group:'Plätze',kind:'fountain',voxels:vox,label:true,
+    desc:'Großer Stufenbrunnen auf dem Marktplatz: achteckiges Becken, oberes Becken und eine Säule, an der das Wasser herabfällt. Vier Laternen auf dem Rand.',
+    steps:['Achteck mit 11 Blöcken Durchmesser abstecken.','Außen ein Ring aus Steinziegeltreppen als Stufe zum Brunnen.','Beckenrand: Steinziegel, darauf Steinziegelstufen als Sitzkante. Becken mit Wasser füllen.','Oberes Becken: 5 × 5 Steinziegel zwei Lagen hoch, innen Wasser.','Mitte: Säule aus 6 Steinziegeln. An alle vier Seiten oben eine Wasserquelle setzen, das Wasser fällt dann an der Säule herab. Obendrauf eine Steinziegelmauer mit Laterne.','Laternen auf die vier Ecken des Beckenrands stellen.']});
+}
+
+// ---------- Stall, Bäume, Marktstände, Laternen ----------
+function genStable(){
+  const m=new Model(),W=13,D=7;
+  for(let x=0;x<W;x++)for(let z=0;z<D;z++)for(let y=0;y<4;y++){
+    const back=z===D-1,side=x===0||x===W-1,front=z===0,corner=side&&(front||back);
+    if(corner)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});
+    else if(back)m.set(x,y,z,hash3(x,y,z)<.5?'cobblestone':'stone_bricks');
+    else if(side)m.set(x,y,z,'spruce_planks');
+    else if(front&&x%3===0)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});
+    else if(front&&y===0)m.set(x,y,z,'spruce_fence');
+  }
+  for(const x of[3,6,9])for(let z=1;z<D-1;z++)m.set(x,0,z,'spruce_fence');
+  for(const x of[1,5,8,11])m.set(x,0,D-2,'hay_block');
+  m.set(2,0,D-2,'barrel');
+  for(let x=0;x<W;x++)for(let z=0;z<D;z++){const per=x===0||x===W-1||z===0||z===D-1;m.set(x,4,z,per?'stripped_dark_oak_log':'spruce_planks',per?{a:(z===0||z===D-1)?'x':'z'}:null)}
+  for(const[x,z]of[[2,2],[3,2],[2,3],[7,4],[8,4],[10,2]])m.set(x,5,z,'hay_block');
+  let k=0,zf=-1,zb=D;
+  while(zf<=zb){const y=4+k;
+    for(let x=-1;x<=W;x++){if(zf===zb)m.set(x,y,zf,'spruce_slab',{h:0});else{m.set(x,y,zf,'spruce_stairs',{f:2,h:0});m.set(x,y,zb,'spruce_stairs',{f:0,h:0})}}
+    if(k>=1&&zf<zb)for(const gx of[0,W-1])for(let z=zf+1;z<zb;z++)m.set(gx,y,z,'spruce_planks');
+    if(zf===zb)break;zf++;zb--;k++}
+  m.set(4,3,-1,'lantern',{h:1});m.set(8,3,-1,'lantern',{h:1});
+  m.ax=6;m.az=3;m.front=0;return m;
+}
+function oakTree(vox,x,z,base,R){
+  const h=4+Math.floor(R()*2);
+  for(let y=0;y<h;y++)vox.push({x,y:base+y,z,b:'oak_log',a:'y'});
+  const top=base+h-1;
+  for(let dy=-2;dy<=1;dy++){const r=dy<0?2:1;for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){
+    if(dx===0&&dz===0&&dy<1)continue;
+    if(Math.abs(dx)===r&&Math.abs(dz)===r&&(dy===1||R()<.5))continue;
+    vox.push({x:x+dx,y:top+dy,z:z+dz,b:'oak_leaves'})}}
+}
+function spruceTree(vox,x,z,base,R){
+  const h=7+Math.floor(R()*3);
+  for(let y=0;y<h;y++)vox.push({x,y:base+y,z,b:'spruce_log',a:'y'});
+  const radii=[0,1,1,2,1,2,2,1,2,3,2];
+  vox.push({x,y:base+h,z,b:'spruce_leaves'});
+  for(let i=1;i<radii.length&&base+h-i>base+1;i++){const y=base+h-i,r=radii[i];
+    for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){if(!dx&&!dz)continue;if(r>1&&Math.abs(dx)===r&&Math.abs(dz)===r)continue;if(r===1&&dx&&dz&&i%2)continue;vox.push({x:x+dx,y,z:z+dz,b:'spruce_leaves'})}}
+}
+const STALL_SCHEMES=[['red_wool','white_wool'],['blue_wool','blue_wool'],['green_wool','yellow_wool'],['yellow_wool','yellow_wool'],['orange_wool','white_wool'],['red_wool','red_wool'],['blue_wool','white_wool']];
+const STALL_GOODS=[['pumpkin','melon','Gemüsestand'],['hay_block','hay_block','Kornstand'],['melon','melon','Obststand'],['barrel','barrel','Weinhändler'],['red_wool','blue_wool','Tuchhändler'],['pumpkin','hay_block','Bauernstand'],['barrel','pumpkin','Gewürzstand']];
+function genStall(i){
+  const m=new Model(),sc=STALL_SCHEMES[i%STALL_SCHEMES.length],gd=STALL_GOODS[i%STALL_GOODS.length];
+  for(const[x,z]of[[0,0],[3,0],[0,2],[3,2]])for(let y=0;y<3;y++)m.set(x,y,z,'spruce_fence');
+  for(let x=0;x<4;x++){for(let z=0;z<3;z++)m.set(x,3,z,sc[x%2]);m.set(x,2,-1,sc[x%2])}
+  m.set(1,0,0,'spruce_planks');m.set(2,0,0,'spruce_planks');m.set(1,1,0,gd[0]);m.set(2,1,0,gd[1]);
+  m.set(1,0,2,'barrel');m.set(2,0,2,'barrel');m.set(0,2,1,'lantern',{h:1});
+  m.ax=1.5;m.az=1;m.front=0;m.title=gd[2];return m;
 }
 
 // ---------- Stadt aufbauen ----------
 const HOUSE_NAMES=['Wohnhaus','Bürgerhaus','Giebelhaus','Handwerkerhaus','Häuschen','Eckhaus'];
+// ---------- Hafen ----------
+function boat(m,ox,oz,sail){
+  for(let x=1;x<=5;x++)for(let z=0;z<=2;z++)m.set(ox+x,-1,oz+z,'spruce_planks');
+  m.set(ox,-1,oz+1,'spruce_planks');m.set(ox+6,-1,oz+1,'spruce_planks');
+  for(let x=1;x<=5;x++){m.set(ox+x,0,oz,'spruce_slab',{h:0});m.set(ox+x,0,oz+2,'spruce_slab',{h:0})}
+  m.set(ox,0,oz+1,'spruce_stairs',{f:1,h:0});m.set(ox+6,0,oz+1,'spruce_stairs',{f:3,h:0});
+  if(sail){for(let y=0;y<=5;y++)m.set(ox+3,y,oz+1,'spruce_fence');for(let y=2;y<=4;y++){m.set(ox+3,y,oz,'white_wool');m.set(ox+3,y,oz+2,'white_wool')}}
+  else{m.set(ox+2,0,oz+1,'barrel');m.set(ox+4,0,oz+1,'spruce_slab',{h:0})}
+}
+function buildHarbor(){
+  const m=new Model(),len=15;
+  [122,134,150,162].forEach((pz,pi)=>{
+    for(let z=pz;z<=pz+2;z++){const c=coastX(z);
+      for(let x=c;x<c+len;x++){
+        const edge=z===pz||z===pz+2;
+        if(edge&&(x-c)%4===0){for(let y=hAt(x,z);y<=0;y++)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});if((x-c)%8===4)m.set(x,1,z,'lantern',{h:0})}
+        else{m.set(x,-1,z,'spruce_planks');if(edge&&x-c>1)m.set(x,0,z,'spruce_fence')}
+      }}
+    const c0=coastX(pz+1)+len;
+    for(let x=c0;x<c0+3;x++)for(let z=pz-2;z<=pz+4;z++){
+      const post=x===c0+2&&(z===pz-2||z===pz+4||z===pz+1);
+      if(post){for(let y=hAt(x,z);y<=0;y++)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});m.set(x,1,z,'lantern',{h:0})}
+      else{m.set(x,-1,z,'spruce_planks');if(x===c0+2||((z===pz-2||z===pz+4)&&x>c0))m.set(x,0,z,'spruce_fence')}
+    }
+    m.set(c0+1,0,pz-1,'barrel');m.set(c0,0,pz-1,'barrel');m.set(c0+1,0,pz+3,'hay_block');
+    boat(m,coastX(pz+6)+4,pz+5,pi%2===0);
+  });
+  addBuilding({name:'Hafen: Stege & Boote',group:'Hafen',kind:'harbor',voxels:placeModel(m,0,0,0,0),farm:'Kelp & Fische (Etappe 2)',label:true,
+    desc:'Vier Holzstege mit Pfählen, Geländern und Laternen, jeweils mit breitem Querkopf am Ende. An jedem Steg liegt ein Boot, zwei davon mit Segel.',
+    steps:['Stegverlauf vom Ufer gerade aufs Wasser abstecken, 3 Blöcke breit und 15 lang.','Pfähle: entrindete Schwarzeichenstämme vom Grund bis 1 Block über den Steg, an den Rändern alle 4 Blöcke.','Belag aus Fichtenholzbrettern auf Wasserhöhe, Geländer aus Fichtenholzzaun an beiden Seiten.','Querkopf am Ende: 3 × 7 Bretter, Ecken mit Pfahl und Laterne.','Boote: Rumpf 7 × 3 aus Brettern, Bord aus Stufen, Bug und Heck aus Treppen. Segelboot mit Zaun als Mast und weißer Wolle als Segel.','Fässer und Heuballen als Ladung verteilen.']});
+  // Leuchtturm auf der Landzunge
+  const L=new Model(),lx=238,lz=105,lb=hAt(lx,lz),H=18;
+  for(let dz=-5;dz<=5;dz++)for(let dx=-5;dx<=5;dx++){
+    const d=Math.hypot(dx,dz),x=lx+dx,z=lz+dz;
+    if(d<=3.5){const col=Math.min(lb,hAt(x,z));
+      for(let y=col;y<lb+H;y++){if(d>2.4)L.set(x,y,z,((y-lb)>>2)%2?'polished_andesite':stoneMix(x,y,z,.2,.1));else if(y<lb||(y-lb)%6===0)L.set(x,y,z,y<lb?'stone_bricks':'spruce_planks')}
+      L.set(x,lb+H,z,'stone_bricks')}
+    else if(d<=4.5){L.set(x,lb+H,z,'stone_brick_slab',{h:1});L.set(x,lb+H+1,z,'spruce_fence')}
+    if(d>1.5&&d<=2.5){for(const y of[lb+H+1,lb+H+2])L.set(x,y,z,(Math.abs(dx)===Math.abs(dz))?'stone_brick_wall':'glass_pane',{a:Math.abs(dx)>=Math.abs(dz)?'z':'x'})}
+  }
+  L.set(lx,lb+H+1,lz,'glowstone');L.set(lx,lb+H+2,lz,'glowstone');
+  roundSpire(L,lx,lz,2,lb+H+3,'dark_oak',false);
+  for(let y=lb+1;y<lb+H;y++)L.set(lx,y,lz-2,'ladder',{f:0});
+  L.set(lx,lb,lz+3,'spruce_door',{f:2,h:0});L.set(lx,lb+1,lz+3,'spruce_door',{f:2,h:1});
+  addBuilding({name:'Leuchtturm',group:'Hafen',kind:'tower',voxels:placeModel(L,0,0,0,0),label:true,
+    desc:'Runder Leuchtturm auf der felsigen Landzunge: Steinziegel mit Bändern aus poliertem Andesit, umlaufender Balkon, Laternenraum aus Glasscheiben mit Leuchtstein und spitzer Schwarzeichenhelm.',
+    steps:['Kreis mit Radius 3 auf der Felsspitze abstecken, Tür nach Süden.','Wand 18 hoch hochziehen, alle 4 Lagen zwischen Steinziegeln und poliertem Andesit wechseln. Innen alle 6 Blöcke ein Boden, Leiter an der Nordwand.','Oben eine volle Steinziegelscheibe als Boden, außen herum ein Balkon aus oberen Steinziegelstufen mit Zaungeländer.','Laternenraum: Ring aus Glasscheiben, an den Diagonalen Steinziegelmauern, in der Mitte zwei Leuchtsteine.','Spitzer Helm aus Schwarzeichenholz darüber.']});
+}
+
+// ---------- Marktstände, Laternen, Natur ----------
+function placeStalls(){
+  const main=STREETS[0].pts,R=mulberry32(55);const cand=[];
+  for(let z=118;z<=162;z++)for(let x=66;x<=116;x++)cand.push([x,z]);
+  for(let i=cand.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]]}
+  let n=0;
+  for(const[x,z]of cand){
+    if(n>=8)break;
+    if(Math.hypot(x-92,z-140)<9)continue;
+    const m=genStall(n);const D=dirIndex(92-x,140-z);const r=(D-m.front+4)&3;
+    const[ax,az]=rotP(m.ax,m.az,r);const ox=Math.round(x-ax),oz=Math.round(z-az);const bb=m.bboxRot(r);
+    let ok=true;
+    for(let xx=ox+bb.minX-1;xx<=ox+bb.maxX+1&&ok;xx++)for(let zz=oz+bb.minZ-1;zz<=oz+bb.maxZ+1;zz++){if(oAt(xx,zz)!==2||polyDist(xx+.5,zz+.5,main)<4){ok=false;break}}
+    if(!ok)continue;
+    for(let xx=ox+bb.minX;xx<=ox+bb.maxX;xx++)for(let zz=oz+bb.minZ;zz<=oz+bb.maxZ;zz++)oSet(xx,zz,4);
+    n++;
+    addBuilding({name:`Marktstand: ${m.title}`,group:'Markt',kind:'stall',voxels:placeModel(m,r,ox,0,oz),
+      desc:'Offener Marktstand: vier Zaunpfosten, buntes Stoffdach aus Wolle mit herabhängender Kante, Ladentisch mit Waren, Fässer dahinter.',
+      steps:['Vier Fichtenholzzäune 3 hoch als Pfosten (4 × 3 Grundfläche).','Dach: eine Lage Wolle auf die Pfosten, die Farben streifenweise abwechseln. Vorne eine Reihe eine Lage tiefer als Kante.','Ladentisch aus zwei Fichtenholzbrettern, darauf die Waren.','Hinten zwei Fässer, unter das Dach eine Laterne hängen.']});
+  }
+}
+function buildLamps(){
+  const m=new Model();let cnt=0;
+  for(const s of STREETS){
+    if(s.kind==='court')continue;
+    const step=s.kind==='main'?10:s.kind==='quay'?8:14,hw=Math.ceil(s.w/2);let acc=0,side=1;
+    for(let i=0;i<s.pts.length-1;i++){const a=s.pts[i],b=s.pts[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]);const tx=(b[0]-a[0])/L,tz=(b[1]-a[1])/L;
+      for(let t=0;t<L;t++){if(++acc%step)continue;
+        const nx=-tz*side,nz=tx*side;side=-side;
+        const px=Math.round(a[0]+tx*t+nx*(hw+1)),pz=Math.round(a[1]+tz*t+nz*(hw+1));
+        const o=oAt(px,pz);if(!(o===0||o===6||o===5)||moat[pz*WX+px]||SEA[pz*WX+px])continue;
+        const base=hAt(px,pz),D=dirIndex(-nx,-nz),ax=px+DIRS[D][0],az=pz+DIRS[D][1];
+        for(let y=base;y<=base+3;y++)m.set(px,y,pz,'spruce_fence');
+        m.set(ax,base+3,az,'spruce_fence');m.set(ax,base+2,az,'lantern',{h:1});
+        oSet(px,pz,8);cnt++;
+      }}
+  }
+  addBuilding({name:'Straßenlaternen',group:'Plätze',kind:'deco',voxels:placeModel(m,0,0,0,0),pickable:false,
+    desc:`${cnt} Laternenpfosten entlang der Hauptstraße, der Gassen und am Kai.`,
+    steps:['Pfosten: 4 Fichtenholzzäune übereinander neben der Straße.','Oben einen Zaun seitlich zur Straße hin als Ausleger setzen.','Eine Laterne unter den Ausleger hängen (beim Setzen auf die Unterseite des Zauns klicken).']});
+}
+function buildNature(){
+  const vox=[],R=mulberry32(3131);
+  const clear=(x,z,r,codes)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){const xx=x+dx,zz=z+dz;if(!codes.includes(oAt(xx,zz)))return false;if(xx>=0&&zz>=0&&xx<WX&&zz<WZ&&(moat[zz*WX+xx]||SEA[zz*WX+xx]))return false}return true};
+  const mark=(x,z,r)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++)oSet(x+dx,z+dz,8)};
+  for(let gz=0;gz<WZ;gz+=6)for(let gx=0;gx<WX;gx+=6){
+    const x=gx+Math.floor(R()*5),z=gz+Math.floor(R()*5),p=R(),kind=R();
+    if(x>=WX||z>=WZ)continue;const o=oAt(x,z),i=z*WX+x;
+    if(o===6){if(p>.5||SAND[i]||!clear(x,z,2,[6])||polyDist(x+.5,z+.5,WALL)<9)continue;(kind<.5?spruceTree:oakTree)(vox,x,z,hAt(x,z),R);mark(x,z,2)}
+    else if(o===5&&!ROCK[i]&&Hm[i]>0&&Hm[i]<PLAT){if(p>.4||!clear(x,z,2,[5]))continue;oakTree(vox,x,z,hAt(x,z),R);mark(x,z,2)}
+  }
+  for(let gz=0;gz<WZ;gz+=8)for(let gx=0;gx<WX;gx+=8){
+    const x=gx+Math.floor(R()*6),z=gz+Math.floor(R()*6),p=R();
+    if(oAt(x,z)!==0||SAND[z*WX+x]||p>.4||!clear(x,z,2,[0]))continue;
+    if(p<.12){vox.push({x,y:0,z,b:'oak_leaves'});if(R()<.5)vox.push({x:x+1,y:0,z,b:'oak_leaves'});mark(x,z,1)}
+    else{oakTree(vox,x,z,0,R);mark(x,z,2)}
+  }
+  for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
+    const o=oAt(x,z),i=z*WX+x,h=hash3(x,31,z);if(SAND[i]||ROCK[i])continue;
+    if((o===0&&h<.035)||(o===6&&h<.014))vox.push({x,y:hAt(x,z),z,b:FLOWERS[Math.floor(hash3(z,5,x)*5)]});
+  }
+  addBuilding({name:'Bäume & Blumen',group:'Bäume & Deko',kind:'deco',voxels:vox,pickable:false,
+    desc:'Eichen und Fichten vor der Mauer und am Burghügel, einzelne Bäume und Büsche in den Hinterhöfen, Blumen im Gras.',
+    steps:['Bäume am einfachsten aus Setzlingen ziehen und mit Knochenmehl wachsen lassen.','Büsche: einzelne Laubblöcke (mit der Schere abgebaut, dann verfallen sie nicht).','Blumen: Knochenmehl auf Gras streuen oder einzeln setzen.']});
+}
+
 function buildCity(){
   buildCityWall();
   buildCastle();
   buildFountain(92,140);
+  buildHarbor();
+  placeStalls();
   // Benannte Gebäude (Farmen folgen in Etappe 2)
   const named=[
     {name:'Taverne',farm:'Bienen & Honig (Etappe 2)',at:[114,124],o:{w:13,d:11,floors:3,over:true,roof:'dark_oak',chimneys:2,seed:11},desc:'Große Taverne am Marktplatz: drei Stockwerke mit Überhängen, zwei Schornsteine.'},
     {name:'Bäckerei',farm:'Karotten & Kartoffeln (Etappe 2)',at:[72,124],o:{w:11,d:9,floors:2,over:true,roof:'spruce',chimneys:2,seed:12},desc:'Bäckerei am Markt mit Backofen-Schornstein auf beiden Giebelseiten.'},
     {name:'Schmiede',farm:'Eisengolem-Farm (Etappe 2)',at:[110,212],o:{w:11,d:9,floors:2,over:false,roof:'dark_oak',stoneGround:true,seed:13},desc:'Schmiede nahe dem Stadttor: steinernes Erdgeschoss gegen Funkenflug, Fachwerk darüber.'},
+    {name:'Fischerhaus',farm:'Fischfarm (Etappe 2)',at:[203,128],o:{w:9,d:5,floors:2,over:false,roof:'spruce',stoneGround:true,seed:14},desc:'Fischerhaus am Kai mit steinernem Erdgeschoss, Fachwerk darüber und Blick auf die Stege.'},
   ];
   for(const n of named){
     const m=genHouse(n.o);const p=placeNear(m,n.at[0],n.at[1],18);
@@ -696,7 +1034,7 @@ function buildCity(){
         const p=pts[t];const nx=-p.tz*side,nz=p.tx*side;
         const D=dirIndex(-nx,-nz); // Front zeigt zur Straße
         const big=s.kind==='main'?1:0;
-        const o={w:5+Math.floor(R()*(6+big*2)),d:[5,7,7,9,9][Math.floor(R()*5)]+(big&&R()<.4?2:0),floors:R()<.15?1:R()<.8?2:3,over:R()<.7,roof:R()<.55?'spruce':'dark_oak',gableFront:R()<.35,seed:Math.floor(R()*1e9)};
+        const o={w:5+Math.floor(R()*(6+big*2)),d:[5,7,7,9,9][Math.floor(R()*5)]+(big&&R()<.4?2:0),floors:R()<.15?1:R()<.8?2:3,over:R()<.7,roof:R()<.55?'spruce':'dark_oak',gableFront:R()<.35,seed:Math.floor(R()*1e9),stoneGround:R()<.3};
         if(o.floors===3&&o.w<7)o.floors=2;
         const m=genHouse(o);const r=(D-m.front+4)&3;const bb=m.bboxRot(r);
         let ox,oz;const px=Math.round(p.x),pz=Math.round(p.z);
@@ -719,7 +1057,9 @@ function buildCity(){
   const sv=[];for(const[i,b]of streetCell){const x=i%WX,z=Math.floor(i/WX);sv.push({x,y:hAt(x,z)-1,z,b})}
   addBuilding({name:'Straßen & Plätze',group:'Plätze',kind:'street',voxels:sv,pickable:false,
     desc:'Hauptstraße vom Tor über den Markt zur Burg (Bruchstein und Kies), Gassen aus Trampelpfad und Kies, Marktplatz aus Steinziegeln, Bruchstein und Andesit.',
-    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, Bruchstein und Andesit.']});
+    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, poliertem Andesit und Bruchstein, dazwischen Flecken aus festgetretenem Schlamm.','Kai am Hafen aus Steinziegeln und Bruchstein.']});
+  buildLamps();
+  buildNature();
 }
 
 // ---------- Meshing ----------
@@ -780,26 +1120,42 @@ function addFace(G,x,y,z,mn,mx,fi,tile,bright){
   for(let k=0;k<4;k++){G.p.push(x+P[k][0],y+P[k][1],z+P[k][2]);G.u.push(T[k][0],T[k][1]);G.c.push(sh,sh,sh)}
   G.i.push(b,b+1,b+2,b,b+2,b+3);
 }
+function addCross(G,x,y,z,tile){
+  const t=TILE[tile],cl=q=>Math.min(1-EPS,Math.max(EPS,q));
+  const uv=(tu,tv)=>[(t.c+cl(tu))/ATL_COLS,1-(t.r+1-cl(tv))/ATL_ROWS];
+  const a=.15,b=.85;
+  for(const[x0,z0,x1,z1]of[[a,a,b,b],[a,b,b,a]])for(const flip of[false,true]){
+    const P=[[x0,0,z0],[x1,0,z1],[x1,1,z1],[x0,1,z0]],T=[uv(0,0),uv(1,0),uv(1,1),uv(0,1)];
+    const base=G.p.length/3;
+    for(let k=0;k<4;k++){G.p.push(x+P[k][0],y+P[k][1],z+P[k][2]);G.u.push(T[k][0],T[k][1]);G.c.push(.92,.92,.92)}
+    if(flip)G.i.push(base,base+2,base+1,base,base+3,base+2);else G.i.push(base,base+1,base+2,base,base+2,base+3);
+  }
+}
 function meshVoxels(vox,solidAt,getAt){
-  const O=newGeo(),Wt=newGeo();
+  const O=newGeo(),Wt=newGeo(),Lg=newGeo();
   for(const v of vox){
     const def=BLOCKS[v.b];
+    if(def.shape==='cross'){addCross(O,v.x,v.y,v.z,def.tex);continue}
+    if(def.shape==='leaves'){
+      for(let fi=0;fi<6;fi++){const n=FACE[fi].n;const nb=getAt(v.x+n[0],v.y+n[1],v.z+n[2]);if(nb&&(nb.b===v.b||FULL.has(nb.b)))continue;if(solidAt(v.x+n[0],v.y+n[1],v.z+n[2]))continue;addFace(O,v.x,v.y,v.z,[0,0,0],[1,1,1],fi,def.tex,.85+hash3(v.x,v.y,v.z)*.15)}
+      continue;
+    }
     if(def.shape==='water'){
       const up=getAt(v.x,v.y+1,v.z);const top=up&&up.b==='water'?1:14*s16;
       for(let fi=0;fi<6;fi++){const n=FACE[fi].n;const nb=getAt(v.x+n[0],v.y+n[1],v.z+n[2]);if(nb&&nb.b==='water')continue;if(solidAt(v.x+n[0],v.y+n[1],v.z+n[2]))continue;addFace(Wt,v.x,v.y,v.z,[0,0,0],[1,top,1],fi,'water_still',1)}
       continue;
     }
-    const full=FULL.has(v.b);
+    const full=FULL.has(v.b),G=GLOW.has(v.b)?Lg:O;
     const br=hash3(v.x,v.y,v.z)*.08+.94;
     for(const bx of boxesOf(v,getAt)){
       const mn=[bx[0],bx[1],bx[2]],mx=[bx[3],bx[4],bx[5]];
       for(let fi=0;fi<6;fi++){
         if(full){const n=FACE[fi].n;if(solidAt(v.x+n[0],v.y+n[1],v.z+n[2]))continue}
-        addFace(O,v.x,v.y,v.z,mn,mx,fi,texOf(v,fi),br);
+        addFace(G,v.x,v.y,v.z,mn,mx,fi,texOf(v,fi),G===Lg?1/FACE[fi].sh*(.82+FACE[fi].sh*.18):br);
       }
     }
   }
-  return{O,W:Wt};
+  return{O,W:Wt,L:Lg};
 }
 function toGeometry(G){
   const g=new THREE.BufferGeometry();
@@ -811,25 +1167,28 @@ function toGeometry(G){
   return g;
 }
 function meshTerrain(){
-  const G=newGeo();
-  const topOf=(x,z)=>{if(x<0||z<0||x>=WX||z>=WZ)return -5;const i=z*WX+x;return Hm[i]-(streetCell.has(i)?1:0)};
+  const G=newGeo(),Wt=newGeo();
+  const topOf=(x,z)=>{if(x<0||z<0||x>=WX||z>=WZ)return -8;const i=z*WX+x;return Hm[i]-(streetCell.has(i)?1:0)};
   for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
-    const i=z*WX+x,t=topOf(x,z),isStreet=streetCell.has(i),isMoat=moat[i];
+    const i=z*WX+x,t=topOf(x,z),isStreet=streetCell.has(i),isMoat=moat[i],sea=SEA[i],sand=SAND[i],rock=ROCK[i];
     const br=.95+hash3(x,1,z)*.07;
-    if(!isStreet)addFace(G,x,t-1,z,[0,0,0],[1,1,1],2,isMoat?'dirt':'grass_block_top',br);
+    let top='grass_block_top',side='grass_block_side',under='dirt';
+    if(isMoat)top=side='dirt';
+    else if(sea||sand){top=side=under='sand'}
+    else if(rock){const h=hash3(x,2,z);top=h<.45?'stone':h<.7?'andesite':'grass_block_top';side=top==='grass_block_top'?'grass_block_side':top;under='stone'}
+    if(!isStreet)addFace(G,x,t-1,z,[0,0,0],[1,1,1],2,top,br);
+    if(sea)addFace(Wt,x,-1,z,[0,0,0],[1,14/16,1],2,'water_still',1);
     for(const fi of[0,1,4,5]){
       const n=FACE[fi].n;const nt=topOf(x+n[0],z+n[2]);
-      for(let y=Math.max(nt,-5);y<t;y++){
-        const tile=(y===t-1&&!isStreet&&!isMoat)?'grass_block_side':'dirt';
-        addFace(G,x,y,z,[0,0,0],[1,1,1],fi,tile,br);
-      }
+      for(let y=Math.max(nt,-8);y<t;y++)addFace(G,x,y,z,[0,0,0],[1,1,1],fi,(y===t-1&&!isStreet)?side:under,br);
+      if(sea&&(x+n[0]<0||x+n[0]>=WX||z+n[2]<0||z+n[2]>=WZ))addFace(Wt,x,-1,z,[0,0,0],[1,14/16,1],fi,'water_still',1);
     }
   }
-  return G;
+  return{G,W:Wt};
 }
 
 // ---------- Three.js ----------
-let renderer,scene,camera,controls,world,atlasTex,matO,matW,matHover,matSel,matLayer,terrainMesh;
+let renderer,scene,camera,controls,world,atlasTex,matO,matW,matG,matHover,matSel,matLayer,terrainMesh,glowPoints,skyTex;
 const solid=new Set();const allVox=new Map();
 function solidAt(x,y,z){if(y<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;return solid.has(K(x,y,z))}
 function initThree(){
@@ -847,20 +1206,46 @@ function initThree(){
   matHover=matO.clone();matHover.color=new THREE.Color(1.22,1.16,1.0);
   matSel=matO.clone();matSel.color=new THREE.Color(1.35,1.18,.86);
   matLayer=matO.clone();matLayer.color=new THREE.Color(1.55,1.22,.62);
+  matG=matO.clone();
   applyTheme();
-  camera.position.set(-20,150,175);controls.target.set(0,4,10);controls.update();
+  camera.position.set(100-WX/2-20,150,140-WZ/2+175);controls.target.set(100-WX/2,4,140-WZ/2+10);controls.update();
   resize();window.addEventListener('resize',resize);
 }
 function applyTheme(){
+  if(evening){
+    if(!skyTex){const c=document.createElement('canvas');c.width=2;c.height=256;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,0,256);
+      gr.addColorStop(0,'#2b2f5c');gr.addColorStop(.45,'#8a5a7a');gr.addColorStop(.75,'#e48a58');gr.addColorStop(1,'#f7c37a');g.fillStyle=gr;g.fillRect(0,0,2,256);skyTex=new THREE.CanvasTexture(c)}
+    scene.background=skyTex;scene.fog=new THREE.Fog('#b9786a',300,950);return;
+  }
   const sky=getComputedStyle(document.documentElement).getPropertyValue('--sky').trim()||'#a8cff0';
   scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,320,900);
+}
+function setEvening(on){
+  evening=on;paintAtlas();atlasTex.needsUpdate=true;
+  const k=on?new THREE.Color(.52,.43,.5):new THREE.Color(1,1,1);
+  matO.color.copy(k);
+  matHover.color.copy(k).multiply(new THREE.Color(1.22,1.16,1.0));
+  matSel.color.copy(k).multiply(new THREE.Color(1.35,1.18,.86));
+  matLayer.color.copy(k).multiply(new THREE.Color(1.55,1.22,.62));
+  matW.color.copy(on?new THREE.Color(.62,.52,.62):new THREE.Color(1,1,1));
+  if(glowPoints)glowPoints.visible=on&&!layerMode;
+  applyTheme();
+}
+function makeGlowPoints(){
+  const pos=[];for(const b of buildings)for(const v of b.voxels)if(LIGHTS.has(v.b))pos.push(v.x+.5,v.y+.45,v.z+.5);
+  const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const gr=g.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,214,140,1)');gr.addColorStop(.25,'rgba(255,170,80,.55)');gr.addColorStop(1,'rgba(255,140,40,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  glowPoints=new THREE.Points(geo,new THREE.PointsMaterial({size:9,map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}));
+  glowPoints.visible=evening;world.add(glowPoints);
 }
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 
 function buildMeshes(){
   for(const b of buildings)for(const v of b.voxels){const k=K(v.x,v.y,v.z);allVox.set(k,v);if(FULL.has(v.b))solid.add(k)}
   const getAt=(x,y,z)=>allVox.get(K(x,y,z));
-  terrainMesh=new THREE.Mesh(toGeometry(meshTerrain()),matO);world.add(terrainMesh);
+  const tr=meshTerrain();terrainMesh=new THREE.Mesh(toGeometry(tr.G),matO);world.add(terrainMesh);world.add(new THREE.Mesh(toGeometry(tr.W),matW));
+  makeGlowPoints();
   for(const b of buildings)makeBuildingMeshes(b,b.voxels,solidAt,getAt);
 }
 function makeBuildingMeshes(b,vox,sAt,gAt,layerY){
@@ -868,12 +1253,13 @@ function makeBuildingMeshes(b,vox,sAt,gAt,layerY){
   b.meshes=[];
   const parts=layerY==null?[[vox,matO]]:[[vox.filter(v=>v.y<layerY),matO],[vox.filter(v=>v.y===layerY),matLayer]];
   for(const[vv,mat]of parts){
-    const{O,W}=meshVoxels(vv,sAt,gAt);
+    const{O,W,L}=meshVoxels(vv,sAt,gAt);
+    if(L.i.length){const m=new THREE.Mesh(toGeometry(L),matG);m.userData.bid=b.id;m.userData.base=matG;m.userData.glow=true;b.meshes.push(m);world.add(m)}
     if(O.i.length){const m=new THREE.Mesh(toGeometry(O),mat);m.userData.bid=b.id;m.userData.base=mat;b.meshes.push(m);world.add(m)}
     if(W.i.length){const m=new THREE.Mesh(toGeometry(W),matW);m.userData.bid=b.id;m.userData.base=matW;m.userData.water=true;b.meshes.push(m);world.add(m)}
   }
 }
-function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
+function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.glow||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
 
 // ---------- Interaktion ----------
 const ray=new THREE.Raycaster();const mouse=new THREE.Vector2();
@@ -920,7 +1306,7 @@ function stepTween(now){
 const labelEls=[];let showNames=true;
 function initLabels(){
   const host=document.getElementById('labels');
-  for(const b of buildings){if(!(b.label||b.group==='Burg'||b.kind==='fountain'||b.kind==='wall'))continue;if(b.kind==='water')continue;
+  for(const b of buildings){if(!(b.label||b.group==='Burg'||b.kind==='wall'))continue;if(b.kind==='water'||b.kind==='deco'||b.name==='Burgbrunnen')continue;
     const el=document.createElement('div');el.className='lbl'+(b.farm?' farm':'');el.textContent=b.name.replace('Burg: ','');host.appendChild(el);
     let ax=(b.bb.x0+b.bb.x1)/2,az=(b.bb.z0+b.bb.z1)/2;
     if(b.kind==='wall'){ax=100;az=238}
@@ -1003,6 +1389,7 @@ function exitLayerMode(){
   const getAt=(x,y,z)=>allVox.get(K(x,y,z));
   if(selected){makeBuildingMeshes(selected,selected.voxels,solidAt,getAt);setBuildingMat(selected,matSel)}
   for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=true);
+  if(glowPoints)glowPoints.visible=evening;
 }
 function renderLayer(b){
   const y=b.bb.y0+layer,nL=b.bb.y1-b.bb.y0+1;
@@ -1014,6 +1401,7 @@ function renderLayer(b){
     const sAt=(x,yy,z)=>{if(yy<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;const v=own.get(K(x,yy,z));return!!v&&FULL.has(v.b)};
     makeBuildingMeshes(b,b.voxels.filter(v=>v.y<=y),sAt,(x,yy,z)=>own.get(K(x,yy,z)),y);
     for(const o of buildings)if(o!==b&&o.meshes&&o.kind!=='street')o.meshes.forEach(m=>m.visible=false);
+    if(glowPoints)glowPoints.visible=false;
   }
   drawPlan(b,y);
   const cnt=countBlocks(b.voxels.filter(v=>v.y===y));
@@ -1099,7 +1487,7 @@ function showTotal(){
   });
 }
 function listHTML(groups){
-  const order=['Burg','Stadtbefestigung','Gebäude mit Farm','Plätze','Wohnhäuser'];
+  const order=['Burg','Stadtbefestigung','Gebäude mit Farm','Markt','Hafen','Plätze','Wohnhäuser','Bäume & Deko'];
   return order.filter(g=>groups[g]).map(g=>`<div class="group-h">${esc(g)} (${groups[g].length})</div><div class="blist">${groups[g].map(b=>{const n=Object.entries(b.counts).reduce((s,[k,v])=>s+(k==='water'?0:v),0);return`<button data-bid="${b.id}"><span>${esc(b.name)}${b.farm?` <span class="farmtag">Farm</span>`:''}</span><span>${n.toLocaleString('de-DE')}</span></button>`}).join('')}</div>`).join('');
 }
 function bindList(){document.querySelectorAll('[data-bid]').forEach(bt=>bt.onclick=()=>{currentTab='mat';select(buildings[+bt.dataset.bid])})}
@@ -1111,17 +1499,85 @@ function showList(){
 }
 function closePanel(){panel.hidden=true;if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}}
 
+// ---------- Texturen aus der Minecraft-.jar ----------
+// Die .jar ist ein ZIP-Archiv. Es wird nur im Browser gelesen, nichts wird hochgeladen.
+const JAR_NAMES={door_bottom:'spruce_door_bottom',door_top:'spruce_door_top',campfire_log:'campfire_log_lit'};
+const JAR_TINT={grass_block_top:[121,192,90],oak_leaves:[89,174,48],spruce_leaves:[97,153,97],water_still:[63,118,228]};
+const JAR_SKIP=new Set(['lantern']); // Laterne ist in Minecraft ein Teilebogen, keine Blockfläche
+async function readJar(file){
+  const buf=new Uint8Array(await file.arrayBuffer()),dv=new DataView(buf.buffer);
+  let e=buf.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
+  if(e<0)throw new Error('Das ist keine .jar- bzw. ZIP-Datei.');
+  const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const dec=new TextDecoder();const entries=new Map();
+  for(let i=0;i<n;i++){if(dv.getUint32(p,true)!==0x02014b50)break;
+    const method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lho=dv.getUint32(p+42,true);
+    const name=dec.decode(buf.subarray(p+46,p+46+nl));if(name.startsWith('assets/minecraft/textures/block/'))entries.set(name,{method,csize,lho});p+=46+nl+el+cl}
+  return async name=>{const en=entries.get(name);if(!en)return null;const l=en.lho;const off=l+30+dv.getUint16(l+26,true)+dv.getUint16(l+28,true);const data=buf.subarray(off,off+en.csize);
+    if(en.method===0)return data;return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())};
+}
+async function pngTo16(bytes,tint){
+  const bmp=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
+  const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d');g.imageSmoothingEnabled=false;
+  g.drawImage(bmp,0,0,bmp.width,bmp.width,0,0,16,16); // animierte Streifen: nur das erste Bild
+  const im=g.getImageData(0,0,16,16);
+  if(tint)for(let i=0;i<im.data.length;i+=4){im.data[i]=im.data[i]*tint[0]/255;im.data[i+1]=im.data[i+1]*tint[1]/255;im.data[i+2]=im.data[i+2]*tint[2]/255}
+  return im;
+}
+async function loadTexturesFromJar(file){
+  const read=await readJar(file);let ok=0,miss=[];
+  const keys=TILE_KEYS.filter(k=>k!=='plaster').concat(Object.keys(PLASTER));
+  for(const k of keys){if(JAR_SKIP.has(k))continue;
+    const bytes=await read('assets/minecraft/textures/block/'+(JAR_NAMES[k]||k)+'.png');
+    if(!bytes){miss.push(k);continue}
+    jarTex.set(k,await pngTo16(bytes,JAR_TINT[k]));ok++}
+  if(!ok)throw new Error('In dieser Datei wurden keine Blocktexturen gefunden. Bitte die Versions-.jar wählen, z. B. 26.3.jar.');
+  saveJarTex();applyAtlas();return{ok,miss};
+}
+function applyAtlas(){paintAtlas();if(atlasTex)atlasTex.needsUpdate=true;for(const k in swatchCache)delete swatchCache[k]}
+function saveJarTex(){try{const o={};const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d');for(const[k,im]of jarTex){g.putImageData(im,0,0);o[k]=c.toDataURL()}localStorage.setItem('burgstadt-jar-tex',JSON.stringify(o))}catch(e){}}
+async function restoreJarTex(){
+  let o=null;try{o=JSON.parse(localStorage.getItem('burgstadt-jar-tex')||'null')}catch(e){}
+  if(!o)return false;
+  for(const[k,url]of Object.entries(o)){try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d');g.drawImage(img,0,0);jarTex.set(k,g.getImageData(0,0,16,16))}catch(e){}}
+  applyAtlas();return jarTex.size>0;
+}
+function clearJarTex(){jarTex.clear();try{localStorage.removeItem('burgstadt-jar-tex')}catch(e){}applyAtlas()}
+function showTexPanel(msg){
+  if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
+  currentTab='tex';
+  openPanel('Texturen aus Minecraft laden','Original-Texturen aus deiner eigenen Minecraft-Installation',[['tex','Texturen']],()=>{
+    document.getElementById('pBody').innerHTML=`${msg?`<p class="note">${msg}</p>`:''}
+      <p class="desc">Die Texturen gehören Mojang und dürfen nicht mit der Datei veröffentlicht werden. Deshalb liest die Seite sie direkt aus deiner Minecraft-Datei. Das passiert nur in deinem Browser, nichts wird hochgeladen. Danach merkt sich dieser Browser die Texturen.</p>
+      <h3>So geht es (Windows)</h3>
+      <ol class="steps"><li>Auf „Minecraft-.jar auswählen“ klicken.</li><li>Oben in die Adresszeile des Dateifensters <code>%APPDATA%\\.minecraft\\versions\\26.3</code> eingeben und Enter drücken.</li><li>Die Datei <b>26.3.jar</b> auswählen.</li></ol>
+      <p class="desc">Auf dem Mac liegt sie unter <code>~/Library/Application Support/minecraft/versions/26.3/</code>.</p>
+      <div class="row"><button class="primary" id="pickJar">Minecraft-.jar auswählen</button>${jarTex.size?'<button id="dropJar">Wieder nachgebaute Texturen nutzen</button>':''}</div>
+      <p class="desc" style="color:var(--muted)">${jarTex.size?`Aktiv: ${jarTex.size} Original-Texturen.`:'Aktiv: nachgebaute Texturen im Minecraft-Stil.'} Die Laterne bleibt immer nachgebaut, weil Minecraft sie aus Einzelteilen zusammensetzt.</p>`;
+    document.getElementById('pickJar').onclick=()=>document.getElementById('jarFile').click();
+    const d=document.getElementById('dropJar');if(d)d.onclick=()=>{clearJarTex();showTexPanel('Nachgebaute Texturen sind wieder aktiv.')};
+  });
+}
+
 // ---------- Start ----------
-function loop(now){requestAnimationFrame(loop);stepTween(now);controls.update();updateLabels();renderer.render(scene,camera)}
+let paused=false;
+function loop(now){requestAnimationFrame(loop);if(paused)return;stepTween(now);controls.update();updateLabels();renderer.render(scene,camera)}
 function start(){
   if(!window.THREE||!THREE.OrbitControls){document.getElementById('loading').textContent='Three.js konnte nicht geladen werden. Bitte mit Internetverbindung öffnen.';return}
   buildCity();
   initThree();buildMeshes();initInput();initLabels();
   document.getElementById('btnTotal').onclick=showTotal;
   document.getElementById('btnList').onclick=showList;
+  document.getElementById('btnTex').onclick=()=>showTexPanel();
+  document.getElementById('jarFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+    showTexPanel('Texturen werden gelesen …');paused=true;
+    try{const r=await loadTexturesFromJar(f);showTexPanel(`Fertig: ${r.ok} Original-Texturen geladen.${r.miss.length?` Nicht gefunden (bleiben nachgebaut): ${r.miss.join(', ')}.`:''}`)}
+    catch(err){showTexPanel('Das hat nicht geklappt: '+esc(err.message))}
+    paused=false};
+  restoreJarTex();
   document.getElementById('pClose').onclick=closePanel;
+  const be=document.getElementById('btnEve');be.onclick=()=>{setEvening(!evening);be.setAttribute('aria-pressed',evening)};
   const bn=document.getElementById('btnNames');bn.onclick=()=>{showNames=!showNames;bn.setAttribute('aria-pressed',showNames)};
-  document.getElementById('selPlaster').onchange=e=>{plasterChoice=e.target.value;paintAtlas();atlasTex.needsUpdate=true;for(const k in swatchCache)delete swatchCache[k];if(!panel.hidden){if(selected)select(selected);else if(currentTab==='tot'||currentTab==='by')showTotal()}};
+  document.getElementById('selPlaster').onchange=e=>{plasterChoice=e.target.value;applyAtlas();if(!panel.hidden){if(selected)select(selected);else if(currentTab==='tot'||currentTab==='by')showTotal()}};
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
   new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
   document.getElementById('loading').remove();
