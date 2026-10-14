@@ -147,11 +147,12 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
   <div id="tip" hidden></div>
   <div id="tfLegend" class="tflegend" hidden>
     <b>Geländearbeiten</b>
-    <span><i style="background:#3f8cff"></i>Wasser zuschütten, Land aufschütten</span>
-    <span><i style="background:#f24d33"></i>ausheben (Burggraben)</span>
-    <span><i style="background:#ffd633"></i>einebnen (Burgplateau, Markt, Tore, Höfe)</span>
+    <span>Ausgangslage: Insel flach auf Boden-Y 63</span>
+    <span><i style="background:#3f8cff"></i>Wasser zuschütten, vom Grund bis Y 63</span>
+    <span><i style="background:linear-gradient(90deg,#ffed8c,#bf5915)"></i>aufschütten, je dunkler desto höher</span>
+    <span><i style="background:#f24d33"></i>Burggraben frei lassen</span>
     <span><i style="background:#f2f2f2"></i>Bauplatz eines Gebäudes</span>
-    <small>Maus über das Gelände: Koordinaten und Bodenhöhe laut Plan. Die Höhen sind aus der Karte geschätzt, vor Ort mit F3 vergleichen.</small>
+    <small>Maus über das Gelände: Koordinaten, Bodenhöhe und wie viele Blöcke aufgeschüttet werden.</small>
   </div>
   <aside class="panel" id="panel" hidden>
     <div class="panel-head">
@@ -573,8 +574,9 @@ function genHouse(o){
 }
 
 // ---------- Welt & Gelände: deine Insel ----------
-// Der Ausschnitt ist die Karte deiner Welt. Lokales x/z + Ursprung = Minecraft-X/Z, y + 64 = Minecraft-Y.
-const X0=-2826,Z0=-2054,Y0=64;
+// Der Ausschnitt ist die Karte deiner Welt. Lokales x/z + Ursprung = Minecraft-X/Z, y + 63 = Minecraft-Y.
+// Die oberste Wasserschicht des Meeres liegt auf Y 62 (y = -1). Die Insel wird zuerst flach auf Y 63 gemacht (y = 0).
+const X0=-2826,Z0=-2054,Y0=63;
 const mcX=x=>x+X0,mcY=y=>y+Y0,mcZ=z=>z+Z0;
 const WX=303,WZ=279;
 // Inselkarte, Zeile für Zeile: w Wasser, g Wiese, s Sand, f Wald (Lauflängen)
@@ -584,7 +586,8 @@ const MASK=new Uint8Array(WX*WZ);
 const Hm=new Int16Array(WX*WZ);
 const moat=new Uint8Array(WX*WZ);
 const SEA=new Uint8Array(WX*WZ),ROCK=new Uint8Array(WX*WZ),SAND=new Uint8Array(WX*WZ),FOREST=new Uint8Array(WX*WZ);
-const LEVEL=new Uint8Array(WX*WZ); // Flächen, die eben sein müssen (Geländearbeiten)
+const LEVEL=new Uint8Array(WX*WZ);
+const WFLOOR=new Int8Array(WX*WZ); // Grundhöhe dort, wo laut Karte Wasser ist // Flächen, die eben sein müssen (Geländearbeiten)
 const hAtW=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?-6:Hm[z*WX+x];
 let hAt=hAtW;
 function vnoise(x,z,s,seed){const xi=Math.floor(x/s),zi=Math.floor(z/s),fx=x/s-xi,fz=z/s-zi;const g=(a,b)=>hash3(a,b,seed);const sm=t=>t*t*(3-2*t);const a=g(xi,zi),b=g(xi+1,zi),c=g(xi,zi+1),e=g(xi+1,zi+1);return(a+(b-a)*sm(fx))+((c+(e-c)*sm(fx))-(a+(b-a)*sm(fx)))*sm(fz)}
@@ -629,7 +632,8 @@ for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
   let hill=0;
   if(e<=1)hill=PLAT;else{const t=Math.pow(e,1/6),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;hill=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/12)))}
   const water=MASK[i]===0&&hill<PLAT-2;
-  if(water){SEA[i]=1;const dl=dLand[i];Hm[i]=dl<=1?-2:dl<=3?-3:dl<=7?-4:-6;continue}
+  if(MASK[i]===0){const dl=dLand[i];WFLOOR[i]=dl<=1?-2:dl<=3?-3:dl<=7?-4:-6}
+  if(water){SEA[i]=1;Hm[i]=WFLOOR[i];continue}
   const lift=landH(x,z,i);let h=Math.max(lift,hill);
   if(hill>0&&hill>=lift)HILL[i]=1;
   if(cx>=56&&cx<=144&&cz<=90&&!inPoly(cx+.5,cz+.5,OUTER)){const d=polyDist(cx+.5,cz+.5,OUTER_C);if(d>3.5&&d<=7.5){h=PLAT-3;moat[i]=1;HILL[i]=1}}
@@ -641,6 +645,10 @@ for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
 // Land auf der anderen Seite des Flusses: bleibt unbebaut (nur Wald und Wiese)
 const EAST=new Uint8Array(WX*WZ);
 {const s0=60*WX+280,q=[s0];EAST[s0]=1;while(q.length){const i=q.pop(),x=i%WX;for(const j of[x>0?i-1:-1,x<WX-1?i+1:-1,i-WX,i+WX])if(j>=0&&j<WX*WZ&&!EAST[j]&&MASK[j]!==0){EAST[j]=1;q.push(j)}}}
+// Die Hauptinsel (mit Sandzunge und Halbinsel im Südosten) wird flach auf BASE gemacht, alles darüber wird aufgeschüttet
+const BASE=1,MAIN=new Uint8Array(WX*WZ);
+{const s0=134*WX+118,q=[s0];MAIN[s0]=1;while(q.length){const i=q.pop(),x=i%WX;for(const j of[x>0?i-1:-1,x<WX-1?i+1:-1,i-WX,i+WX])if(j>=0&&j<WX*WZ&&!MAIN[j]&&!SEA[j]&&!EAST[j]){MAIN[j]=1;q.push(j)}}}
+for(let i=0;i<WX*WZ;i++)if(MAIN[i]&&Hm[i]<BASE)Hm[i]=BASE;
 // Steile Hänge am Burghügel zeigen Fels
 for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){const i=z*WX+x;if(!HILL[i]||moat[i]||SEA[i])continue;
   let m=0;for(const j of[i-1,i+1,i-WX,i+WX])if(!moat[j])m=Math.max(m,Hm[i]-Hm[j]);
@@ -2272,16 +2280,46 @@ function setXray(b){
 function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.glow||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
 
 // ---------- Geländearbeiten ----------
-let tfMesh=null,tfOn=false;const FOOT=new Uint8Array(WX*WZ);
-const TF_TXT={1:'Wasser zuschütten, Land aufschütten',2:'ausheben (Burggraben)',3:'einebnen',4:'Bauplatz eines Gebäudes'};
-const TF_COL={1:[.25,.55,1],2:[.95,.3,.2],3:[1,.84,.2],4:[.95,.95,.95]};
-function tfKind(i){if(moat[i])return 2;if(!SEA[i]&&MASK[i]===0)return 1;if(LEVEL[i]||(HILL[i]&&Hm[i]===PLAT))return 3;if(FOOT[i])return 4;return 0}
-function buildTF(){
-  for(const b of buildings){if(['deco','street','water','wall','farm','harbor'].includes(b.kind))continue;
-    for(const v of b.voxels)if(v.x>=0&&v.z>=0&&v.x<WX&&v.z<WZ&&v.y<=hAt(v.x,v.z)+1&&v.y>=hAt(v.x,v.z)-1)FOOT[v.z*WX+v.x]=1}
-  const pos=[],col=[];
-  for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){const i=z*WX+x,k=tfKind(i);if(!k)continue;
-    const y=Hm[i]+.04,c=TF_COL[k];
+// Ausgangslage: die Insel ist flach auf Boden-Y 63. Alles darüber wird aufgeschüttet.
+let tfMesh=null,tfOn=false,tfMode=null,footDone=false;const FOOT=new Uint8Array(WX*WZ);
+function tfInfo(i){
+  if(!MAIN[i]||SEA[i])return null;
+  if(MASK[i]===0)return{k:1,n:Hm[i]-WFLOOR[i]};
+  const n=Hm[i]-BASE;
+  if(moat[i])return{k:2,n};
+  if(n>0)return{k:3,n};
+  if(FOOT[i])return{k:4,n:0};
+  return null;
+}
+function tfText(t){return t.k===1?`Wasser zuschütten: ${t.n} Blöcke vom Grund`:t.k===2?`Burggraben frei lassen (Grabenboden)`:t.k===3?`aufschütten: ${t.n} Blöcke über Y ${mcY(BASE-1)}`:'Bauplatz eines Gebäudes'}
+function tfShown(i,t,mode){
+  if(!t||mode==='all')return!!t;
+  if(mode==='base')return t.k===1||t.k===4;
+  if(mode==='hill')return(t.k===2||t.k===3)&&HILL[i];
+  if(mode==='town')return t.k===3&&!HILL[i];
+  return false;
+}
+function tfColor(t){
+  if(t.k===1)return[.25,.55,1];if(t.k===2)return[.95,.3,.2];if(t.k===4)return[.95,.95,.95];
+  const f=Math.min(1,(t.n-1)/11);return[1-.3*f,.93-.6*f,.55-.47*f];
+}
+// Erde und Stein für eine Etappe der Geländearbeiten
+function tfMaterial(mode){
+  const c={};const add=(k,n)=>{if(n>0)c[k]=(c[k]||0)+n};
+  for(let i=0;i<WX*WZ;i++){const t=tfInfo(i);if(!t||t.k===4)continue;
+    if(mode==='base'){if(t.k===1)add('dirt',BASE-WFLOOR[i]);continue}
+    if(!tfShown(i,t,mode))continue;
+    add(ROCK[i]?'stone':'dirt',Hm[i]-BASE);}
+  return c;
+}
+function buildTF(mode){
+  if(!footDone){footDone=true;for(const b of buildings){if(['deco','street','water','wall','farm','harbor'].includes(b.kind))continue;
+    for(const v of b.voxels)if(v.x>=0&&v.z>=0&&v.x<WX&&v.z<WZ&&v.y<=hAt(v.x,v.z)+1&&v.y>=hAt(v.x,v.z)-1)FOOT[v.z*WX+v.x]=1}}
+  if(tfMesh&&tfMode===mode)return;
+  if(tfMesh){world.remove(tfMesh);tfMesh.geometry.dispose()}
+  tfMode=mode;const pos=[],col=[];
+  for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){const i=z*WX+x,t=tfInfo(i);if(!tfShown(i,t,mode))continue;
+    const y=Hm[i]+.04,c=tfColor(t);
     pos.push(x,y,z, x,y,z+1, x+1,y,z, x+1,y,z, x,y,z+1, x+1,y,z+1);for(let n=0;n<6;n++)col.push(c[0],c[1],c[2])}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   tfMesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.6,depthWrite:false,side:THREE.DoubleSide}));
@@ -2289,7 +2327,7 @@ function buildTF(){
 }
 function setTF(on){
   if(on)exitStages();
-  tfOn=on;if(on&&!tfMesh)buildTF();if(tfMesh)tfMesh.visible=on;
+  tfOn=on;if(on)buildTF('all');if(tfMesh)tfMesh.visible=on;
   if(on&&selected)closePanel();
   if(terrainMesh)terrainMesh.visible=true;if(seaMesh)seaMesh.visible=true;
   for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=!on||b.kind==='street');
@@ -2308,7 +2346,9 @@ function groundAt(){
 // ---------- Bauetappen ----------
 // Die Stadt Schritt für Schritt: was schon steht, bleibt sichtbar, die aktuelle Etappe leuchtet, spätere sind ausgeblendet.
 const STAGES=[
-  {t:'Gelände vorbereiten',m:()=>false,tf:true,d:()=>`Bevor ein Block gesetzt wird: Das Burgplateau auf Boden-Y ${mcY(PLAT-1)} einebnen (gelb), den Burggraben ausheben (rot), an den blauen Stellen Wasser zuschütten und Marktplatz, Torplätze und Höfe einebnen. Fahr mit der Maus übers Gelände, dann siehst du Koordinaten und Bodenhöhe.`},
+  {t:'Insel einebnen',m:()=>false,tf:'base',d:()=>`Die ganze Insel flach machen: oberster Bodenblock auf Y ${mcY(BASE-1)}, die Sandzunge im Südwesten und die Halbinsel im Südosten gehören dazu. Wo der Plan Land im Wasser braucht (blau), vom Grund aus bis Y ${mcY(BASE-1)} aufschütten. Das Land jenseits des Flusses bleibt, wie es ist.`},
+  {t:'Burghügel aufschütten',m:()=>false,tf:'hill',d:()=>`Den Hügel für die Burg aufschütten. Oben ist das Plateau mit Boden-Y ${mcY(PLAT-1)}, die Hänge laufen nach außen flach aus. Den Burggraben (rot) frei lassen: Sein Boden liegt auf Y ${mcY(PLAT-4)}, das Wasser kommt erst später. Je dunkler die Farbe, desto höher. Die Maus zeigt an jeder Stelle die genaue Höhe.`},
+  {t:'Stadtgelände modellieren',m:()=>false,tf:'town',d:()=>`Die sanften Höhen in der Stadt und vor der Mauer aufschütten, so steht die Stadt auf mehreren Ebenen. Der Marktplatz liegt auf Boden-Y ${mcY(PLAZA_Y-1)}, das Haupttor auf Boden-Y ${mcY(GATE_Y-1)}. Die Maus zeigt an jeder Stelle die genaue Höhe.`},
   {t:'Burgmauern und Graben',m:b=>/^Burg: |^Burggraben$/.test(b.name),d:()=>'Erst die runden Türme, dann die Mauern dazwischen, dann Torhaus mit Zugbrücke und das innere Tor. Den Graben erst fluten, wenn die Mauern stehen.'},
   {t:'Bergfried, Palas und Kapelle',m:b=>/^(Bergfried|Palas|Burgkapelle|Burgbrunnen)/.test(b.name),d:()=>'Der Bergfried steht in der Südwestecke der Hauptburg. Kerker und Mob-Farm darunter gleich mit ausheben, solange der Turm noch offen ist. Danach Palas, Kapelle und Brunnen.'},
   {t:'Vorburg',m:b=>/^(Stall|Wirtschaftshaus|Burggarten)/.test(b.name),d:()=>'Stall mit Eierfarm und das Wirtschaftshaus vor dem inneren Tor, danach den Burggarten anlegen.'},
@@ -2329,11 +2369,11 @@ function showStage(i){
   if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
   stageIdx=Math.max(0,Math.min(STAGES.length-1,i));const S=STAGES[stageIdx],N=STAGES.length;
   const list=buildings.filter(b=>b._st===stageIdx);
-  if(S.tf&&!tfMesh)buildTF();if(tfMesh)tfMesh.visible=!!S.tf;
+  if(S.tf)buildTF(S.tf);if(tfMesh)tfMesh.visible=!!S.tf;
   document.getElementById('tfLegend').hidden=true;
   setXray(null);
   for(const b of buildings)setBuildingMat(b,b._st===stageIdx&&b.kind!=='street'?matSel:null);
-  const tot={},exm=new Map();for(const b of list){for(const[k,n]of Object.entries(b.counts))tot[k]=(tot[k]||0)+n;for(const e of(b.extras||[])){const o=exm.get(e.n)||{n:e.n,c:0};o.c+=e.c;exm.set(e.n,o)}}
+  const tot=S.tf?tfMaterial(S.tf):{},exm=new Map();for(const b of list){for(const[k,n]of Object.entries(b.counts))tot[k]=(tot[k]||0)+n;for(const e of(b.extras||[])){const o=exm.get(e.n)||{n:e.n,c:0};o.c+=e.c;exm.set(e.n,o)}}
   const groups={};for(const b of list)(groups[b.group]=groups[b.group]||[]).push(b);
   currentTab='stage';
   openPanel(`Etappe ${stageIdx+1}: ${S.t}`,`Bauetappe ${stageIdx+1} von ${N}`,[['stage','Etappe']],()=>{
@@ -2341,7 +2381,7 @@ function showStage(i){
     body.innerHTML=`<div class="stnav"><button id="stPrev" ${stageIdx===0?'disabled':''}>◀ Zurück</button><button class="primary" id="stNext" ${stageIdx===N-1?'disabled':''}>Weiter ▶</button></div>
       <div class="stdots" aria-label="Etappen">${STAGES.map((x,k)=>`<button data-st="${k}" aria-current="${k===stageIdx}" title="${esc(x.t)}">${k+1}</button>`).join('')}</div>
       <p class="desc">${esc(S.d(list.length))}</p>
-      ${S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen noch keine Gebäude, nur die Straßen sind zur Orientierung zu sehen.</p>`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
+      ${S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen noch keine Gebäude, nur die Straßen sind zur Orientierung zu sehen. Erde reicht zum Aufschütten, Gras wächst von selbst darüber.</p><h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
       <h3>Bauwerke dieser Etappe</h3>${listHTML(groups)}
       <h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[...exm.values()])}`}`;
     document.getElementById('stPrev').onclick=()=>showStage(stageIdx-1);
@@ -2352,7 +2392,7 @@ function showStage(i){
   });
   if(list.length){let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;for(const b of list){if(b.kind==='farm'&&b.underground)continue;x0=Math.min(x0,b.bb.x0);x1=Math.max(x1,b.bb.x1);y0=Math.min(y0,b.bb.y0);y1=Math.max(y1,b.bb.y1);z0=Math.min(z0,b.bb.z0);z1=Math.max(z1,b.bb.z1)}
     if(x0<1e9)focusOn({bb:{x0,x1,y0,y1,z0,z1}})}
-  else if(S.tf){const[x,z]=c2w(100,42);focusOn({bb:{x0:x-40,x1:x+70,y0:0,y1:PLAT,z0:z-60,z1:z+60}})}
+  else if(S.tf){const[x,z]=c2w(100,42);focusOn(S.tf==='hill'?{bb:{x0:x-55,x1:x+55,y0:0,y1:PLAT,z0:z-60,z1:z+60}}:{bb:{x0:x-40,x1:x+110,y0:0,y1:PLAT,z0:z-70,z1:z+70}})}
 }
 function exitStages(){
   if(stageIdx==null)return;stageIdx=null;
@@ -2379,9 +2419,9 @@ function onMove(ev){
   if(b!==hovered){if(hovered&&hovered!==selected)setBuildingMat(hovered,null);hovered=b;if(b&&b!==selected)setBuildingMat(b,matHover)}
   document.getElementById('view').classList.toggle('hover',!!b);
   if(b){tip.hidden=false;tip.textContent=b.name+(b.farm?' · '+b.farm:'');tip.style.left=ev.clientX+'px';tip.style.top=ev.clientY+'px'}
-  else if(gm){const g=groundAt();if(!g){tip.hidden=true;return}const k=tfKind(g.i);
+  else if(gm){const g=groundAt();if(!g){tip.hidden=true;return}const t=tfInfo(g.i);
     tip.hidden=false;tip.style.left=ev.clientX+'px';tip.style.top=ev.clientY+'px';
-    tip.textContent=`X ${mcX(g.x)} · Z ${mcZ(g.z)} · `+(SEA[g.i]?'Wasser':`Boden Y ${mcY(g.top-1)}`)+(k?' · '+TF_TXT[k]:'')+(moat[g.i]?` (${PLAT-Hm[g.i]} tief, danach Wasser bis Y ${mcY(PLAT-1)})`:'')}
+    tip.textContent=`X ${mcX(g.x)} · Z ${mcZ(g.z)} · `+(SEA[g.i]?'Wasser':`Boden Y ${mcY(g.top-1)}`)+(t?' · '+tfText(t):'')+(moat[g.i]?` (${PLAT-Hm[g.i]} tief, später Wasser bis Y ${mcY(PLAT-1)})`:'')}
   else tip.hidden=true;
 }
 let downAt=null;
