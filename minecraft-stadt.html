@@ -99,6 +99,7 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
 .legend i{font-style:normal;font-family:var(--f-mono);color:var(--ink)}
 .blist{display:grid;gap:4px}
 .blist button{display:flex;justify-content:space-between;gap:12px;text-align:left;box-shadow:none;font-weight:400;width:100%}
+.linkbtn{box-shadow:none;padding:2px 6px;font-weight:700;background:none;border:0;border-bottom:1px solid var(--accent);border-radius:0}
 .blist button span:last-child{font-family:var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .group-h{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 6px}
 .farmtag{display:inline-block;font:600 11px/1 var(--f-body);background:var(--accent);color:var(--accent-ink);padding:4px 6px;border-radius:3px;margin-left:6px;vertical-align:middle}
@@ -121,7 +122,7 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
   <canvas id="view" aria-label="3D-Ansicht der Stadt"></canvas>
   <div class="labels" id="labels"></div>
   <div class="bar">
-    <div class="brand"><h1>Burgstadt-Bauplan</h1><span class="stage">Java 26.3 · Etappe 1c</span></div>
+    <div class="brand"><h1>Burgstadt-Bauplan</h1><span class="stage">Java 26.3 · mit Farmen</span></div>
     <div class="tools">
       <button id="btnTotal" class="primary">Gesamt-Materialliste</button>
       <button id="btnList">Gebäude</button>
@@ -252,20 +253,41 @@ const BLOCKS={
   dark_oak_leaves:{de:'Schwarzeichenlaub',shape:'leaves',tex:'dark_oak_leaves',cat:'Bäume',note:'wächst mit dem Setzling'},
   cherry_log:{de:'Kirschholzstamm',shape:'log',tex:{end:'cherry_log_top',side:'cherry_log'},cat:'Bäume',note:'oder Kirschsetzling pflanzen'},
   cherry_leaves:{de:'Kirschblätter',shape:'leaves',tex:'cherry_leaves',cat:'Bäume',note:'wächst mit dem Setzling'},
-  sweet_berry_bush:{de:'Süßbeerenstrauch',shape:'cross',tex:'sweet_berry_bush',cat:'Bäume',note:'Süße Beeren pflanzen'}
+  sweet_berry_bush:{de:'Süßbeerenstrauch',shape:'cross',tex:'sweet_berry_bush',cat:'Bäume',note:'Süße Beeren pflanzen'},
+  hopper:{de:'Trichter',shape:'hopper',tex:'hopper_outside',cat:'Redstone'},
+  chest:{de:'Truhe',shape:'chest',tex:'chest',cat:'Redstone'},
+  dispenser:{de:'Werfer',shape:'cube',tex:{front:'dispenser_front',side:'furnace_side',top:'furnace_top'},cat:'Redstone'},
+  piston:{de:'Kolben',shape:'cube',tex:{front:'piston_top',side:'piston_side',top:'piston_side'},cat:'Redstone'},
+  redstone_wire:{de:'Redstone-Staub',shape:'carpet',tex:'redstone_dust',cat:'Redstone',id:'redstone'},
+  stone_button:{de:'Steinknopf',shape:'button',tex:'stone',cat:'Redstone'},
+  rail:{de:'Schiene',shape:'carpet',tex:'rail',cat:'Redstone'},
+  powered_rail:{de:'Antriebsschiene',shape:'carpet',tex:'powered_rail',cat:'Redstone'},
+  redstone_block:{de:'Redstone-Block',shape:'cube',tex:'redstone_block',cat:'Redstone'},
+  sand:{de:'Sand',shape:'cube',tex:'sand',cat:'Felder'},
+  dirt:{de:'Erde',shape:'cube',tex:'dirt',cat:'Felder'},
+  sugar_cane:{de:'Zuckerrohr',shape:'cross',tex:'sugar_cane',cat:'Felder',note:'Zuckerrohr pflanzen'},
+  melon_stem:{de:'Melonenstiel',shape:'cross',tex:'melon_stem',cat:'Felder',note:'Melonenkerne pflanzen'},
+  pumpkin_stem:{de:'Kürbisstiel',shape:'cross',tex:'melon_stem',cat:'Felder',note:'Kürbiskerne pflanzen'},
+  beehive:{de:'Bienenstock',shape:'cube',tex:{front:'beehive_front',side:'beehive_side',top:'beehive_end'},cat:'Details'},
+  red_bed:{de:'Rotes Bett',shape:'bed',tex:{top:'red_wool',side:'spruce_planks',bottom:'spruce_planks'},cat:'Details',countHalf:true,note:'zählt als 1 Bett pro 2 Felder'},
+  spruce_sign:{de:'Fichtenholzschild',shape:'sign',tex:'spruce_planks',cat:'Redstone',note:'hält die Lava fest'},
+  lava:{de:'Lava',shape:'lava',tex:'lava_still',cat:'Wasser',note:'1 Lavaeimer'},
+  glass:{de:'Glas',shape:'glasscube',tex:'glass',cat:'Details'},
+  kelp:{de:'Seetang',shape:'cross',tex:'kelp',cat:'Felder',note:'unter Wasser pflanzen'},
+  cauldron:{de:'Kessel',shape:'cube',tex:'cauldron_side',cat:'Details'}
 };
 const GLOW=new Set(['lantern','campfire','glowstone','glass_pane','cave_vines']);
 const LIGHTS=new Set(['lantern','campfire','glowstone']);
 const FLOWERS=['poppy','dandelion','cornflower','allium','oxeye_daisy'];
 const blockName=b=>b==='plaster'?PLASTER[plasterChoice]:BLOCKS[b].de;
-const blockId=b=>'minecraft:'+(b==='plaster'?plasterChoice:b);
+const blockId=b=>'minecraft:'+(b==='plaster'?plasterChoice:(BLOCKS[b].id||b));
 const FULL=new Set(Object.keys(BLOCKS).filter(k=>['cube','log'].includes(BLOCKS[k].shape)));
 
 // ---------- Texturen im Minecraft-Stil (nachgebaut, 16×16) ----------
 const TILE_KEYS=['plaster','stripped_dark_oak_log','stripped_dark_oak_log_top','spruce_planks','dark_oak_planks','stone_bricks','mossy_stone_bricks','cracked_stone_bricks','cobblestone','mossy_cobblestone','stone','andesite','smooth_stone','bricks','gravel','dirt_path_top','dirt_path_side','dirt','grass_block_top','grass_block_side','glass','iron_bars','spruce_trapdoor','door_bottom','door_top','lantern','campfire_log','ladder','barrel_top','barrel_side','hay_block_top','hay_block_side','water_still',
   'coarse_dirt','packed_mud','polished_andesite','sand','oak_log','oak_log_top','oak_leaves','spruce_log','spruce_log_top','spruce_leaves',
   'red_wool','white_wool','blue_wool','yellow_wool','green_wool','orange_wool','pumpkin_side','pumpkin_top','melon_side','melon_top','glowstone',
-  'poppy','dandelion','cornflower','allium','oxeye_daisy','short_grass','fern','farmland_moist','wheat','carrots','potatoes','beetroots','vine','chain','azalea_leaves','flowering_azalea_leaves','cave_vines_lit','moss_block','rooted_dirt','birch_log','birch_log_top','birch_leaves','dark_oak_log','dark_oak_log_top','dark_oak_leaves','cherry_log','cherry_log_top','cherry_leaves','sweet_berry_bush'];
+  'poppy','dandelion','cornflower','allium','oxeye_daisy','short_grass','fern','farmland_moist','wheat','carrots','potatoes','beetroots','vine','chain','azalea_leaves','flowering_azalea_leaves','cave_vines_lit','moss_block','rooted_dirt','birch_log','birch_log_top','birch_leaves','dark_oak_log','dark_oak_log_top','dark_oak_leaves','cherry_log','cherry_log_top','cherry_leaves','sweet_berry_bush','hopper_outside','chest','dispenser_front','furnace_side','furnace_top','piston_top','piston_side','redstone_dust','rail','powered_rail','redstone_block','sugar_cane','melon_stem','beehive_front','beehive_side','beehive_end','lava_still','kelp','cauldron_side'];
 let evening=false;
 const ATL_COLS=8, ATL_ROWS=Math.ceil(TILE_KEYS.length/ATL_COLS);
 const TILE={}; TILE_KEYS.forEach((k,i)=>TILE[k]={c:i%ATL_COLS,r:Math.floor(i/ATL_COLS)});
@@ -361,6 +383,22 @@ function texPainter(key){
     case 'birch_leaves':case 'dark_oak_leaves':case 'cherry_leaves':{const c={birch_leaves:[98,140,64],dark_oak_leaves:[52,98,30],cherry_leaves:[238,168,200]}[key];
       for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,mul(c,.75+R()*.4),v<.13?0:255)}break}
     case 'sweet_berry_bush':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=hash3(x>>1,y>>1,11);put(x,y,v<.1?[200,30,40]:mul([50,96,48],.8+R()*.3),v<.62||y<3?(v<.1?255:255):0)}break;
+    case 'hopper_outside':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let f=1+(R()-.5)*.12;if(x===0||y===0||x===15||y===15)f=.7;put(x,y,mul([66,66,70],f))}break;
+    case 'chest':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul([160,110,48],(y%5===0?.8:1)*(1+(R()-.5)*.12));if(x===0||x===15||y===0||y===15||y===6)c=mul([94,64,30],1);if(x>=7&&x<=8&&y>=5&&y<=8)c=[200,200,205];put(x,y,c)}break;
+    case 'furnace_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([116,116,116],1+(R()-.5)*.25));break;
+    case 'furnace_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let f=1+(R()-.5)*.08;if(x===0||y===0||x===15||y===15)f=.8;put(x,y,mul([130,130,130],f))}break;
+    case 'dispenser_front':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul([116,116,116],1+(R()-.5)*.25);if(x>=5&&x<=10&&y>=5&&y<=10)c=(x===5||x===10||y===5||y===10)?[60,60,60]:[25,25,25];put(x,y,c)}break;
+    case 'piston_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul([176,140,90],1+(R()-.5)*.12);if(x<2||x>13||y<2||y>13)c=mul([120,120,120],1+(R()-.5)*.2);put(x,y,c)}break;
+    case 'piston_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,y<4?mul([176,140,90],1+(R()-.5)*.12):mul([118,118,118],1+(R()-.5)*.22));break;
+    case 'redstone_dust':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const on=(Math.abs(x-7.5)<2.2||Math.abs(y-7.5)<2.2)&&hash3(x,y,2)<.85;put(x,y,mul([220,20,10],.75+R()*.35),on?255:0)}break;
+    case 'rail':case 'powered_rail':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const tie=y%4<2&&x>1&&x<14,railx=x===3||x===12;let c=null;if(railx)c=key==='rail'?[160,160,165]:[230,180,40];else if(tie)c=mul([110,80,46],.9+R()*.2);if(key==='powered_rail'&&(x===7||x===8)&&tie)c=[150,30,20];put(x,y,c||[0,0,0],c?255:0)}break;
+    case 'redstone_block':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let f=1+(R()-.5)*.25;if(x===0||y===0||x===15||y===15)f=.7;put(x,y,mul([176,24,16],f))}break;
+    case 'sugar_cane':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,[0,0,0],0);for(const x0 of[3,8,12])for(let y=0;y<16;y++){put(x0,y,mul([140,190,90],y%5===0?.75:.95+R()*.1));put(x0+1,y,mul([120,170,80],.9+R()*.1))}for(const[x,y]of[[5,3],[10,9],[6,12]])put(x,y,[110,160,70]);break;
+    case 'melon_stem':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,[0,0,0],0);for(let y=6;y<16;y++){put(7,y,mul([120,170,60],.9+R()*.2));if(y%3===0)put(y%2?8:6,y,[100,150,50])}break;
+    case 'beehive_front':case 'beehive_side':case 'beehive_end':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul([190,150,90],(y%4===0?.82:1)*(1+(R()-.5)*.12));if(key==='beehive_end')c=mul([210,170,100],1+(R()-.5)*.1);if(key==='beehive_front'&&x>=6&&x<=9&&y>=8&&y<=11)c=[40,30,20];if(key!=='beehive_end'&&y<3)c=mul([140,104,60],1);put(x,y,c)}break;
+    case 'lava_still':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=Math.sin(x*.7+y*.4)+Math.cos(y*.9-x*.3);put(x,y,v>.6?[255,220,90]:v>-.2?[240,120,30]:[200,70,20])}break;
+    case 'kelp':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,[0,0,0],0);for(let y=0;y<16;y++){const x=7+Math.round(Math.sin(y*.6)*1.5);put(x,y,[60,110,40]);put(x+1,y,[80,130,50]);if(y%4===1){put(x+2,y,[70,120,40]);put(x+3,y-1>=0?y-1:0,[70,120,40])}}break;
+    case 'cauldron_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let f=1+(R()-.5)*.15;if(y<2)f=.7;if(y>12&&x>3&&x<12)f=.5;put(x,y,mul([74,74,78],f))}break;
     case 'moss_block':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([90,110,44],.8+R()*.35));break;
     case 'rooted_dirt':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,v<.12?[150,110,80]:mul([134,96,67],1+(R()-.5)*.2))}break;
     case 'vine':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=hash3(x>>1,y>>1,9);put(x,y,mul([62,118,40],.7+R()*.5),v<.55?255:0)}break;
@@ -882,7 +920,7 @@ function buildCastle(){
   banner(keep,kxm,B+20,kz1+1,5);
   addBuilding({name:'Bergfried',group:'Burg',kind:'castle',voxels:placeModel(keep,0,0,0,0),
     desc:'Hauptturm der Burg: 11 × 11 Blöcke, 32 hoch, fünf Stockwerke mit Holzböden und Leiter, Doppelfenster, Wandbehang, vier Ecktürmchen und ein steiler Schwarzeichenhelm mit Fahne.',
-    farm:'Xp-Farm, darunter der Kerker mit Mob-Grinder (Etappe 2)',
+    farm:'Xp-Farm, darunter der Kerker mit Mob-Grinder',
     steps:['Grundfläche 11 × 11 in der Nordwestecke der Hauptburg, Eingang nach Süden.','Wände einen Block dick aus Steinziegel-Mischung 32 hoch. Alle 6 Blöcke einen Fichtenholzboden, eine Ecke für die Leiter frei lassen.','Doppelfenster aus Glasscheiben in jedem Stockwerk.','Ecktürmchen: ab Höhe 26 an jeder Ecke ein 2 × 2 Erker, unten mit umgedrehten Treppen abgestützt, oben ein kleiner Helm.','Hauptturmhelm: Treppenring mit Überstand, pro Ring einen Block nach innen und zwei höher. Oben Fahnenmast aus Zaun mit Wollfahne.','Wandbehang über der Tür aus blauer und gelber Wolle, Laternen neben der Tür.']});
 
   // ---- Palas: großer Saalbau mit Steinsockel und Fachwerk
@@ -915,7 +953,7 @@ function buildCastle(){
 
   // ---- Vorburg: Stall und Wirtschaftshaus
   const st=genStable(),sr=1,[sax,saz]=rotP(st.ax,st.az,sr);
-  addBuilding({name:'Stall',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(st,sr,Math.round(81-sax),B,Math.round(62-saz)),farm:'Tierzucht (Etappe 2)',label:true,
+  addBuilding({name:'Stall',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(st,sr,Math.round(81-sax),B,Math.round(62-saz)),farm:'Tierzucht',label:true,
     desc:'Offener Stall in der Vorburg: Steinrückwand, vier Boxen mit Zäunen, Heuboden unter dem Satteldach.',
     steps:['Grundriss 13 × 7 an der Westmauer der Vorburg, offene Seite nach Osten.','Rückwand aus Bruchstein und Steinziegeln, Seitenwände aus Fichtenholzbrettern, Ecken aus entrindeten Schwarzeichenstämmen.','Vorne alle 3 Blöcke ein Stammpfosten, dazwischen Zäune als Boxentüren. Innen Zäune als Trennwände.','Balkenlage auf Höhe 5 mit Brettern als Heuboden, darauf Heuballen.','Satteldach aus Fichtenholztreppen mit Stufen als First.']});
   const wh=genHouse({w:11,d:7,floors:2,over:true,roof:'spruce',stoneGround:true,chimneys:2,seed:778}),wr=3,[wax,waz]=rotP(wh.ax,wh.az,wr);
@@ -951,7 +989,7 @@ function buildCastle(){
   const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){if(y===PLAT-1&&x>=97&&x<=103&&z>=80&&z<=83)continue;wv.push({x,y,z,b:'water'})}
   addBuilding({name:'Burggraben',group:'Burg',kind:'water',voxels:wv,
     desc:'Vier Blöcke breiter, drei Blöcke tiefer Wassergraben rund um Haupt- und Vorburg.',
-    farm:'Wasserfarm (Etappe 2)',
+    farm:'Wasserfarm (noch offen)',
     steps:['Graben 4 breit und 3 tief rund um die ganze Burg ausheben, gut 3 Blöcke Abstand zur Mauer lassen.','Mit Eimern füllen: Zwei Wasserquellen nebeneinander ergeben eine unendliche Quelle. Jede Ecke einzeln füllen, damit kein Fließwasser bleibt.']});
 }
 
@@ -1131,7 +1169,7 @@ function buildFields(){
     for(let x=x0-1;x<=x0+W;x++)for(const z of[z0-1,z0+D]){m.set(x,g0,z,'spruce_fence');oSet(x,z,8)}
     for(let z=z0;z<z0+D;z++)for(const x of[x0-1,x0+W]){if(z===z0+(D>>1)&&x===x0-1)continue;m.set(x,g0,z,'spruce_fence');oSet(x,z,8)}
   }
-  addBuilding({name:'Felder & Gärten',group:'Felder',kind:'deco',voxels:placeModel(m,0,0,0,0),pickable:false,farm:'Weizen für die Windmühle (Etappe 2)',
+  addBuilding({name:'Felder & Gärten',group:'Felder',kind:'deco',voxels:placeModel(m,0,0,0,0),pickable:false,farm:'Weizen für die Windmühle',
     desc:`Rund geschwungene Felder vor der Mauer (${cells} Ackerblöcke) mit Hecken und Zaunstücken als Rand, dazu ${gardens} kleine Gemüsegärten in den Hinterhöfen.`,
     steps:['Feldform frei und rund abstecken, gern dem Gelände folgend.','Alle 8 Blöcke in beide Richtungen einen Block Wasser setzen: Wasser bewässert 4 Blöcke in jede Richtung, so bleibt der ganze Acker feucht.','Erde mit der Hacke zu Ackerboden machen und Weizen, Karotten, Kartoffeln oder Rote Bete in Flecken pflanzen.','Rand: Laubhecken (mit der Schere abgebautes Laub verfällt nicht), dazwischen kurze Zaunstücke und Lücken als Durchgang.','Vogelscheuche: Zaun, darauf Heuballen und Kürbis.','Gärten in den Höfen: 5 × 3 oder 3 × 5 Beet mit einem Wasserblock in der Mitte und Zaun rundherum.']});
 }
@@ -1163,7 +1201,7 @@ function buildHarbor(){
     m.set(c0+1,0,pz-1,'barrel');m.set(c0,0,pz-1,'barrel');m.set(c0+1,0,pz+3,'hay_block');
     boat(m,coastX(pz+6)+4,pz+5,pi%2===0);
   });
-  addBuilding({name:'Hafen: Stege & Boote',group:'Hafen',kind:'harbor',voxels:placeModel(m,0,0,0,0),farm:'Kelp & Fische (Etappe 2)',label:true,
+  addBuilding({name:'Hafen: Stege & Boote',group:'Hafen',kind:'harbor',voxels:placeModel(m,0,0,0,0),farm:'Kelp & Fische',label:true,
     desc:'Vier Holzstege mit Pfählen, Geländern und Laternen, jeweils mit breitem Querkopf am Ende. An jedem Steg liegt ein Boot, zwei davon mit Segel.',
     steps:['Stegverlauf vom Ufer gerade aufs Wasser abstecken, 3 Blöcke breit und 15 lang.','Pfähle: entrindete Schwarzeichenstämme vom Grund bis 1 Block über den Steg, an den Rändern alle 4 Blöcke.','Belag aus Fichtenholzbrettern auf Wasserhöhe, Geländer aus Fichtenholzzaun an beiden Seiten.','Querkopf am Ende: 3 × 7 Bretter, Ecken mit Pfahl und Laterne.','Boote: Rumpf 7 × 3 aus Brettern, Bord aus Stufen, Bug und Heck aus Treppen. Segelboot mit Zaun als Mast und weißer Wolle als Segel.','Fässer und Heuballen als Ladung verteilen.']});
   // Leuchtturm auf der Landzunge
@@ -1313,24 +1351,504 @@ function buildNature(){
     desc:`${trees} Bäume (Eiche, große Eiche, Birke, Fichte, Schwarzeiche, Kirsche) in Wäldern und Wiesen, ${bushes} Büsche aus verschiedenem Laub, dazu Blumen, Gras und Farn.`,
     steps:['Bäume am einfachsten aus Setzlingen ziehen und mit Knochenmehl wachsen lassen. Schwarzeichen brauchen 4 Setzlinge im Quadrat.','Wälder dicht setzen, Wiesen nur mit einzelnen Bäumen, so wirkt es natürlich.','Büsche: kleine Laubhaufen (mit der Schere abgebaut verfallen sie nicht), dazwischen Süßbeerensträucher.','Blumen, Gras und Farn: Knochenmehl auf Grasblöcke streuen.']});
 }
+// ===================== Farmen =====================
+// Jede Farm ist ein eigenes Bauwerk mit Materialliste und Schichtplan.
+// Keller werden aus dem Gelände ausgehöhlt (carved), damit man sie in der Röntgenansicht sieht.
+const carved=new Set();
+let seaMesh=null;
+const farms=[];
+function hostByName(n){return buildings.find(b=>b.name===n)}
+function footprint(b){
+  let base=1e9;for(const v of b.voxels)if(v.b==='spruce_planks'&&v.y<base)base=v.y;
+  let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;
+  for(const v of b.voxels){if(v.y!==base)continue;const sh=BLOCKS[v.b].shape;if(sh!=='cube'&&sh!=='log')continue;if(v.x<x0)x0=v.x;if(v.x>x1)x1=v.x;if(v.z<z0)z0=v.z;if(v.z>z1)z1=v.z}
+  return{base,x0,x1,z0,z1};
+}
+function groundRepl(F,x,z,b){const i=z*WX+x;streetCell.set(i,b);fieldIdx.add(i);occ[i]=8;F.set(x,hAt(x,z)-1,z,b)}
+function flatten(x0,z0,x1,z1,g){for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++)if(x>=0&&z>=0&&x<WX&&z<WZ)Hm[z*WX+x]=g}
+function markRect(x0,z0,x1,z1,code=8){for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++)oSet(x,z,code)}
+function findFreeRect(cx,cz,w,d,codes,maxR,maxSlope=2){
+  for(let rr=0;rr<=maxR;rr++)for(let dz=-rr;dz<=rr;dz++)for(let dx=-rr;dx<=rr;dx++){
+    if(Math.max(Math.abs(dx),Math.abs(dz))!==rr)continue;
+    const x0=cx+dx-(w>>1),z0=cz+dz-(d>>1);let ok=true,lo=1e9,hi=-1e9;
+    for(let x=x0-1;x<=x0+w&&ok;x++)for(let z=z0-1;z<=z0+d;z++){
+      if(x<0||z<0||x>=WX||z>=WZ){ok=false;break}
+      const i=z*WX+x;if(!codes.includes(occ[i])||SAND[i]||SEA[i]||moat[i]||streetCell.has(i)){ok=false;break}
+      const h=Hm[i];if(h<lo)lo=h;if(h>hi)hi=h;
+    }
+    if(ok&&hi-lo<=maxSlope)return{x0,z0,g:hi};
+  }
+  return null;
+}
+function addFarm(host,o){
+  const pos=new Set(o.voxels.map(v=>K(v.x,v.y,v.z)));
+  const own=new Set(o.carve||[]);for(const k of own)carved.add(k);
+  const rm=o.remove||new Set();
+  for(const h of buildings){
+    let hit=false;for(const v of h.voxels){const k=K(v.x,v.y,v.z);if(pos.has(k)||own.has(k)||rm.has(k)){hit=true;break}}
+    if(!hit)continue;
+    h.voxels=h.voxels.filter(v=>{const k=K(v.x,v.y,v.z);return!(pos.has(k)||own.has(k)||rm.has(k))});
+    h.counts=countBlocks(h.voxels);
+  }
+  const b=addBuilding({name:o.name,group:'Farmen',kind:'farm',voxels:o.voxels,pickable:false,desc:o.desc,steps:o.steps,extras:o.extras||[],auto:o.auto});
+  b.out=o.out;b.link=!!o.link;b.hostId=host?host.id:null;
+  b.underground=o.voxels.some(v=>v.y<hAt(v.x,v.z)-1);
+  if(host){host.farmId=b.id;host.farm=o.short}
+  farms.push(b);return b;
+}
+// Keller unter einem Rechteck: Wände rundum, Boden, Innenraum ausgehöhlt
+function cellarBox(F,C,x0,z0,x1,z1,top,depth){
+  const yf=top-depth-1;
+  for(let x=x0-1;x<=x1+1;x++)for(let z=z0-1;z<=z1+1;z++){
+    const ins=x>=x0&&x<=x1&&z>=z0&&z<=z1;
+    for(let y=yf;y<top;y++){
+      if(!ins||y===yf)F.set(x,y,z,ins?'stone_bricks':(hash3(x,y,z)<.5?'cobblestone':'stone_bricks'));
+      else C.add(K(x,y,z));
+    }
+  }
+  return yf;
+}
+function cellarLadder(F,x,z,f,yFrom,top){for(let y=yFrom;y<top;y++)F.set(x,y,z,'ladder',{f});F.set(x,top,z,'spruce_trapdoor',{f:0,h:1,o:0})}
+
+// ---- Spülfarm (Karotten, Kartoffeln, Weizen): Knopf → Werfer setzen Wasser → Ernte schwimmt in die Trichter
+function flushFarm(F,C,x0,z0,x1,z1,top,crops){
+  const yf=cellarBox(F,C,x0,z0,x1,z1,top,5);
+  cellarLadder(F,x0,z0,3,yf+1,top);
+  const zs=z0+1,half=Math.floor((zs+z1)/2);
+  for(let z=zs;z<=z1;z++){
+    F.set(x0,yf+1,z,'hopper',{f:z<z1?2:4});
+    for(let x=x0+1;x<x1;x++){F.set(x,yf+1,z,'farmland');F.set(x,yf+2,z,z<=half?crops[0]:crops[1])}
+    F.set(x1,yf+1,z,'stone_bricks');F.set(x1,yf+2,z,'dispenser',{f:3});F.set(x1,yf+3,z,'redstone_wire');
+  }
+  F.set(x0,yf,z1,'chest');
+  F.set(x1,yf+3,z0,'stone_button',{f:1});
+  for(let x=x0+1;x<x1;x+=3)for(let z=zs;z<=z1;z+=3)F.set(x,top-1,z,'lantern',{h:1});
+  return{x:x0,y:yf,z:z1,rows:z1-zs+1,len:x1-x0-1};
+}
+function flushSteps(crop,r){return[
+  `Keller ausheben: Innenraum unter dem Haus, 5 Blöcke hoch, Wände aus Bruchstein und Steinziegeln. Leiter an der Ecke, oben eine Falltür im Hausboden.`,
+  `Vorne an der Seite des Kellers eine Rinne aus Trichtern, die alle in eine Truhe am Ende führen.`,
+  `Daneben ${r.rows} Reihen Ackerboden, je ${r.len} lang, darauf ${crop} pflanzen. Hängende Laternen sorgen für Licht zum Wachsen.`,
+  `Am anderen Ende jeder Reihe ein Werfer mit Wassereimer, Öffnung zum Feld. Auf die Werfer eine Linie Redstone-Staub, daneben an der Wand ein Knopf.`,
+  `Ernten: Knopf drücken. Das Wasser läuft über das Feld, bricht die Pflanzen ab und schwemmt sie in die Trichter. Nochmal drücken, dann saugen die Werfer das Wasser wieder auf. Danach neu pflanzen.`
+]}
+
+function farmBakery(){
+  const host=hostByName('Bäckerei');if(!host)return;
+  const fp=footprint(host),F=new Model(),C=new Set();
+  const r=flushFarm(F,C,fp.x0+1,fp.z0+1,fp.x1-1,fp.z1-1,fp.base,['carrots','potatoes']);
+  addFarm(host,{name:'Bäckerei: Gemüsekeller',short:'Karotten & Kartoffeln',voxels:placeModel(F,0,0,0,0),carve:C,out:r,link:true,auto:'halbautomatisch (Knopf)',
+    desc:'Unter der Bäckerei liegt ein Keller mit Karotten und Kartoffeln. Ein Knopfdruck spült die reife Ernte mit Wasser in eine Trichterrinne.',
+    steps:flushSteps('Karotten und Kartoffeln',r).concat(['Die Truhe ist mit der Lorenbahn zum Lagerhaus verbunden: Ein Trichter unter der Truhe führt nach unten zur Bahn.']),
+    extras:[{n:'Wassereimer',c:r.rows,note:'einer pro Werfer'},{n:'Karotten und Kartoffeln',c:r.rows*r.len,note:'zum ersten Pflanzen'}]});
+}
+
+// ---- Mob-Farm im Bergfried, Kerker mit Schlagkammer
+function farmKeep(){
+  const host=hostByName('Bergfried');if(!host)return;
+  const B=PLAT,F=new Model(),C=new Set(),RM=new Set();
+  const ix0=87,ix1=95,iz0=17,iz1=25,hx=[90,91],hz=[20,21],yS=B+18;
+  for(const[x,z]of[[91,16],[86,21],[96,21]])for(const y of[B+22,B+23])F.set(x,y,z,'stone_bricks');
+  let water=0;
+  for(let x=ix0;x<=ix1;x++)for(let z=iz0;z<=iz1;z++){const edge=x===ix0||x===ix1||z===iz0||z===iz1;if(edge&&!(x<=ix0+1&&z<=iz0+1)){F.set(x,yS+1,z,'water');water++}}
+  for(const y of[yS,B+12,B+6,B])for(const x of hx)for(const z of hz)RM.add(K(x,y,z));
+  for(let y=B;y<yS;y++)for(let x=89;x<=92;x++)for(let z=19;z<=22;z++){if(hx.includes(x)&&hz.includes(z))continue;F.set(x,y,z,'glass')}
+  for(const y of[B+1,B+7,B+13])for(const[x,z]of[[ix0+1,iz1-1],[ix1-1,iz0+1],[ix1-1,iz1-1]])F.set(x,y,z,'lantern',{h:0});
+  // Kerker
+  const yk=B-7;
+  for(let x=86;x<=96;x++)for(let z=16;z<=26;z++){const ins=x>86&&x<96&&z>16&&z<26;for(let y=yk;y<B;y++){if(!ins||y===yk)F.set(x,y,z,ins?'cobblestone':stoneMix(x,y,z,.35,.2));else C.add(K(x,y,z))}}
+  for(let y=yk+1;y<=B;y++)F.set(87,y,17,'ladder',{f:0});
+  const yH=B-4;
+  F.set(91,yH,20,'hopper',{f:3});F.set(91,yH,21,'hopper',{f:3});F.set(90,yH,21,'hopper',{f:0});F.set(90,yH,20,'hopper',{f:4});
+  F.set(90,yH-1,20,'chest');F.set(90,yH-1,21,'stone_bricks');F.set(91,yH-1,20,'stone_bricks');F.set(91,yH-1,21,'stone_bricks');
+  for(let x=90;x<=91;x++)for(let z=20;z<=21;z++)F.set(x,yk+1,z,'stone_bricks');
+  for(let y=B-3;y<B;y++)for(let x=89;x<=92;x++)for(let z=19;z<=22;z++){
+    if(hx.includes(x)&&hz.includes(z))continue;
+    if(y===B-3&&z===22&&hx.includes(x))F.set(x,y,z,'stone_brick_slab',{h:1});else F.set(x,y,z,'glass');
+  }
+  // Gefängniszellen an der Ostwand
+  for(let z=iz0;z<=iz1;z++)for(let y=yk+1;y<=yk+3;y++)F.set(93,y,z,'iron_bars',{a:'z'});
+  for(const z of[20,23])for(const x of[94,95])for(let y=yk+1;y<=yk+3;y++)F.set(x,y,z,'iron_bars',{a:'x'});
+  for(const z of[18,21,24]){F.set(94,B-1,z,'iron_chain');F.set(94,B-2,z,'lantern',{h:1})}
+  F.set(95,yk+1,18,'hay_block');F.set(95,yk+1,22,'barrel');
+  for(const[x,z]of[[88,24],[88,19],[92,25]])F.set(x,B-1,z,'lantern',{h:1});
+  addFarm(host,{name:'Bergfried: Mob-Farm & Kerker',short:'Xp-Farm & Mob-Grinder',voxels:placeModel(F,0,0,0,0),carve:C,remove:RM,auto:'automatisch (Xp: selbst zuschlagen)',out:{x:90,y:yH-1,z:20},
+    desc:'Das vierte Stockwerk des Bergfrieds ist ein stockdunkler Spawnraum. Wasser schiebt die Monster in einen Schacht, sie fallen 22 Blöcke tief in den Kerker und landen mit einem halben Herz in der Schlagkammer. Ein Schlag genügt, die Erfahrung bekommst du, die Beute fällt in eine Truhe.',
+    steps:['Spawnraum (Boden auf Höhe 18 im Turm): Fenster zumauern, keine Lichtquelle. Monster spawnen nur bei Blocklicht 0.','Am Rand des Bodens ringsum Wasserquellen setzen, in der Mitte ein 2 × 2 Loch. Das Wasser schiebt die Monster ins Loch.','Durch die Stockwerke darunter einen Glasschacht um das Loch bauen, damit niemand hineinfällt. Die anderen Stockwerke mit Laternen hell machen.','Kerker unter dem Turm ausheben (6 Blöcke hoch). Die Monster fallen genau 22 Blöcke und landen auf 4 Trichtern, die in eine Truhe führen.','Schlagkammer: Glas rundherum, auf der Spielerseite unten eine obere Steinziegelstufe. Durch den halben Spalt triffst du die Füße der Monster.','Wichtig: Monster spawnen nur 24 bis 128 Blöcke vom Spieler entfernt. Steh beim Warten in der Schlagkammer und leuchte Höhlen in der Umgebung aus, sonst spawnen die Monster dort.','Im Kerker an der Ostwand Gefängniszellen aus Eisengittern als Dekoration.'],
+    extras:[{n:'Wassereimer',c:water},{n:'Schwert',c:1,note:'am besten mit Plünderung'}]});
+}
+
+// ---- Eisengolem-Farm tief unter der Schmiede
+function farmIron(){
+  const host=hostByName('Schmiede');if(!host)return;
+  const fp=footprint(host),top=fp.base,F=new Model(),C=new Set();
+  const x0=fp.x0+1,x1=fp.x1-1,z0=fp.z0+1,z1=fp.z1-1;
+  const yf=cellarBox(F,C,x0,z0,x1,z1,top,17);
+  cellarLadder(F,x0,z0,3,yf+1,top);
+  const along=(x1-x0)>=(z1-z0),P=(a,b)=>along?[x0+a,z0+b]:[x0+b,z0+a];
+  const cx=Math.round((x0+x1)/2),cz=Math.round((z0+z1)/2);
+  const yP=top-15,yV=top-11;
+  let water=0;
+  for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++){
+    if(x===x0&&z===z0)continue;
+    const c=x===cx&&z===cz;
+    F.set(x,yP,z,c?'hopper':((x+z)%4===0?'glowstone':'stone_bricks'),c?{f:4}:null);
+    F.set(x,yV,z,'stone_bricks');
+    const edge=x===x0||x===x1||z===z0||z===z1,nearL=Math.abs(x-x0)+Math.abs(z-z0)<=1;
+    if(edge&&!nearL){F.set(x,yP+1,z,'water');water++}
+  }
+  F.set(cx,yP-1,cz,'chest');F.set(cx,yP+2,cz,'spruce_sign');F.set(cx,yP+3,cz,'lava');
+  for(const[x,z]of[[x0+2,z1-1],[x1-1,z0+1],[x1-1,z1-1]])F.set(x,yf+1,z,'lantern',{h:0});
+  // Dorfbewohner-Kabinen mit Betten, Zombie dahinter
+  const La=along?x1-x0+1:z1-z0+1;
+  const vs=[Math.floor(La/2)-2,Math.floor(La/2),Math.floor(La/2)+2];
+  for(let a=vs[0]-1;a<=vs[2]+1;a++)for(let b=0;b<=3;b++){
+    const cell=vs.includes(a)&&(b===1||b===2);const[x,z]=P(a,b);
+    for(let y=yV+1;y<=yV+3;y++)if(!cell)F.set(x,y,z,'glass');
+    F.set(x,yV+4,z,'glass');
+    if(cell)F.set(x,yV+1,z,'red_bed',{f:along?2:1,h:b===2?1:0});
+  }
+  const za=vs[1];
+  for(let a=za-1;a<=za+1;a++)for(let b=4;b<=6;b++){const[x,z]=P(a,b);for(let y=yV+1;y<=yV+3;y++)if(!(a===za&&b===5))F.set(x,y,z,'glass');F.set(x,yV+4,z,'glass')}
+  for(const[a,b]of[[0,5],[La-1,5],[0,1]]){const[x,z]=P(a,b);if(!(x===x0&&z===z0))F.set(x,yV+1,z,'lantern',{h:0})}
+  addFarm(host,{name:'Schmiede: Eisengolem-Farm',short:'Eisengolem-Farm',voxels:placeModel(F,0,0,0,0),carve:C,auto:'automatisch',out:{x:cx,y:yP-1,z:cz},
+    desc:'Tief unter der Schmiede: Drei Dorfbewohner sehen einen Zombie hinter Glas, bekommen Angst und rufen Eisengolems herbei. Die Golems spawnen auf der Plattform darunter, Wasser schiebt sie in die Mitte, wo Lava an ihren Köpfen brennt. Eisen und Mohn fallen in den Trichter.',
+    steps:['Schacht 17 Blöcke tief unter der Schmiede ausheben. Die Tiefe ist wichtig: Golems spawnen bis zu 6 Blöcke über und unter den Dorfbewohnern und bis zu 8 Blöcke daneben. Hier unten gibt es in diesem Bereich nur die Plattform.','Unterer Gang (2 hoch) mit Laternen, darüber die Spawnplattform. In der Mitte ein Trichter mit Truhe darunter.','Wasserquellen ringsum am Rand der Plattform, das Wasser fließt zur Mitte.','Über dem Trichter ein Schild und darauf eine Lavaquelle (Lavaklinge): Das Schild hält die Lava fest, der Golem berührt sie mit dem Kopf.','Darüber, 3 Blöcke Platz für die Golems, dann eine Decke. Auf der Decke drei Glaskabinen mit je einem Bett und einem Dorfbewohner.','Zwei Felder daneben eine Glaskabine mit einem Zombie, mit Namensschild benennen, damit er nicht verschwindet.','Die Dorfbewohner müssen nachts in ihren Betten schlafen können. Eisen und Mohn landen in der Truhe im unteren Gang.'],
+    extras:[{n:'Dorfbewohner',c:3,note:'mit Loren oder Booten hinbringen'},{n:'Zombie',c:1},{n:'Namensschild',c:1,note:'für den Zombie'},{n:'Lavaeimer',c:1},{n:'Wassereimer',c:water}]});
+}
+
+// ---- Eierfarm auf dem Heuboden des Stalls
+function farmStable(){
+  const host=hostByName('Stall');if(!host)return;
+  const B=PLAT,F=new Model();
+  const planks=host.voxels.filter(v=>v.y===B+4&&v.b==='spruce_planks');
+  const has=new Set(planks.map(v=>v.x+','+v.z));
+  let start=null,dir=null;
+  for(const v of planks){for(const d of[[1,0],[0,1]]){let ok=true;for(let k=0;k<5;k++)if(!has.has((v.x+d[0]*k)+','+(v.z+d[1]*k)))ok=false;if(ok){start=v;dir=d;break}}if(start)break}
+  if(!start)return;
+  const f=dir[0]?1:2;
+  for(let k=0;k<4;k++)F.set(start.x+dir[0]*k,B+4,start.z+dir[1]*k,'hopper',{f});
+  F.set(start.x+dir[0]*4,B+4,start.z+dir[1]*4,'chest');
+  for(let k=-1;k<=4;k++)for(const s2 of[-1,1]){const x=start.x+dir[0]*k+dir[1]*s2,z=start.z+dir[1]*k+dir[0]*s2;F.set(x,B+5,z,'spruce_fence')}
+  F.set(start.x-dir[0],B+5,start.z-dir[1],'spruce_fence');
+  addFarm(host,{name:'Stall: Eierfarm',short:'Tierzucht & Eier',voxels:placeModel(F,0,0,0,0),auto:'automatisch',out:{x:start.x+dir[0]*4,y:B+4,z:start.z+dir[1]*4},
+    desc:'Auf dem Heuboden stehen vier Hühner auf Trichtern. Ihre Eier fallen in die Trichter und landen in einer Truhe. In den Boxen unten stehen Kühe, Schafe und Pferde.',
+    steps:['Auf dem Heuboden 4 Trichter in eine Reihe setzen, alle zeigen auf eine Truhe am Ende.','Einen Zaun rund um die Trichter, damit die Hühner oben bleiben.','Je ein Huhn auf einen Trichter setzen (mit Weizenkörnern hinlocken oder Eier werfen).','Eier aus der Truhe kannst du werfen, um mehr Hühner zu bekommen. In den Boxen unten Kühe und Schafe mit Weizen züchten.'],
+    extras:[{n:'Hühner',c:4},{n:'Kühe, Schafe',c:4,note:'für die Boxen'},{n:'Weizen',c:16,note:'zum Züchten'}]});
+}
+
+// ---- Bienengarten hinter der Taverne
+function farmBees(){
+  const host=hostByName('Taverne');if(!host)return;
+  const cx=Math.round((host.bb.x0+host.bb.x1)/2),cz=Math.round((host.bb.z0+host.bb.z1)/2);
+  const r=findFreeRect(cx,cz,7,5,[0],18,1);if(!r)return;
+  const{x0,z0,g}=r;flatten(x0,z0,x0+6,z0+4,g);markRect(x0,z0,x0+6,z0+4);
+  const F=new Model();
+  for(let x=x0;x<=x0+6;x++)for(let z=z0;z<=z0+4;z++){
+    const edge=x===x0||x===x0+6||z===z0||z===z0+4;
+    if(edge){if(!(z===z0+4&&x===x0+3))F.set(x,g,z,'spruce_fence');continue}
+    if(z===z0+1&&(x===x0+1||x===x0+3||x===x0+5)){F.set(x,g,z,'campfire');F.set(x,g+1,z,'beehive',{f:2})}
+    else F.set(x,g,z,FLOWERS[(x+z)%5]);
+  }
+  for(const[x,z]of[[x0,z0],[x0+6,z0],[x0,z0+4],[x0+6,z0+4]])F.set(x,g+1,z,'lantern',{h:0});
+  addFarm(host,{name:'Taverne: Bienengarten',short:'Bienen & Honig',voxels:placeModel(F,0,0,0,0),auto:'von Hand ernten',
+    desc:'Ein umzäunter Garten hinter der Taverne mit drei Bienenstöcken über Lagerfeuern und Blumenbeeten. Der Rauch beruhigt die Bienen, so kannst du gefahrlos Honig und Honigwaben ernten.',
+    steps:['Kleinen Garten 7 × 5 umzäunen, eine Lücke als Tor.','Hinten drei Lagerfeuer, direkt darauf je einen Bienenstock, Öffnung zum Garten.','Den Rest mit Blumen bepflanzen, die Bienen fliegen auch zu Blumen in der Stadt.','Bienen bekommst du aus einem Bienennest in der Wildnis (mit Behutsamkeit abbauen) oder du lockst sie mit Blumen.','Wenn ein Stock voll ist (Honig tropft): mit Glasflasche Honig abfüllen oder mit der Schere Honigwaben ernten. Dank Lagerfeuer greifen die Bienen nicht an.'],
+    extras:[{n:'Bienen',c:3,note:'im Bienennest umsiedeln'},{n:'Schere',c:1},{n:'Glasflaschen',c:16}]});
+}
+
+// ---- Angelsteg am Fischerhaus
+function farmFisher(){
+  const host=hostByName('Fischerhaus');if(!host)return;
+  const zc=Math.round((host.bb.z0+host.bb.z1)/2),F=new Model();
+  const c=coastX(zc);
+  for(let x=c;x<c+9;x++)for(let z=zc-1;z<=zc+1;z++){
+    const edge=z!==zc,post=edge&&(x-c)%4===0;
+    if(post){for(let y=hAt(x,z);y<=0;y++)F.set(x,y,z,'stripped_dark_oak_log',{a:'y'})}
+    else{F.set(x,-1,z,'spruce_planks');if(edge&&x<c+6&&x>c)F.set(x,0,z,'spruce_fence')}
+  }
+  for(const[x,z]of[[c+6,zc-1],[c+8,zc-1],[c+6,zc+1],[c+8,zc+1]])for(let y=0;y<=2;y++)F.set(x,y,z,'spruce_fence');
+  for(let x=c+5;x<=c+9;x++)for(let z=zc-2;z<=zc+2;z++)F.set(x,3,z,'spruce_slab',{h:0});
+  F.set(c+7,0,zc-1,'chest');F.set(c+7,0,zc+1,'barrel');F.set(c+7,2,zc,'lantern',{h:1});F.set(c+8,0,zc,'spruce_stairs',{f:3,h:0});
+  addFarm(host,{name:'Fischerhaus: Angelsteg',short:'Fischfarm',voxels:placeModel(F,0,0,0,0),auto:'von Hand',
+    desc:'Ein überdachter Steg vor dem Fischerhaus, weit draußen über offenem Wasser. Dort angelst du Fische und mit Glück Schätze.',
+    steps:['Steg aus Fichtenholzbrettern 9 Blöcke weit aufs Wasser, Pfähle aus Stämmen bis zum Grund.','Am Ende ein kleines Dach aus Stufen auf vier Zaunpfosten, darunter Truhe, Fass und Laterne.','Für Schätze braucht der Schwimmer offenes Wasser: rund um den Schwimmer 5 × 5 Wasser, 4 tief, ohne andere Blöcke.','Angel mit Glück des Meeres und Köder verzaubern, das bringt mehr und schneller Fang.'],
+    extras:[{n:'Angel',c:1,note:'mit Köder und Glück des Meeres'}]});
+}
+
+// ---- Seetangfeld am Hafen
+function farmKelp(){
+  const host=hostByName('Hafen: Stege & Boote');if(!host)return;
+  const F=new Model();let n=0;
+  for(let z=140;z<=146;z++){const c=coastX(z);for(let x=c+2;x<=c+13;x++){if(!SEA[z*WX+x])continue;if(hash3(x,4,z)<.35)continue;for(let y=hAt(x,z);y<=-2;y++){F.set(x,y,z,'kelp');n++}}}
+  addFarm(host,{name:'Hafen: Seetangfeld',short:'Seetang & Fische',voxels:placeModel(F,0,0,0,0),auto:'von Hand',
+    desc:'Zwischen den Stegen wächst ein Feld aus Seetang. Er wächst nach oben nach, man erntet die oberen Stücke und lässt den untersten stehen.',
+    steps:['Seetang am Meeresgrund pflanzen (aus dem Ozean mitbringen).','Ernten: mit dem Boot über das Feld fahren und die oberen Stücke abbauen, den untersten Block stehen lassen.','Seetang im Ofen trocknen, 9 getrocknete ergeben einen Block: guter Brennstoff.'],
+    extras:[{n:'Seetang zum Pflanzen',c:Math.max(1,Math.round(n/2))}]});
+}
+
+// ---- Neue Gebäude ----------------------------------------------------
+function churchNave(m,x0,x1,z0,z1,g,H){
+  const mx=Math.round((x0+x1)/2);
+  for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++){
+    const edge=x===x0||x===x1||z===z0||z===z1;
+    if(edge)for(let y=g;y<g+H;y++)m.set(x,y,z,(x===x0||x===x1)&&(z===z0||z===z1)?'stone_bricks':stoneMix(x,y,z,.16,.1));
+    else groundRepl(m,x,z,'polished_andesite');
+  }
+  for(let z=z0+3;z<=z1-2;z+=3)for(const x of[x0,x1]){for(let y=g+2;y<=g+H-3;y++)m.set(x,y,z,'glass_pane',{a:'z'});m.set(x,g+H-2,z,'stone_brick_stairs',{f:x===x0?1:3,h:1})}
+  for(const x of[mx-1,mx+1]){m.set(x,g,z1,'spruce_door',{f:2,h:0});m.set(x,g+1,z1,'spruce_door',{f:2,h:1})}
+  for(let x=x0+1;x<x1;x++)if(x!==mx)for(let z=z0+4;z<=z1-3;z+=2)m.set(x,g,z,'spruce_stairs',{f:2,h:0});
+  for(let x=mx-1;x<=mx+1;x++)m.set(x,g,z0+1,'stone_bricks');m.set(mx-1,g+1,z0+1,'lantern',{h:0});m.set(mx+1,g+1,z0+1,'lantern',{h:0});
+  for(let x=x0+2;x<=x1-2;x++)for(let y=g+H;y<=g+H+2;y++)if(Math.abs(x-mx)+(y-g-H)<=2)m.set(x,y,z1,'glass_pane',{a:'x'});
+  return gableRoofZ(m,x0,x1,z0,z1,g+H,'dark_oak','stone_bricks');
+}
+
+function buildMill(){
+  const r=findFreeRect(34,48,15,15,[6],34,3);if(!r)return null;
+  const{x0,z0,g}=r;flatten(x0,z0,x0+14,z0+14,g);markRect(x0-1,z0-1,x0+15,z0+15);
+  const m=new Model(),bx0=x0+3,bz0=z0+3,bx1=x0+11,bz1=z0+11,cx=x0+7;
+  for(let x=bx0;x<=bx1;x++)for(let z=bz0;z<=bz1;z++){
+    const edge=x===bx0||x===bx1||z===bz0||z===bz1;
+    if(edge)for(let y=g;y<g+7;y++)m.set(x,y,z,hash3(x,y,z)<.45?'cobblestone':stoneMix(x,y,z,.25,.1));
+    else{m.set(x,g,z,'spruce_planks');m.set(x,g+7,z,'spruce_planks')}
+  }
+  m.set(cx,g+1,bz1,'spruce_door',{f:2,h:0});m.set(cx,g+2,bz1,'spruce_door',{f:2,h:1});m.set(cx,g,bz1,'spruce_planks');
+  for(const x of[bx0,bx1])for(const y of[g+3])m.set(x,y,bz0+4,'glass_pane',{a:'z'});
+  m.set(cx-2,g+1,bz0+2,'hay_block');m.set(cx+2,g+1,bz0+2,'barrel');m.set(cx,g+1,bz0+4,'smooth_stone_slab',{h:0});
+  const ux0=bx0+1,uz0=bz0+1,ux1=bx1-1,uz1=bz1-1;
+  for(let x=ux0;x<=ux1;x++)for(let z=uz0;z<=uz1;z++){
+    const edge=x===ux0||x===ux1||z===uz0||z===uz1;if(!edge)continue;
+    const corner=(x===ux0||x===ux1)&&(z===uz0||z===uz1),mid=x===cx||z===bz0+4;
+    for(let y=g+8;y<g+14;y++){
+      if(corner)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});
+      else if(y===g+13)m.set(x,y,z,'stripped_dark_oak_log',{a:z===uz0||z===uz1?'x':'z'});
+      else m.set(x,y,z,mid?'stripped_dark_oak_log':'spruce_planks',mid?{a:'y'}:null);
+    }
+  }
+  for(const[x,z,a]of[[cx,uz0,'x'],[ux0,bz0+4,'z'],[ux1,bz0+4,'z']])m.set(x,g+10,z,'glass_pane',{a});
+  squareSpire(m,ux0,uz0,ux1,uz1,g+14,'spruce',true);
+  const zs=uz1+2;
+  m.set(cx,g+11,uz1+1,'stripped_dark_oak_log',{a:'z'});m.set(cx,g+11,zs,'stripped_dark_oak_log',{a:'z'});
+  for(let k=1;k<=6;k++){m.set(cx,g+11+k,zs,'spruce_fence');m.set(cx,g+11-k,zs,'spruce_fence');m.set(cx+k,g+11,zs,'spruce_fence');m.set(cx-k,g+11,zs,'spruce_fence')}
+  for(let k=2;k<=6;k++){m.set(cx+1,g+11+k,zs,'white_wool');m.set(cx-1,g+11-k,zs,'white_wool');m.set(cx+k,g+10,zs,'white_wool');m.set(cx-k,g+12,zs,'white_wool')}
+  m.set(cx,g,bz1+1,'stone_brick_stairs',{f:0,h:0});
+  const b=addBuilding({name:'Windmühle',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(m,0,0,0,0),label:true,farm:'Weizen',
+    desc:'Windmühle vor der Stadt bei den Weizenfeldern: Steinsockel 9 × 9, darüber ein Holzturm mit Fichtenhelm und Fahne, vier Flügel aus Zäunen mit weißen Wollsegeln.',
+    steps:['Steinsockel 9 × 9, 7 hoch, aus Bruchstein mit Steinziegeln, Tür nach Süden.','Holzstockwerk 7 × 7 darauf, 6 hoch, Ecken und obere Kante aus entrindeten Schwarzeichenstämmen, Wände aus Fichtenholzbrettern.','Helm aus Fichtenholz: Treppenring mit Überstand, dann pro Ring einen Block nach innen und zwei höher. Oben eine Fahne.','Flügel: Achse aus zwei liegenden Stämmen an der Südseite. Vier Arme aus je 6 Zäunen, an jedem Arm 5 weiße Wolle als Segel, alle in die gleiche Drehrichtung versetzt.']});
+  return{b,bx0,bz0,bx1,bz1,g};
+}
+function farmMill(mill){
+  if(!mill)return;const F=new Model(),C=new Set();
+  const r=flushFarm(F,C,mill.bx0+1,mill.bz0+1,mill.bx1-1,mill.bz1-1,mill.g,['wheat','wheat']);
+  addFarm(mill.b,{name:'Windmühle: Weizenkeller',short:'Weizen',voxels:placeModel(F,0,0,0,0),carve:C,out:r,link:true,auto:'halbautomatisch (Knopf)',
+    desc:'Unter der Mühle wächst Weizen im Keller unter Laternenlicht. Ein Knopf spült die Ernte in die Trichterrinne. Dazu kommen die großen Weizenfelder rund um die Mühle.',
+    steps:flushSteps('Weizen',r).concat(['Die Truhe ist mit der Lorenbahn zum Lagerhaus verbunden.']),
+    extras:[{n:'Wassereimer',c:r.rows},{n:'Weizenkörner',c:r.rows*r.len}]});
+}
+
+function buildTannery(){
+  const m=genHouse({w:9,d:7,floors:2,over:true,roof:'spruce',stoneGround:true,chimneys:1,seed:41});
+  const p=placeNear(m,60,176,24);if(!p)return null;
+  return addBuilding({name:'Gerberei',group:'Gebäude mit Farm',kind:'house',voxels:p.vox,model:m,rot:p.r,label:true,farm:'Leder & Kaninchen',
+    desc:'Gerberei an der Gerbergasse: steinernes Erdgeschoss, Fachwerk darüber. Im Hof stehen Gerbkessel und die Kuh- und Kaninchenställe.',steps:houseSteps(m,p.r)});
+}
+function farmTannery(host){
+  if(!host)return;
+  const cx=Math.round((host.bb.x0+host.bb.x1)/2),cz=Math.round((host.bb.z0+host.bb.z1)/2);
+  const r=findFreeRect(cx,cz,10,8,[0],34,2);if(!r){console.warn('Kein Platz für den Lederhof');return}
+  const{x0,z0,g}=r;flatten(x0,z0,x0+9,z0+7,g);markRect(x0,z0,x0+9,z0+7);
+  const F=new Model();
+  for(let a=0;a<=4;a++)for(let b=0;b<=6;b++){const edge=a===0||a===4||b===0||b===6;if(edge&&!(a===4&&b===3)&&!(a===0&&b===3))F.set(x0+a,g,z0+b,'spruce_fence')}
+  F.set(x0+4,g+1,z0+3,'stone_bricks');F.set(x0,g,z0+3,'spruce_fence');
+  for(let a=5;a<=8;a++){
+    groundRepl(F,x0+a,z0+3,'hopper');F.get(x0+a,g-1,z0+3).f=a<8?1:4;
+    F.set(x0+a,g+1,z0+3,'stone_bricks');for(const b of[2,4])for(let y=g;y<=g+1;y++)F.set(x0+a,y,z0+b,'stone_bricks');
+  }
+  for(let y=g;y<=g+1;y++)F.set(x0+9,y,z0+3,'stone_bricks');
+  F.set(x0+8,g-2,z0+3,'chest');
+  F.set(x0+6,g,z0,'cauldron');F.set(x0+8,g,z0,'cauldron');F.set(x0+7,g,z0,'barrel');
+  for(let a=5;a<=9;a++)for(let b=5;b<=7;b++){const edge=a===5||a===9||b===7||b===5;if(edge)F.set(x0+a,g,z0+b,'spruce_fence')}
+  F.set(x0+7,g,z0+6,'hay_block');F.set(x0+1,g+1,z0+1,'lantern',{h:0});
+  addFarm(host,{name:'Gerberei: Lederhof',short:'Leder & Kaninchen',voxels:placeModel(F,0,0,0,0),out:{x:x0+8,y:g-2,z:z0+3},link:true,auto:'halbautomatisch (füttern)',
+    desc:'Im Hof der Gerberei: Kühe vermehren sich im Gehege. Die Kälber passen durch einen nur 1 Block hohen Spalt in einen Tunnel. Wachsen sie dort heran, stoßen sie an die Decke und ersticken. Leder und Rindfleisch fallen in die Trichter. Daneben ein Kaninchenstall.',
+    steps:['Gehege 5 × 7 aus Fichtenholzzaun, darin zwei Kühe. Regelmäßig mit Weizen füttern, dann gibt es Kälber.','In der Zaunseite eine Öffnung, darüber ein Steinblock: Der Spalt ist nur 1 Block hoch. Kälber passen durch, große Kühe nicht.','Dahinter ein Tunnel, 4 lang und 1 hoch: Boden aus Trichtern (alle zeigen zum Ende, der letzte nach unten in eine Truhe), Wände und Decke aus Steinziegeln.','Wächst ein Kalb im Tunnel zur Kuh heran, steckt sein Kopf in der Decke: Es erstickt, Leder und Rindfleisch landen in den Trichtern.','Die Truhe ist mit der Lorenbahn zum Lagerhaus verbunden.','Kaninchenstall daneben: kleines Zaungehege, Kaninchen mit Karotten oder Löwenzahn vermehren. Gerbkessel als Dekoration.'],
+    extras:[{n:'Kühe',c:2},{n:'Weizen',c:32,note:'zum Füttern'},{n:'Kaninchen',c:2},{n:'Karotten',c:8}]});
+}
+
+function buildMonastery(){
+  const r=findFreeRect(160,122,23,21,[0],36,3);if(!r)return null;
+  const{x0,z0,g}=r;flatten(x0,z0,x0+22,z0+20,g);markRect(x0,z0,x0+22,z0+20);
+  const m=new Model();
+  churchNave(m,x0,x0+8,z0+4,z0+20,g,8);
+  squareTower(m,x0+2,z0,x0+6,z0+4,g,22,{spire:'spruce'});
+  for(const[x,z,a]of[[x0+4,z0,'x'],[x0+2,z0+2,'z'],[x0+6,z0+2,'z']]){m.set(x,g+17,z,null);m.set(x,g+18,z,null);m.set(x,g+16,z,'stone_brick_slab',{h:1})}
+  m.set(x0+4,g+18,z0+2,'lantern',{h:1});
+  // Kreuzgang
+  const cx0=x0+9,cx1=x0+22,cz0=z0+4,cz1=z0+20;
+  for(let x=cx0;x<=cx1;x++)for(let z=cz0;z<=cz1;z++){
+    const outer=x===cx1||z===cz0||z===cz1;
+    const walk=(x<=cx0+1||x>=cx1-2||z<=cz0+2||z>=cz1-2)&&!outer;
+    const arc=!walk&&!outer&&(x===cx0+2||x===cx1-3||z===cz0+3||z===cz1-3);
+    if(outer){for(let y=g;y<g+5;y++)m.set(x,y,z,stoneMix(x,y,z,.18,.1));if(((x+z)&1)===0&&(z===cz0||z===cz1))m.set(x,g+4,z,'glass_pane',{a:'x'})}
+    else if(walk){groundRepl(m,x,z,'stone_bricks');m.set(x,g+4,z,'stone_brick_slab',{h:0})}
+    else if(arc){if(((x+z)&1)===0)for(let y=g;y<g+4;y++)m.set(x,y,z,'stone_brick_wall');else m.set(x,g+3,z,'stone_brick_slab',{h:1});m.set(x,g+4,z,'stone_brick_slab',{h:0})}
+  }
+  for(let x=cx0;x<=cx1-1;x+=4)m.set(x,g+3,cz0+1,'lantern',{h:1});
+  m.set(cx1,g,cz0+8,null);m.set(cx1,g+1,cz0+8,null);
+  const b=addBuilding({name:'Kloster',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(m,0,0,0,0),label:true,farm:'Zuckerrohr',
+    desc:'Kloster mit Kirche, Glockenturm und Kreuzgang: Die Kirche hat hohe Fenster, ein Rautenfenster über der Doppeltür und Bänke. Im Innenhof des Kreuzgangs liegt hinter Säulen die Zuckerrohrfarm.',
+    steps:['Kirche 9 × 17 aus Steinziegeln, 8 hoch, Boden aus poliertem Andesit, Doppeltür nach Süden.','Hohe Fenster: Glasscheiben übereinander mit Spitzbogen aus umgedrehter Treppe. Bänke aus Fichtenholztreppen, Altar mit Laternen.','Satteldach aus Schwarzeichenholztreppen, Giebel mit Steinziegeln, im Südgiebel ein Rautenfenster.','Glockenturm 5 × 5 an der Nordseite, 22 hoch, oben Schallöffnungen, Fichtenhelm.','Kreuzgang östlich der Kirche: Außenmauer 5 hoch, innen ein überdachter Gang aus Steinziegelstufen, zum Hof hin Säulen aus Steinziegelmauern im Wechsel mit Bögen.']});
+  return{b,gx0:cx0+3,gx1:cx1-4,gz0:cz0+4,gz1:cz1-4,g};
+}
+function farmMonastery(mon){
+  if(!mon)return;
+  const{gx0,gx1,gz0,g}=mon,F=new Model(),C=new Set();
+  const rows=['P+','C','W','C','P-','path','P+','C','W'];
+  let pist=0,cane=0;
+  rows.forEach((t,i)=>{const z=gz0+i;
+    for(let x=gx0;x<=gx1;x++){
+      if(t==='P+'||t==='P-'){F.set(x,g,z,'stone_bricks');F.set(x,g+1,z,'piston',{f:t==='P+'?2:0});F.set(x,g+2,z,'redstone_wire');pist++}
+      else if(t==='C'){groundRepl(F,x,z,'sand');F.set(x,g,z,'sugar_cane');F.set(x,g+1,z,'sugar_cane');cane++;
+        F.set(x,g-2,z,x===gx0||x===gx1?'powered_rail':'rail');C.add(K(x,g-2,z));
+        if(x===gx0||x===gx1)F.set(x,g-3,z,'redstone_block');}
+      else if(t==='W')groundRepl(F,x,z,'water');
+    }
+    if(t==='P+'||t==='P-'){F.set(gx1+1,g,z,'stone_bricks');F.set(gx1+1,g+1,z,'stone_bricks');F.set(gx1+1,g+2,z,'stone_bricks');F.set(gx1+1,g+3,z,'stone_button',{f:4})}
+    if(t==='C'){F.set(gx0-1,g-2,z,'stone_bricks');F.set(gx1+1,g-2,z,'stone_bricks')}
+  });
+  const hx=gx0+3,cz=rows.map((t,i)=>t==='C'?gz0+i:null).filter(v=>v!==null);
+  const zEnd=cz[cz.length-1]+1;
+  for(const z of cz)F.set(hx,g-3,z,'hopper',{f:4});
+  for(let z=cz[0];z<zEnd;z++)F.set(hx,g-4,z,'hopper',{f:2});
+  F.set(hx,g-4,zEnd,'chest');
+  addFarm(mon.b,{name:'Kloster: Zuckerrohrfarm',short:'Zuckerrohr',voxels:placeModel(F,0,0,0,0),carve:C,out:{x:hx,y:g-4,z:zEnd},link:true,auto:'halbautomatisch (Knopf)',
+    desc:'Im Innenhof des Kreuzgangs wächst Zuckerrohr in drei Reihen auf Sand neben Wasser. Ein Knopf lässt Kolben das obere Stück abbrechen. Unter dem Sand fährt eine Trichterlore hin und her und sammelt die Ernte durch den Sand hindurch ein.',
+    steps:['Reihen anlegen: Sand mit Zuckerrohr, direkt daneben Wasser. Zuckerrohr wächst nur neben Wasser.','Hinter jeder Zuckerrohrreihe auf Höhe des zweiten Rohrstücks eine Reihe Kolben, Kopf zum Rohr. Oben auf die Kolben Redstone-Staub, am Ende ein Block mit Knopf obendrauf.','Unter jeder Sandreihe eine Schiene: an beiden Enden Antriebsschienen auf Redstone-Blöcken und dahinter ein Block. Eine Trichterlore pendelt dort hin und her.','Die Trichterlore sammelt die abgebrochenen Rohre, die auf dem Sand liegen, durch den Sand hindurch auf.','In der Mitte liegt unter jeder Schiene ein Trichter, der die Lore leert. Eine Trichterreihe führt alles in eine Truhe.','Ernten: Knopf drücken, wenn das Rohr 2 bis 3 Blöcke hoch ist. Das unterste Stück bleibt stehen und wächst nach.','Die Truhe ist mit der Lorenbahn zum Lagerhaus verbunden.'],
+    extras:[{n:'Trichterlore',c:cz.length},{n:'Zuckerrohr zum Pflanzen',c:cane},{n:'Wassereimer',c:2}]});
+}
+
+function buildOrchard(){
+  const r=findFreeRect(176,40,24,18,[6],34,3);if(!r)return null;
+  const{x0,z0,g}=r;flatten(x0,z0,x0+23,z0+17,g);markRect(x0-1,z0-1,x0+24,z0+18);
+  const m=new Model();
+  const h=genHouse({w:9,d:7,floors:2,over:false,roof:'spruce',stoneGround:true,chimneys:1,seed:51});
+  const bb=h.bboxRot(2);
+  for(const v of placeModel(h,2,x0+1-bb.minX,g,z0+1-bb.minZ))m.set(v.x,v.y,v.z,v.b,v);
+  const R=mulberry32(61);
+  for(let a=14;a<=22;a+=4)for(let b=2;b<=6;b+=4)(R()<.35?cherryTree:oakTree)(m,x0+a,z0+b,g,R);
+  for(let a=0;a<=23;a++)for(let b=0;b<=17;b++){const edge=a===0||a===23||b===0||b===17;if(edge&&!(b===17&&(a===11||a===12)))m.set(x0+a,g,z0+b,'spruce_fence')}
+  m.set(x0,g+1,z0+17,'lantern',{h:0});m.set(x0+23,g+1,z0+17,'lantern',{h:0});
+  const b=addBuilding({name:'Obsthof',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(m,0,0,0,0),label:true,farm:'Melonen & Kürbisse',
+    desc:'Obsthof vor der Stadt: Bauernhaus mit steinernem Erdgeschoss, Obstbäume (Eichen für Äpfel, Kirschen) und ein umzäuntes Melonen- und Kürbisfeld.',
+    steps:['Grundstück 24 × 18 mit Fichtenholzzaun umzäunen, Tor im Süden.','Bauernhaus 9 × 7 in die Nordwestecke (Bauanleitung wie die Wohnhäuser).','Obstbäume in Reihen alle 4 Blöcke pflanzen: Eichen (lassen Äpfel fallen) und Kirschbäume.']});
+  return{b,fx0:x0+2,fz0:z0+10,g};
+}
+function farmOrchard(o){
+  if(!o)return;
+  const{fx0,fz0,g}=o,fx1=fx0+8,F=new Model(),C=new Set();
+  const rows=['P+','F','S','W','S','F','P-'];let stems=0;
+  rows.forEach((t,i)=>{const z=fz0+i;
+    for(let x=fx0;x<=fx1;x++){
+      const melon=x<=fx0+4;
+      if(t==='P+'||t==='P-'){F.set(x,g,z,'piston',{f:t==='P+'?2:0});F.set(x,g+1,z,'redstone_wire')}
+      else if(t==='F'){groundRepl(F,x,z,'dirt');if(hash3(x,8,z)<.5)F.set(x,g,z,melon?'melon':'pumpkin');
+        F.set(x,g-2,z,x===fx0||x===fx1?'powered_rail':'rail');C.add(K(x,g-2,z));if(x===fx0||x===fx1)F.set(x,g-3,z,'redstone_block')}
+      else if(t==='S'){groundRepl(F,x,z,'farmland');F.set(x,g,z,melon?'melon_stem':'pumpkin_stem');stems++}
+      else if(t==='W')groundRepl(F,x,z,'water');
+    }
+    if(t==='P+'||t==='P-'){F.set(fx1+1,g,z,'stone_bricks');F.set(fx1+1,g+1,z,'stone_bricks');F.set(fx1+1,g+2,z,'stone_button',{f:4})}
+    if(t==='F'){F.set(fx0-1,g-2,z,'stone_bricks');F.set(fx1+1,g-2,z,'stone_bricks')}
+  });
+  const hx=fx0+4,z1=fz0+1,z2=fz0+5;
+  F.set(hx,g-3,z1,'hopper',{f:4});F.set(hx,g-3,z2,'hopper',{f:4});
+  for(let z=z1;z<=z2;z++)F.set(hx,g-4,z,'hopper',{f:2});
+  F.set(hx,g-4,z2+1,'chest');
+  addFarm(o.b,{name:'Obsthof: Melonen- & Kürbisfarm',short:'Melonen & Kürbisse',voxels:placeModel(F,0,0,0,0),carve:C,out:{x:hx,y:g-4,z:z2+1},link:true,auto:'halbautomatisch (Knopf)',
+    desc:'Melonen- und Kürbisstiele wachsen auf Ackerboden am Wasser. Die Früchte erscheinen auf den Erdreihen daneben. Ein Knopf lässt Kolben die Früchte zerschlagen, eine Trichterlore unter der Erde sammelt sie ein.',
+    steps:['Sieben Reihen, 9 lang: Kolben, Erde, Stiele auf Ackerboden, Wasser, Stiele, Erde, Kolben.','Links Melonen, rechts Kürbisse pflanzen. Die Früchte wachsen auf die Erdreihen.','Die Kolben zeigen auf die Erdreihen. Oben auf die Kolben Redstone-Staub, am Ende ein Block mit Knopf obendrauf.','Unter jeder Erdreihe eine Schiene mit Antriebsschienen auf Redstone-Blöcken an beiden Enden: Dort pendelt eine Trichterlore und sammelt die Früchte durch die Erde hindurch ein.','In der Mitte leert ein Trichter unter der Schiene die Lore, eine Trichterreihe führt in die Truhe.','Ernten: Knopf drücken, die Kolben zerschlagen alle Früchte. Die Stiele bleiben stehen.','Die Truhe ist mit der Lorenbahn zum Lagerhaus verbunden.'],
+    extras:[{n:'Trichterlore',c:2},{n:'Melonen- und Kürbiskerne',c:stems},{n:'Wassereimer',c:2}]});
+}
+
+function buildWarehouse(){
+  const m=genHouse({w:15,d:11,floors:2,over:true,roof:'dark_oak',stoneGround:true,chimneys:1,seed:21});
+  const p=placeNear(m,118,160,24);if(!p)return null;
+  return addBuilding({name:'Lagerhaus',group:'Gebäude mit Farm',kind:'house',voxels:p.vox,model:m,rot:p.r,label:true,farm:'Sortieranlage',
+    desc:'Großes Lagerhaus nahe dem Markt mit steinernem Erdgeschoss. Im Keller kommen die Lorenbahnen aller Farmen an, jede Farm liefert in ihre eigene Truhe.',steps:houseSteps(m,p.r)});
+}
+// Lorenbahn: jede Farm hat ihre eigene Bahn in eigener Tiefe, so kreuzen sich keine Gleise
+function buildRailNetwork(lag){
+  if(!lag)return;
+  const routes=farms.filter(f=>f.link&&f.out);if(!routes.length)return;
+  const fp=footprint(lag),ix0=fp.x0+1,ix1=fp.x1-1,iz0=fp.z0+1,iz1=fp.z1-1;
+  const N=routes.length,ys=routes.map((_,i)=>-9-3*i),yBot=ys[N-1]-2;
+  const S=new Model(),SC=new Set();
+  for(let x=ix0-1;x<=ix1+1;x++)for(let z=iz0-1;z<=iz1+1;z++){
+    const ins=x>=ix0&&x<=ix1&&z>=iz0&&z<=iz1;
+    for(let y=yBot;y<fp.base;y++){
+      const floor=ins&&ys.some(yy=>y===yy-2)&&!(x===ix1&&z===iz1);
+      if(!ins||y===yBot||floor)S.set(x,y,z,ins?'stone_bricks':(hash3(x,y,z)<.5?'cobblestone':'stone_bricks'));else SC.add(K(x,y,z));
+    }
+  }
+  cellarLadder(S,ix1,iz1,1,yBot+1,fp.base);
+  for(const y of ys)for(const[x,z]of[[ix0,iz1],[ix1-1,iz0+2]])S.set(x,y-1,z,'lantern',{h:0});
+  const used=new Set(SC);for(const b of buildings)for(const v of b.voxels)used.add(K(v.x,v.y,v.z));for(const k of carved)used.add(k);
+  const R=new Model(),RC=new Set();let rails=0,prails=0,hops=0;
+  const names=[];
+  routes.forEach((f,i)=>{
+    const y=ys[i],o=f.out,north=o.z<(iz0+iz1)/2,sx=ix0+1+2*i;
+    const zIn=north?iz0:iz1,zWall=north?iz0-1:iz1+1,zChest=north?iz0+1:iz1-1;
+    S.set(sx,y-1,zIn,'hopper',{f:north?2:0});S.set(sx,y-1,zChest,'chest');S.set(sx,y,zChest,'stone_bricks');
+    names.push(`${f.name.split(':')[0]}: Truhe ${i+1} (Ebene ${i+1})`);
+    const paths=[];
+    for(const xFirst of[true,false]){
+      const cells=[];let x=o.x,z=o.z;cells.push([x,z]);
+      const zLane=north?iz0-3:iz1+3;
+      const goX=t=>{while(x!==t){x+=Math.sign(t-x);cells.push([x,z])}};
+      const goZ=t=>{while(z!==t){z+=Math.sign(t-z);cells.push([x,z])}};
+      if(xFirst){goX(sx);goZ(zWall)}else{goZ(zLane);goX(sx);goZ(zWall)}
+      cells.push([sx,zIn]);
+      let hit=0;for(const[cx,cz]of cells.slice(0,-2))if(used.has(K(cx,y,cz))||used.has(K(cx,y+1,cz)))hit++;
+      paths.push({cells,hit});
+    }
+    paths.sort((a,b)=>a.hit-b.hit);const cells=paths[0].cells;
+    for(let yy=o.y-1;yy>y;yy--){R.set(o.x,yy,o.z,'hopper',{f:4});hops++}
+    cells.forEach(([cx,cz],k)=>{
+      const last=k===cells.length-1,first=k===0,beforeLast=k===cells.length-2;
+      const straight=k>0&&k<cells.length-1&&(cells[k-1][0]===cells[k+1][0]||cells[k-1][1]===cells[k+1][1]);
+      const powered=first||beforeLast||(straight&&k%16===0);
+      R.set(cx,y,cz,powered?'powered_rail':'rail');if(powered){R.set(cx,y-1,cz,'redstone_block');prails++}else rails++;
+      RC.add(K(cx,y,cz));if(!first&&!last)RC.add(K(cx,y+1,cz));
+    });
+  });
+  addFarm(lag,{name:'Lagerhaus: Sortieranlage',short:'Sortieranlage',voxels:placeModel(S,0,0,0,0),carve:SC,auto:'automatisch',
+    desc:`Tiefer Keller unter dem Lagerhaus mit ${N} Ebenen. Auf jeder Ebene endet die Lorenbahn einer Farm: Ein Trichter unter der Schiene leert die vorbeifahrende Trichterlore in die Truhe dieser Farm. So ist alles nach Herkunft sortiert.`,
+    steps:['Keller unter dem Lagerhaus ausheben, mit Leiter in der Ecke und einem Zwischenboden alle 3 Blöcke.','Auf jeder Ebene: Ende der Schiene über einem Trichter, der Trichter zeigt in eine Truhe, über der Truhe ein Block als Prellbock.'].concat(names.map(n=>'Ebene: '+n)),
+    extras:[]});
+  addFarm(null,{name:'Lorenbahn',short:'Lorenbahn',voxels:placeModel(R,0,0,0,0),carve:RC,auto:'automatisch',
+    desc:`Unterirdische Bahnen von ${N} Farmen zum Lagerhaus. Jede Bahn liegt in einer eigenen Tiefe, damit sich keine Gleise kreuzen. Auf jeder Bahn pendelt eine Trichterlore: An der Farm füllt ein Trichter sie, im Lagerhaus leert ein Trichter sie.`,
+    steps:['Unter der Truhe der Farm einen Trichter setzen, dann Trichter senkrecht nach unten bis knapp über die Bahn.','Tunnel 1 breit und 2 hoch in der angegebenen Tiefe graben (siehe Schichtplan) und Schienen legen.','An beiden Enden und auf langen Geraden alle 16 Blöcke eine Antriebsschiene auf einem Redstone-Block. So pendelt die Lore ohne Hilfe hin und her.','Eine Trichterlore auf die Schiene setzen und anschubsen.'],
+    extras:[{n:'Trichterlore',c:N,note:'eine pro Bahn'}]});
+}
+
 function buildCity(){
   buildCityWall();
   buildCastle();
   buildFountain(92,140);
   buildHarbor();
   placeStalls();
-  // Benannte Gebäude (Farmen folgen in Etappe 2)
+  // Benannte Gebäude, ihre Farmen kommen weiter unten dazu
   const named=[
-    {name:'Taverne',farm:'Bienen & Honig (Etappe 2)',at:[114,124],o:{w:13,d:11,floors:3,over:true,roof:'dark_oak',chimneys:2,seed:11},desc:'Große Taverne am Marktplatz: drei Stockwerke mit Überhängen, zwei Schornsteine.'},
-    {name:'Bäckerei',farm:'Karotten & Kartoffeln (Etappe 2)',at:[72,124],o:{w:11,d:9,floors:2,over:true,roof:'spruce',chimneys:2,seed:12},desc:'Bäckerei am Markt mit Backofen-Schornstein auf beiden Giebelseiten.'},
-    {name:'Schmiede',farm:'Eisengolem-Farm (Etappe 2)',at:[110,212],o:{w:11,d:9,floors:2,over:false,roof:'dark_oak',stoneGround:true,seed:13},desc:'Schmiede nahe dem Stadttor: steinernes Erdgeschoss gegen Funkenflug, Fachwerk darüber.'},
-    {name:'Fischerhaus',farm:'Fischfarm (Etappe 2)',at:[203,128],o:{w:9,d:5,floors:2,over:false,roof:'spruce',stoneGround:true,seed:14},desc:'Fischerhaus am Kai mit steinernem Erdgeschoss, Fachwerk darüber und Blick auf die Stege.'},
+    {name:'Taverne',farm:'Bienen & Honig',at:[114,124],o:{w:13,d:11,floors:3,over:true,roof:'dark_oak',chimneys:2,seed:11},desc:'Große Taverne am Marktplatz: drei Stockwerke mit Überhängen, zwei Schornsteine.'},
+    {name:'Bäckerei',farm:'Karotten & Kartoffeln',at:[72,124],o:{w:11,d:9,floors:2,over:true,roof:'spruce',chimneys:2,seed:12},desc:'Bäckerei am Markt mit Backofen-Schornstein auf beiden Giebelseiten.'},
+    {name:'Schmiede',farm:'Eisengolem-Farm',at:[110,212],o:{w:11,d:9,floors:2,over:false,roof:'dark_oak',stoneGround:true,seed:13},desc:'Schmiede nahe dem Stadttor: steinernes Erdgeschoss gegen Funkenflug, Fachwerk darüber.'},
+    {name:'Fischerhaus',farm:'Fischfarm',at:[203,128],o:{w:9,d:5,floors:2,over:false,roof:'spruce',stoneGround:true,seed:14},desc:'Fischerhaus am Kai mit steinernem Erdgeschoss, Fachwerk darüber und Blick auf die Stege.'},
   ];
   for(const n of named){
     const m=genHouse(n.o);const p=placeNear(m,n.at[0],n.at[1],18);
     if(!p){console.warn('Kein Platz für',n.name);continue}
     addBuilding({name:n.name,group:'Gebäude mit Farm',kind:'house',voxels:p.vox,model:m,rot:p.r,farm:n.farm,desc:n.desc,steps:houseSteps(m,p.r),label:true});
   }
+  const warehouse=buildWarehouse(),tannery=buildTannery();farmTannery(tannery);const monastery=buildMonastery();
   // Wohnhäuser entlang der Gassen
   const R=mulberry32(4242);let count=0;
   const order=STREETS.filter(s=>s.kind!=='court');
@@ -1362,7 +1880,11 @@ function buildCity(){
       }
     }
   }
+  const mill=buildMill(),orchard=buildOrchard();
   buildFields();
+  farmBakery();farmKeep();farmIron();farmStable();farmBees();farmFisher();farmKelp();
+  farmMill(mill);farmMonastery(monastery);farmOrchard(orchard);
+  buildRailNetwork(warehouse);
   // Straßen & Plätze als eigener Posten
   const sv=[];for(const[i,b]of streetCell){if(fieldIdx.has(i))continue;const x=i%WX,z=Math.floor(i/WX),y=hAt(x,z);sv.push({x,y:y-1,z,b});
     if(sideWalk.has(i)&&occ[i]===1&&!moat[i]&&y<PLAT){sv.push({x,y,z,b:'stone_brick_slab',h:0});continue}
@@ -1379,6 +1901,13 @@ function buildCity(){
   buildLamps();
   buildArches();
   buildNature();
+  // Doppelte Blöcke entfernen: das zuerst gebaute Bauwerk behält den Block
+  const seen=new Set();
+  for(const b of buildings){
+    const before=b.voxels.length;
+    b.voxels=b.voxels.filter(v=>{const k=K(v.x,v.y,v.z);if(seen.has(k))return false;seen.add(k);return true});
+    if(b.voxels.length!==before)b.counts=countBlocks(b.voxels);
+  }
 }
 
 // ---------- Meshing ----------
@@ -1402,8 +1931,10 @@ function aoFor(x,y,z,fi,sAt){
   return out;
 }
 const AXI={x:0,y:1,z:2};
+const FDIR={0:1,1:3,4:2,5:0};
 function texOf(v,fi){
   const t=BLOCKS[v.b].tex;
+  if(t.front){if(FDIR[fi]===v.f)return t.front;if(FACE[fi].a===1)return t.top||t.side;return t.side}
   if(t==='door')return v.h?'door_top':'door_bottom';
   if(typeof t==='string')return t;
   if(t.end){const ax=AXI[v.a||'y'];return FACE[fi].a===ax?t.end:t.side}
@@ -1420,6 +1951,12 @@ function boxesOf(v,get){
     case 'stairs':{const lo=v.h?.5:0,hi=v.h?0:.5;const st=[[0,hi,0,1,hi+.5,.5],[.5,hi,0,1,hi+.5,1],[0,hi,.5,1,hi+.5,1],[0,hi,0,.5,hi+.5,1]][v.f||0];return[[0,lo,0,1,lo+.5,1],st]}
     case 'pane':return v.a==='z'?[[7*s16,0,0,9*s16,1,1]]:[[0,0,7*s16,1,1,9*s16]];
     case 'chain':return[[6.5*s16,0,6.5*s16,9.5*s16,1,9.5*s16]];
+    case 'hopper':return[[0,10*s16,0,1,1,1],[4*s16,4*s16,4*s16,12*s16,10*s16,12*s16],[6*s16,0,6*s16,10*s16,4*s16,10*s16]];
+    case 'chest':return[[s16,0,s16,15*s16,14*s16,15*s16]];
+    case 'bed':return[[0,0,0,1,9*s16,1]];
+    case 'sign':return[[7*s16,0,7*s16,9*s16,9*s16,9*s16],[0,9*s16,7*s16,1,1,9*s16]];
+    case 'glasscube':return[[0,0,0,1,1,1]];
+    case 'button':return[[[5*s16,6*s16,0,11*s16,10*s16,2*s16],[14*s16,6*s16,5*s16,1,10*s16,11*s16],[5*s16,6*s16,14*s16,11*s16,10*s16,1],[0,6*s16,5*s16,2*s16,10*s16,11*s16],[5*s16,0,6*s16,11*s16,2*s16,10*s16]][v.f||0]];
     case 'carpet':return[[0,0,0,1,s16,1]];
     case 'trapdoor':if(!v.o)return v.h?[[0,13*s16,0,1,1,1]]:[[0,0,0,1,3*s16,1]];
     case 'ladder':case 'door':{
@@ -1480,7 +2017,8 @@ function meshVoxels(vox,solidAt,getAt){
   const leafSolid=(x,y,z)=>{if(solidAt(x,y,z))return true;const n=getAt(x,y,z);return!!n&&BLOCKS[n.b].shape==='leaves'};
   for(const v of vox){
     const def=BLOCKS[v.b];
-    if(def.shape==='cross'){addCross(O,v.x,v.y,v.z,def.tex);continue}
+    if(def.shape==='cross'){addCross(def.tex==='kelp'||GLOW.has(v.b)?(GLOW.has(v.b)?Lg:O):O,v.x,v.y,v.z,def.tex);continue}
+    if(def.shape==='lava'){for(let fi=0;fi<6;fi++){const n=FACE[fi].n;if(solidAt(v.x+n[0],v.y+n[1],v.z+n[2]))continue;addFace(Lg,v.x,v.y,v.z,[0,0,0],[1,14/16,1],fi,'lava_still',1,null,true)}continue}
     if(def.shape==='crop'){addCrop(O,v.x,v.y,v.z,def.tex);continue}
     if(def.shape==='leaves'){
       for(let fi=0;fi<6;fi++){const n=FACE[fi].n;const nb=getAt(v.x+n[0],v.y+n[1],v.z+n[2]);if(nb&&(nb.b===v.b||FULL.has(nb.b)))continue;if(solidAt(v.x+n[0],v.y+n[1],v.z+n[2]))continue;addFace(O,v.x,v.y,v.z,[0,0,0],[1,1,1],fi,def.tex,.85+hash3(v.x,v.y,v.z)*.15,aoFor(v.x,v.y,v.z,fi,leafSolid))}
@@ -1537,7 +2075,7 @@ function meshTerrain(){
 // ---------- Three.js ----------
 let renderer,scene,camera,controls,world,atlasTex,matO,matW,matG,matHover,matSel,matLayer,terrainMesh,glowPoints,skyTex;
 const solid=new Set();const allVox=new Map();
-function solidAt(x,y,z){if(y<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;return solid.has(K(x,y,z))}
+function solidAt(x,y,z){const k=K(x,y,z);if(carved.has(k))return solid.has(k);if(y<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;return solid.has(k)}
 function initThree(){
   const cv=document.getElementById('view');
   renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
@@ -1596,7 +2134,7 @@ function stepSmoke(now){
     const a=(1-ph)*(ph<.1?ph*10:1)*(evening?.3:.22);col[j]=col[j+1]=col[j+2]=a;
   }
   smoke.geo.attributes.position.needsUpdate=true;smoke.geo.attributes.color.needsUpdate=true;
-  smoke.pts.visible=!layerMode;
+  smoke.pts.visible=!layerMode&&!(selected&&selected.underground);
 }
 function makeGlowPoints(){
   const pos=[];for(const b of buildings)for(const v of b.voxels)if(LIGHTS.has(v.b))pos.push(v.x+.5,v.y+.45,v.z+.5);
@@ -1611,7 +2149,7 @@ function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);c
 function buildMeshes(){
   for(const b of buildings)for(const v of b.voxels){const k=K(v.x,v.y,v.z);allVox.set(k,v);if(FULL.has(v.b))solid.add(k)}
   const getAt=(x,y,z)=>allVox.get(K(x,y,z));
-  const tr=meshTerrain();terrainMesh=new THREE.Mesh(toGeometry(tr.G),matO);world.add(terrainMesh);world.add(new THREE.Mesh(toGeometry(tr.W),matW));
+  const tr=meshTerrain();terrainMesh=new THREE.Mesh(toGeometry(tr.G),matO);world.add(terrainMesh);seaMesh=new THREE.Mesh(toGeometry(tr.W),matW);world.add(seaMesh);
   makeGlowPoints();makeSmoke();
   for(const b of buildings)makeBuildingMeshes(b,b.voxels,solidAt,getAt);
 }
@@ -1625,6 +2163,12 @@ function makeBuildingMeshes(b,vox,sAt,gAt,layerY){
     if(O.i.length){const m=new THREE.Mesh(toGeometry(O),mat);m.userData.bid=b.id;m.userData.base=mat;b.meshes.push(m);world.add(m)}
     if(W.i.length){const m=new THREE.Mesh(toGeometry(W),matW);m.userData.bid=b.id;m.userData.base=matW;m.userData.water=true;b.meshes.push(m);world.add(m)}
   }
+}
+function setXray(b){
+  const on=!!(b&&b.underground);
+  if(terrainMesh)terrainMesh.visible=!on;if(seaMesh)seaMesh.visible=!on;
+  for(const o of buildings){if(!o.meshes)continue;o.meshes.forEach(m=>m.visible=o===b||!on)}
+  if(glowPoints)glowPoints.visible=evening&&!on;if(smoke)smoke.pts.visible=!on;
 }
 function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.glow||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
 
@@ -1698,12 +2242,12 @@ function updateLabels(){
 const panel=document.getElementById('panel');
 let currentTab='mat',layer=0;
 function fmtStacks(b,n){if(b==='water')return'—';const s=Math.floor(n/64),r=n%64;if(n>=1728){const sh=Math.floor(n/1728);return`${sh} Kiste${sh>1?'n':''} + ${Math.floor((n%1728)/64)} St.`}return s?`${s} St.${r?' + '+r:''}`:String(r)}
-function matTable(counts){
+function matTable(counts,extras){
   const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   const total=rows.reduce((s,r)=>s+(r[0]==='water'?0:r[1]),0);
   return `<div class="tablewrap"><table class="mats"><thead><tr><th></th><th>Block</th><th class="num">Anzahl</th><th class="num">Stacks à 64</th></tr></thead><tbody>${
     rows.map(([b,n])=>`<tr><td><img class="sw" alt="" src="${swatch(iconTile(b))}"></td><td>${esc(blockName(b))}<br><code>${blockId(b)}</code>${BLOCKS[b].note?`<br><code>${esc(BLOCKS[b].note)}</code>`:''}</td><td class="num">${n.toLocaleString('de-DE')}</td><td class="num st">${fmtStacks(b,n)}</td></tr>`).join('')
-  }</tbody><tfoot><tr><td></td><td>Blöcke gesamt (ohne Wasser)</td><td class="num">${total.toLocaleString('de-DE')}</td><td class="num st">${fmtStacks('',total)}</td></tr></tfoot></table></div>`;
+  }</tbody><tfoot><tr><td></td><td>Blöcke gesamt (ohne Wasser)</td><td class="num">${total.toLocaleString('de-DE')}</td><td class="num st">${fmtStacks('',total)}</td></tr></tfoot></table></div>`+(extras&&extras.length?`<h3>Außerdem nötig</h3><div class="tablewrap"><table class="mats"><tbody>${extras.map(e=>`<tr><td>${esc(e.n)}${e.note?`<br><code>${esc(e.note)}</code>`:''}</td><td class="num">${e.c}</td></tr>`).join('')}</tbody></table></div>`:'');
 }
 function matText(counts,title){
   return title+'\n'+Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([b,n])=>`${n}\t${blockName(b)}\t${blockId(b)}`).join('\n');
@@ -1717,12 +2261,12 @@ function openPanel(title,sub,tabs,render){
 }
 function select(b){
   if(selected&&selected!==b){setBuildingMat(selected,null);exitLayerMode()}
-  selected=b;setBuildingMat(b,matSel);
+  selected=b;setBuildingMat(b,matSel);setXray(b);
   if(!['mat','guide','farm'].includes(currentTab))currentTab='mat';
   const w=b.bb.x1-b.bb.x0+1,d=b.bb.z1-b.bb.z0+1,h=b.bb.y1-b.bb.y0+1;
-  const tabs=[['mat','Materialliste'],['guide','Bauanleitung']];if(b.farm)tabs.push(['farm','Farm']);
-  if(currentTab==='farm'&&!b.farm)currentTab='mat';
-  openPanel(b.name,`${esc(b.group)}${b.farm?`<span class="farmtag">${esc(b.farm.replace(' (Etappe 2)',''))}</span>`:''}`,tabs,()=>renderBuilding(b,w,d,h));
+  const tabs=[['mat','Materialliste'],['guide','Bauanleitung']];if(b.farm&&b.kind!=='farm')tabs.push(['farm','Farm']);
+  if(currentTab==='farm'&&!(b.farm&&b.kind!=='farm'))currentTab='mat';
+  openPanel(b.name,`${esc(b.group)}${b.farm&&b.kind!=='farm'?`<span class="farmtag">${esc(b.farm)}</span>`:''}${b.auto?`<span class="farmtag">${esc(b.auto)}</span>`:''}`,tabs,()=>renderBuilding(b,w,d,h));
   focusOn(b);
 }
 function renderBuilding(b,w,d,h){
@@ -1731,15 +2275,16 @@ function renderBuilding(b,w,d,h){
   const total=Object.entries(b.counts).reduce((s,[k,n])=>s+(k==='water'?0:n),0);
   const facts=`<div class="facts"><div><small>Grundfläche</small><b>${w} × ${d}</b></div><div><small>Höhe</small><b>${h}</b></div><div><small>Blöcke</small><b>${total.toLocaleString('de-DE')}</b></div></div>`;
   if(currentTab==='mat'){
-    body.innerHTML=`${facts}<p class="desc">${esc(b.desc||'')}</p><div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(b.counts)}`;
+    body.innerHTML=`${facts}<p class="desc">${esc(b.desc||'')}</p>${b.auto?`<p class="note">Betrieb: <b>${esc(b.auto)}</b>${b.hostId!=null?` · gehört zu <button class="linkbtn" id="toHost">${esc(buildings[b.hostId].name)}</button>`:''}</p>`:''}<div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(b.counts,b.extras)}`;
     document.getElementById('cpy').onclick=e=>copyText(matText(b.counts,b.name),e.target);
+    const th=document.getElementById('toHost');if(th)th.onclick=()=>select(buildings[b.hostId]);
   }else if(currentTab==='guide'){
     const nL=b.bb.y1-b.bb.y0+1;if(!layerMode)layer=0;
     body.innerHTML=`<h3>Schritte</h3><ol class="steps">${(b.steps||[]).map(s=>`<li>${esc(s.split('%PUTZ%').join(PLASTER[plasterChoice]))}</li>`).join('')}</ol>
       <h3>Schicht für Schicht</h3>
       <div class="layerbar"><button id="lPrev" aria-label="Schicht tiefer">◀</button><input type="range" id="lRange" min="0" max="${nL-1}" value="${layer}" aria-label="Schicht"><button id="lNext" aria-label="Schicht höher">▶</button><span class="lnum" id="lNum"></span></div>
       <label class="chk"><input type="checkbox" id="lIso" checked> In 3D nur dieses Gebäude bis zu dieser Schicht zeigen</label>
-      <div class="legend"><span><i>▲</i> Treppe (Spitze = hohe Seite)</span><span><i>△</i> umgedrehte Treppe</span><span><i>▁</i>/<i>▔</i> Stufe unten/oben</span><span><i>│</i> Scheibe/Gitter</span><span><i>▌</i> Falltür, Tür, Leiter (Wandseite)</span><span><i>═</i> liegender Stamm</span><span>blass: Schicht darunter</span></div>
+      <div class="legend"><span><i>▲</i> Treppe (Spitze = hohe Seite)</span><span><i>△</i> umgedrehte Treppe</span><span><i>▁</i>/<i>▔</i> Stufe unten/oben</span><span><i>│</i> Scheibe/Gitter</span><span><i>▌</i> Falltür, Tür, Leiter (Wandseite)</span><span><i>═</i> liegender Stamm</span><span><i>↑</i> Trichter, Werfer, Kolben (Richtung)</span><span>blass: Schicht darunter</span></div>
       <div class="planwrap"><canvas id="plan"></canvas></div><div class="plancap" id="planCap">Norden ist oben. Zeiger über ein Feld halten zeigt den Block.</div>
       <div id="layerMats"></div>`;
     const set=v=>{layer=Math.max(0,Math.min(nL-1,v));document.getElementById('lRange').value=layer;renderLayer(b)};
@@ -1749,7 +2294,13 @@ function renderBuilding(b,w,d,h){
     document.getElementById('lIso').onchange=e=>{if(e.target.checked)renderLayer(b);else exitLayerMode()};
     renderLayer(b);
   }else{
-    body.innerHTML=`${facts}<p class="note">Hier entsteht in Etappe 2 die versteckte Farm: <b>${esc(b.farm.replace(' (Etappe 2)',''))}</b>. Sie wird mit eigener Materialliste und Bauanleitung ins Blockmodell eingebaut und per Hopper-Linie mit dem Lagerhaus verbunden.</p>`;
+    const fb=b.farmId!=null?buildings[b.farmId]:null;
+    if(!fb){body.innerHTML=`${facts}<p class="note">Für <b>${esc(b.farm)}</b> gibt es noch keinen Bauplan.</p>`;return}
+    const n=Object.entries(fb.counts).reduce((s2,[k,v])=>s2+(k==='water'?0:v),0);
+    body.innerHTML=`<h3>${esc(fb.name)}</h3><p class="note">Betrieb: <b>${esc(fb.auto)}</b> · ${n.toLocaleString('de-DE')} Blöcke${fb.link?' · liefert per Lorenbahn ins Lagerhaus':''}</p><p class="desc">${esc(fb.desc)}</p>
+      <div class="row"><button class="primary" id="openFarm">Bauplan der Farm öffnen</button></div>
+      <h3>So funktioniert sie</h3><ol class="steps">${fb.steps.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`;
+    document.getElementById('openFarm').onclick=()=>{currentTab='mat';select(fb)};
   }
 }
 function exitLayerMode(){
@@ -1758,6 +2309,7 @@ function exitLayerMode(){
   if(selected){makeBuildingMeshes(selected,selected.voxels,solidAt,getAt);setBuildingMat(selected,matSel)}
   for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=true);
   if(glowPoints)glowPoints.visible=evening;
+  setXray(selected);
 }
 function renderLayer(b){
   const y=b.bb.y0+layer,nL=b.bb.y1-b.bb.y0+1;
@@ -1766,10 +2318,11 @@ function renderLayer(b){
   if(iso&&iso.checked){
     layerMode=true;
     const own=new Map();for(const v of b.voxels)if(v.y<=y)own.set(K(v.x,v.y,v.z),v);
-    const sAt=(x,yy,z)=>{if(yy<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;const v=own.get(K(x,yy,z));return!!v&&FULL.has(v.b)};
+    const sAt=(x,yy,z)=>{const k=K(x,yy,z);if(!carved.has(k)&&yy<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;const v=own.get(k);return!!v&&FULL.has(v.b)};
     makeBuildingMeshes(b,b.voxels.filter(v=>v.y<=y),sAt,(x,yy,z)=>own.get(K(x,yy,z)),y);
     for(const o of buildings)if(o!==b&&o.meshes&&o.kind!=='street')o.meshes.forEach(m=>m.visible=false);
     if(glowPoints)glowPoints.visible=false;
+    if(b.underground){terrainMesh.visible=false;seaMesh.visible=false}
   }
   drawPlan(b,y);
   const cnt=countBlocks(b.voxels.filter(v=>v.y===y));
@@ -1787,6 +2340,9 @@ function stateText(v){
   else if(s==='ladder')parts.push(`an der Wand im ${DIR_DE[v.f]}`);
   else if(s==='door')parts.push(`${v.h?'obere':'untere'} Hälfte, Außenseite ${DIR_DE[v.f]}`);
   else if(s==='lantern')parts.push(v.h?'hängend':'stehend');
+  else if(v.b==='hopper')parts.push(v.f===4?'zeigt nach unten':`zeigt nach ${DIR_DE[v.f||0]}`);
+  else if(['dispenser','piston','beehive'].includes(v.b))parts.push(`Vorderseite nach ${DIR_DE[v.f||0]}`);
+  else if(s==='button')parts.push(v.f===4?'oben auf dem Block':`an der Wand im ${DIR_DE[v.f]}`);
   return parts.join(' · ');
 }
 function drawPlan(b,y){
@@ -1818,6 +2374,8 @@ function drawPlan(b,y){
     else if(sh==='campfire'){g.fillStyle='#ff8a2a';g.beginPath();g.arc(0,0,q*.7,0,7);g.fill()}
     else if(sh==='fence'||sh==='wall'){g.fillStyle='#8b6a44';g.fillRect(-q*.4,-q*.4,q*.8,q*.8)}
     else if(sh==='water'){g.fillStyle='rgba(60,110,220,.35)';g.fillRect(-cs/2,-cs/2,cs,cs)}
+    else if(['hopper','dispenser','piston','beehive'].includes(v.b)&&v.f!=null&&v.f<4){g.rotate([0,Math.PI/2,Math.PI,-Math.PI/2][v.f]);g.strokeStyle='#fff';g.lineWidth=Math.max(2,cs/8);g.beginPath();g.moveTo(0,q);g.lineTo(0,-q);g.moveTo(-q*.6,-q*.3);g.lineTo(0,-q);g.lineTo(q*.6,-q*.3);g.stroke()}
+    else if(v.b==='hopper'){g.fillStyle='#fff';g.beginPath();g.arc(0,0,q*.35,0,7);g.fill()}
     g.restore();
   }
   // Raster
@@ -1843,19 +2401,20 @@ async function copyText(t,btn){
 function showTotal(){
   if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
   const tot={};for(const b of buildings)for(const[k,n]of Object.entries(b.counts))tot[k]=(tot[k]||0)+n;
+  const exm=new Map();for(const b of buildings)for(const e of(b.extras||[])){const o=exm.get(e.n)||{n:e.n,c:0};o.c+=e.c;exm.set(e.n,o)}const ext=[...exm.values()];
   currentTab='tot';
   const groups={};for(const b of buildings)(groups[b.group]=groups[b.group]||[]).push(b);
   openPanel('Gesamt-Materialliste',`Alle ${buildings.length} Bauwerke der Stadt, automatisch aus den Blockmodellen gezählt`,[['tot','Material'],['by','Nach Gebäude']],()=>{
     const body=document.getElementById('pBody');
     if(currentTab==='tot'){
-      body.innerHTML=`<p class="note">Etappe 1: Stadtmauer, Burg, Straßen, Markt und Häuser. Die Farmen kommen in Etappe 2 dazu und erscheinen dann automatisch in dieser Liste.</p><div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(tot)}`;
+      body.innerHTML=`<p class="note">Alles zusammen: Stadtmauer, Burg, Straßen, Markt, Häuser, Bäume und alle Farmen mit Lorenbahn.</p><div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(tot,ext)}`;
       document.getElementById('cpy').onclick=e=>copyText(matText(tot,'Gesamt-Materialliste Burgstadt'),e.target);
     }else body.innerHTML=listHTML(groups);
     bindList();
   });
 }
 function listHTML(groups){
-  const order=['Burg','Stadtbefestigung','Gebäude mit Farm','Markt','Hafen','Felder','Plätze','Wohnhäuser','Bäume & Deko'];
+  const order=['Burg','Stadtbefestigung','Gebäude mit Farm','Farmen','Markt','Hafen','Felder','Plätze','Wohnhäuser','Bäume & Deko'];
   return order.filter(g=>groups[g]).map(g=>`<div class="group-h">${esc(g)} (${groups[g].length})</div><div class="blist">${groups[g].map(b=>{const n=Object.entries(b.counts).reduce((s,[k,v])=>s+(k==='water'?0:v),0);return`<button data-bid="${b.id}"><span>${esc(b.name)}${b.farm?` <span class="farmtag">Farm</span>`:''}</span><span>${n.toLocaleString('de-DE')}</span></button>`}).join('')}</div>`).join('');
 }
 function bindList(){document.querySelectorAll('[data-bid]').forEach(bt=>bt.onclick=()=>{currentTab='mat';select(buildings[+bt.dataset.bid])})}
@@ -1865,13 +2424,13 @@ function showList(){
   const groups={};for(const b of buildings)(groups[b.group]=groups[b.group]||[]).push(b);
   openPanel('Gebäude',`${buildings.length} Bauwerke · Zahl = Blöcke`,[['list','Liste']],()=>{document.getElementById('pBody').innerHTML=listHTML(groups);bindList()});
 }
-function closePanel(){panel.hidden=true;if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}}
+function closePanel(){panel.hidden=true;if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}setXray(null)}
 
 // ---------- Texturen aus der Minecraft-.jar ----------
 // Die .jar ist ein ZIP-Archiv. Es wird nur im Browser gelesen, nichts wird hochgeladen.
-const JAR_NAMES={chain:['iron_chain','chain'],sweet_berry_bush:'sweet_berry_bush_stage3',door_bottom:'spruce_door_bottom',door_top:'spruce_door_top',campfire_log:'campfire_log_lit',wheat:'wheat_stage7',carrots:'carrots_stage3',potatoes:'potatoes_stage3',beetroots:'beetroots_stage3'};
-const JAR_TINT={birch_leaves:[128,167,85],dark_oak_leaves:[89,174,48],short_grass:[121,192,90],fern:[104,170,80],vine:[89,174,48],grass_block_top:[121,192,90],oak_leaves:[89,174,48],spruce_leaves:[97,153,97],water_still:[63,118,228]};
-const JAR_SKIP=new Set(['lantern']); // Laterne ist in Minecraft ein Teilebogen, keine Blockfläche
+const JAR_NAMES={kelp:'kelp_plant',chain:['iron_chain','chain'],sweet_berry_bush:'sweet_berry_bush_stage3',door_bottom:'spruce_door_bottom',door_top:'spruce_door_top',campfire_log:'campfire_log_lit',wheat:'wheat_stage7',carrots:'carrots_stage3',potatoes:'potatoes_stage3',beetroots:'beetroots_stage3'};
+const JAR_TINT={sugar_cane:[145,189,89],melon_stem:[120,180,60],birch_leaves:[128,167,85],dark_oak_leaves:[89,174,48],short_grass:[121,192,90],fern:[104,170,80],vine:[89,174,48],grass_block_top:[121,192,90],oak_leaves:[89,174,48],spruce_leaves:[97,153,97],water_still:[63,118,228]};
+const JAR_SKIP=new Set(['lantern','chest','redstone_dust']); // Laterne ist in Minecraft ein Teilebogen, keine Blockfläche
 async function readJar(file){
   const buf=new Uint8Array(await file.arrayBuffer()),dv=new DataView(buf.buffer);
   let e=buf.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
