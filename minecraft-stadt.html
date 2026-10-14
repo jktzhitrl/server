@@ -51,6 +51,8 @@ button.primary{background:var(--accent);color:var(--accent-ink);border-color:var
 .toggle[aria-pressed="true"]{background:var(--chip);border-color:var(--accent)}
 
 .hint{position:absolute;left:0;bottom:0;z-index:4;padding-block:0 calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));font:12px/1.4 var(--f-body);color:var(--ink);pointer-events:none}
+.tflegend{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:4;max-width:min(340px,calc(100% - 32px));display:flex;flex-direction:column;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:13px/1.35 var(--f-body);color:var(--ink)}
+.tflegend span{display:flex;align-items:center;gap:8px}.tflegend i{width:14px;height:14px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.25)}.tflegend small{color:var(--muted);margin-top:2px}
 .hint span{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 10px;opacity:.92}
 #tip{position:absolute;z-index:6;pointer-events:none;background:var(--ink);color:var(--panel);font:600 12px/1 var(--f-body);padding:6px 8px;border-radius:4px;white-space:nowrap;transform:translate(12px,12px)}
 .labels{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
@@ -128,6 +130,7 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
       <button id="btnList">Gebäude</button>
       <button id="btnNames" class="toggle" aria-pressed="true">Namen</button>
       <button id="btnEve" class="toggle" aria-pressed="false">Abendstimmung</button>
+      <button id="btnTF" class="toggle" aria-pressed="false">Geländearbeiten</button>
       <button id="btnTex">Texturen aus Minecraft laden</button>
       <select id="selPlaster" aria-label="Putz für die Gefache">
         <option value="calcite">Putz: Calcit</option>
@@ -140,6 +143,14 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
   </div>
   <div class="hint"><span>Ziehen: drehen · Rechte Maustaste: verschieben · Mausrad: zoomen · Klick auf ein Gebäude: Bauplan</span></div>
   <div id="tip" hidden></div>
+  <div id="tfLegend" class="tflegend" hidden>
+    <b>Geländearbeiten</b>
+    <span><i style="background:#3f8cff"></i>Wasser zuschütten, Land aufschütten</span>
+    <span><i style="background:#f24d33"></i>ausheben (Burggraben)</span>
+    <span><i style="background:#ffd633"></i>einebnen (Burgplateau, Markt, Tore, Höfe)</span>
+    <span><i style="background:#f2f2f2"></i>Bauplatz eines Gebäudes</span>
+    <small>Maus über das Gelände: Koordinaten und Bodenhöhe laut Plan. Die Höhen sind aus der Karte geschätzt, vor Ort mit F3 vergleichen.</small>
+  </div>
   <aside class="panel" id="panel" hidden>
     <div class="panel-head">
       <div><h2 id="pTitle"></h2><div class="sub" id="pSub"></div></div>
@@ -571,6 +582,7 @@ const MASK=new Uint8Array(WX*WZ);
 const Hm=new Int16Array(WX*WZ);
 const moat=new Uint8Array(WX*WZ);
 const SEA=new Uint8Array(WX*WZ),ROCK=new Uint8Array(WX*WZ),SAND=new Uint8Array(WX*WZ),FOREST=new Uint8Array(WX*WZ);
+const LEVEL=new Uint8Array(WX*WZ); // Flächen, die eben sein müssen (Geländearbeiten)
 const hAtW=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?-6:Hm[z*WX+x];
 let hAt=hAtW;
 function vnoise(x,z,s,seed){const xi=Math.floor(x/s),zi=Math.floor(z/s),fx=x/s-xi,fz=z/s-zi;const g=(a,b)=>hash3(a,b,seed);const sm=t=>t*t*(3-2*t);const a=g(xi,zi),b=g(xi+1,zi),c=g(xi,zi+1),e=g(xi+1,zi+1);return(a+(b-a)*sm(fx))+((c+(e-c)*sm(fx))-(a+(b-a)*sm(fx)))*sm(fz)}
@@ -642,7 +654,7 @@ const GATE_Y=Math.max(2,Hm[GATE_MAIN[1]*WX+GATE_MAIN[0]]);
 for(const[gx,gz,r,g0]of[[GATE_MAIN[0],GATE_MAIN[1],12,GATE_Y],[240,88,8,GATE_Y],[GATE_HARBOR[0],GATE_HARBOR[1],9,null],[GATE_SMALL[0],GATE_SMALL[1],6,null]]){
   const g=g0!=null?g0:Hm[gz*WX+gx];
   for(let z=gz-r;z<=gz+r;z++)for(let x=gx-r;x<=gx+r;x++){if(x<0||z<0||x>=WX||z>=WZ)continue;const i=z*WX+x;if(SEA[i]||HILL[i])continue;
-    const d=Math.hypot(x-gx,z-gz);if(d>=r)continue;const t=Math.max(0,(d-r*.45)/(r*.55));Hm[i]=Math.round(g+(Hm[i]-g)*t)}
+    const d=Math.hypot(x-gx,z-gz);if(d>=r)continue;const t=Math.max(0,(d-r*.45)/(r*.55));Hm[i]=Math.round(g+(Hm[i]-g)*t);if(t<.3)LEVEL[i]=1}
 }
 const BRIDGE={z0:86,z1:90,y:GATE_Y};
 {let xa=1e9,xb=-1e9;for(let z=BRIDGE.z0;z<=BRIDGE.z1;z++)for(let x=200;x<250;x++)if(SEA[z*WX+x]){xa=Math.min(xa,x);xb=Math.max(xb,x)}BRIDGE.xa=xa-1;BRIDGE.xb=xb+1}
@@ -673,7 +685,7 @@ const MARKET_C=[196,125];
 const PLAZA_Y=Hm[MARKET_C[1]*WX+MARKET_C[0]];
 {let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;MARKET.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
 for(let z=z0-8;z<=z1+8;z++)for(let x=x0-8;x<=x1+8;x++){
-  const i=z*WX+x;if(SEA[i]||HILL[i])continue;if(inPoly(x+.5,z+.5,MARKET)){Hm[i]=PLAZA_Y;continue}
+  const i=z*WX+x;if(SEA[i]||HILL[i])continue;if(inPoly(x+.5,z+.5,MARKET)){Hm[i]=PLAZA_Y;LEVEL[i]=1;continue}
   const d=polyDist(x+.5,z+.5,MARKET.concat([MARKET[0]]));if(d<7)Hm[i]=Math.round(PLAZA_Y+(Hm[i]-PLAZA_Y)*d/7);
 }}
 const streetCell=new Map(); // Index -> Blockart
@@ -1231,31 +1243,6 @@ const fieldIdx=new Set();
 function buildFields(){
   const m=new Model(),R=mulberry32(707),CROPS=['wheat','wheat','wheat','carrots','potatoes','beetroots','wheat'];
   const setGround=(x,z,b)=>{const i=z*WX+x,y=hAt(x,z);streetCell.set(i,b);fieldIdx.add(i);occ[i]=8;m.set(x,y-1,z,b)};
-  // Felder als runde, unregelmäßige Flächen vor der Mauer (Rauschen statt Rechtecke)
-  const isF=new Uint8Array(WX*WZ);let cells=0;
-  const okCell=(x,z)=>{if(x<1||z<1||x>=WX-1||z>=WZ-1)return false;const i=z*WX+x;return occ[i]===6&&!SAND[i]&&!SEA[i]&&!ROCK[i]&&!HILL[i]&&!FOREST[i]&&!EAST[i]};
-  for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){
-    if(!okCell(x,z))continue;
-    const f=vnoise(x,z,16,41)*.75+vnoise(x,z,6,42)*.25;if(f<.6)continue;
-    if(polyDist(x+.5,z+.5,WALL)<10)continue;
-    let nearStreet=false;for(let a=-2;a<=2&&!nearStreet;a++)for(let c=-2;c<=2;c++){const o=oAt(x+a,z+c);if(o===1||o===2||o===9){nearStreet=true;break}}
-    if(nearStreet)continue;
-    isF[z*WX+x]=1;
-  }
-  for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){const i=z*WX+x;if(!isF[i])continue;cells++;
-    if(x%8===4&&z%8===4){setGround(x,z,'water');continue}
-    setGround(x,z,'farmland');const y=hAt(x,z);
-    if(hash3(x,3,z)<.004){m.set(x,y,z,'spruce_fence');m.set(x,y+1,z,'hay_block');m.set(x,y+2,z,'pumpkin');continue}
-    m.set(x,y,z,CROPS[Math.floor(vnoise(x,z,20,43)*CROPS.length)]);
-  }
-  // Ränder: Hecken aus Laub, dazwischen Zaunstücke und Lücken
-  for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){const i=z*WX+x;if(isF[i]||!okCell(x,z)||occ[i]!==6)continue;
-    let edge=false;for(const[a,c]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])if(isF[(z+c)*WX+x+a]){edge=true;break}
-    if(!edge)continue;const y=hAt(x,z),n=vnoise(x,z,7,45),h=hash3(x,9,z);
-    if(n>.62)m.set(x,y,z,'spruce_fence');else if(n>.2&&h>.08){m.set(x,y,z,h<.5?'oak_leaves':'birch_leaves');if(h<.15)m.set(x,y+1,z,'oak_leaves')}
-    else if(h<.04)m.set(x,y,z,'hay_block');
-    occ[i]=8;
-  }
   // Gemüsegärten in den Hinterhöfen
   let gardens=0;
   for(let gz=60;gz<WZ&&gardens<30;gz+=7)for(let gx=10;gx<WX&&gardens<30;gx+=7){
@@ -1267,9 +1254,9 @@ function buildFields(){
     for(let x=x0-1;x<=x0+W;x++)for(const z of[z0-1,z0+D]){m.set(x,g0,z,'spruce_fence');oSet(x,z,8)}
     for(let z=z0;z<z0+D;z++)for(const x of[x0-1,x0+W]){if(z===z0+(D>>1)&&x===x0-1)continue;m.set(x,g0,z,'spruce_fence');oSet(x,z,8)}
   }
-  addBuilding({name:'Felder & Gärten',group:'Felder',kind:'deco',voxels:placeModel(m,0,0,0,0),pickable:false,farm:'Weizen für die Windmühle',
-    desc:`Rund geschwungene Felder auf den Wiesen der Insel (${cells} Ackerblöcke) mit Hecken und Zaunstücken als Rand, dazu ${gardens} kleine Gemüsegärten in den Hinterhöfen.`,
-    steps:['Feldform frei und rund abstecken, gern dem Gelände folgend.','Alle 8 Blöcke in beide Richtungen einen Block Wasser setzen: Wasser bewässert 4 Blöcke in jede Richtung, so bleibt der ganze Acker feucht.','Erde mit der Hacke zu Ackerboden machen und Weizen, Karotten, Kartoffeln oder Rote Bete in Flecken pflanzen.','Rand: Laubhecken (mit der Schere abgebautes Laub verfällt nicht), dazwischen kurze Zaunstücke und Lücken als Durchgang.','Vogelscheuche: Zaun, darauf Heuballen und Kürbis.','Gärten in den Höfen: 5 × 3 oder 3 × 5 Beet mit einem Wasserblock in der Mitte und Zaun rundherum.']});
+  addBuilding({name:'Gemüsegärten',group:'Felder',kind:'deco',voxels:placeModel(m,0,0,0,0),pickable:false,
+    desc:`${gardens} kleine Gemüsegärten in den Hinterhöfen der Stadt.`,
+    steps:['Beet 5 × 3 oder 3 × 5 abstecken, in die Mitte einen Wasserblock.','Erde mit der Hacke zu Ackerboden machen, Karotten, Kartoffeln, Rote Bete oder Weizen pflanzen.','Zaun rundherum, eine Lücke als Eingang.']});
 }
 
 // ---------- Hafen ----------
@@ -1466,7 +1453,7 @@ function footprint(b){
   return{base,x0,x1,z0,z1};
 }
 function groundRepl(F,x,z,b){const i=z*WX+x;streetCell.set(i,b);fieldIdx.add(i);occ[i]=8;F.set(x,hAt(x,z)-1,z,b)}
-function flatten(x0,z0,x1,z1,g){for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++)if(x>=0&&z>=0&&x<WX&&z<WZ)Hm[z*WX+x]=g}
+function flatten(x0,z0,x1,z1,g){for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++)if(x>=0&&z>=0&&x<WX&&z<WZ){Hm[z*WX+x]=g;LEVEL[z*WX+x]=1}}
 function markRect(x0,z0,x1,z1,code=8){for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++)oSet(x,z,code)}
 function findFreeRect(cx,cz,w,d,codes,maxR,maxSlope=2){
   for(let rr=0;rr<=maxR;rr++)for(let dz=-rr;dz<=rr;dz++)for(let dx=-rr;dx<=rr;dx++){
@@ -1736,7 +1723,7 @@ function buildMill(){
   for(let k=2;k<=6;k++){m.set(cx+1,g+11+k,zs,'white_wool');m.set(cx-1,g+11-k,zs,'white_wool');m.set(cx+k,g+10,zs,'white_wool');m.set(cx-k,g+12,zs,'white_wool')}
   m.set(cx,g,bz1+1,'stone_brick_stairs',{f:0,h:0});
   const b=addBuilding({name:'Windmühle',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(m,0,0,0,0),label:true,farm:'Weizen',
-    desc:'Windmühle vor der Stadt bei den Weizenfeldern: Steinsockel 9 × 9, darüber ein Holzturm mit Fichtenhelm und Fahne, vier Flügel aus Zäunen mit weißen Wollsegeln.',
+    desc:'Windmühle vor der Stadt: Steinsockel 9 × 9, darüber ein Holzturm mit Fichtenhelm und Fahne, vier Flügel aus Zäunen mit weißen Wollsegeln.',
     steps:['Steinsockel 9 × 9, 7 hoch, aus Bruchstein mit Steinziegeln, Tür nach Süden.','Holzstockwerk 7 × 7 darauf, 6 hoch, Ecken und obere Kante aus entrindeten Schwarzeichenstämmen, Wände aus Fichtenholzbrettern.','Helm aus Fichtenholz: Treppenring mit Überstand, dann pro Ring einen Block nach innen und zwei höher. Oben eine Fahne.','Flügel: Achse aus zwei liegenden Stämmen an der Südseite. Vier Arme aus je 6 Zäunen, an jedem Arm 5 weiße Wolle als Segel, alle in die gleiche Drehrichtung versetzt.']});
   return{b,bx0,bz0,bx1,bz1,g,door:[cx,bz1+2]};
 }
@@ -1744,7 +1731,7 @@ function farmMill(mill){
   if(!mill)return;const F=new Model(),C=new Set();
   const r=flushFarm(F,C,mill.bx0+1,mill.bz0+1,mill.bx1-1,mill.bz1-1,mill.g,['wheat','wheat']);
   addFarm(mill.b,{name:'Windmühle: Weizenkeller',short:'Weizen',voxels:placeModel(F,0,0,0,0),carve:C,out:r,link:true,auto:'halbautomatisch (Knopf)',
-    desc:'Unter der Mühle wächst Weizen im Keller unter Laternenlicht. Ein Knopf spült die Ernte in die Trichterrinne. Dazu kommen die großen Weizenfelder rund um die Mühle.',
+    desc:'Unter der Mühle wächst Weizen im Keller unter Laternenlicht. Ein Knopf spült die Ernte in die Trichterrinne.',
     steps:flushSteps('Weizen',r).concat(['Die Truhe ist mit der Lorenbahn zum Lagerhaus verbunden.']),
     extras:[{n:'Wassereimer',c:r.rows},{n:'Weizenkörner',c:r.rows*r.len}]});
 }
@@ -2189,9 +2176,9 @@ function initThree(){
   renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
   scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(50,1,.5,3000);
+  camera=new THREE.PerspectiveCamera(50,1,.1,2000);
   controls=new THREE.OrbitControls(camera,cv);
-  controls.enableDamping=true;controls.dampingFactor=.12;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=8;controls.maxDistance=520;controls.screenSpacePanning=false;
+  controls.enableDamping=true;controls.dampingFactor=.12;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=1.5;controls.maxDistance=520;controls.screenSpacePanning=false;
   world=new THREE.Group();world.position.set(-WX/2,0,-WZ/2);scene.add(world);
   atlasTex=new THREE.CanvasTexture(atlas);atlasTex.magFilter=THREE.NearestFilter;atlasTex.minFilter=THREE.NearestFilter;atlasTex.generateMipmaps=false;
   matO=new THREE.MeshBasicMaterial({map:atlasTex,vertexColors:true,alphaTest:.5});
@@ -2280,6 +2267,39 @@ function setXray(b){
 }
 function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.glow||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
 
+// ---------- Geländearbeiten ----------
+let tfMesh=null,tfOn=false;const FOOT=new Uint8Array(WX*WZ);
+const TF_TXT={1:'Wasser zuschütten, Land aufschütten',2:'ausheben (Burggraben)',3:'einebnen',4:'Bauplatz eines Gebäudes'};
+const TF_COL={1:[.25,.55,1],2:[.95,.3,.2],3:[1,.84,.2],4:[.95,.95,.95]};
+function tfKind(i){if(moat[i])return 2;if(!SEA[i]&&MASK[i]===0)return 1;if(LEVEL[i]||(HILL[i]&&Hm[i]===PLAT))return 3;if(FOOT[i])return 4;return 0}
+function buildTF(){
+  for(const b of buildings){if(['deco','street','water','wall','farm','harbor'].includes(b.kind))continue;
+    for(const v of b.voxels)if(v.x>=0&&v.z>=0&&v.x<WX&&v.z<WZ&&v.y<=hAt(v.x,v.z)+1&&v.y>=hAt(v.x,v.z)-1)FOOT[v.z*WX+v.x]=1}
+  const pos=[],col=[];
+  for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){const i=z*WX+x,k=tfKind(i);if(!k)continue;
+    const y=Hm[i]+.04,c=TF_COL[k];
+    pos.push(x,y,z, x,y,z+1, x+1,y,z, x+1,y,z, x,y,z+1, x+1,y,z+1);for(let n=0;n<6;n++)col.push(c[0],c[1],c[2])}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  tfMesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.6,depthWrite:false,side:THREE.DoubleSide}));
+  tfMesh.renderOrder=2;world.add(tfMesh);
+}
+function setTF(on){
+  tfOn=on;if(on&&!tfMesh)buildTF();if(tfMesh)tfMesh.visible=on;
+  if(on&&selected)closePanel();
+  if(terrainMesh)terrainMesh.visible=true;if(seaMesh)seaMesh.visible=true;
+  for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=!on||b.kind==='street');
+  if(glowPoints)glowPoints.visible=evening&&!on;if(smoke)smoke.pts.visible=!on;
+  document.getElementById('tfLegend').hidden=!on;document.getElementById('labels').hidden=on;
+  document.getElementById('btnTF').setAttribute('aria-pressed',on);
+}
+// Gelände unter der Maus: Strahl in kleinen Schritten über das Höhenraster laufen lassen
+function groundAt(){
+  const o=ray.ray.origin,d=ray.ray.direction;
+  for(let t=0;t<1200;t+=.2){const x=o.x+d.x*t+WX/2,y=o.y+d.y*t,z=o.z+d.z*t+WZ/2,xi=Math.floor(x),zi=Math.floor(z);
+    if(xi<0||zi<0||xi>=WX||zi>=WZ)continue;const i=zi*WX+xi,top=SEA[i]?0:Hm[i];if(y<=top)return{x:xi,z:zi,i,top}}
+  return null;
+}
+
 // ---------- Interaktion ----------
 const ray=new THREE.Raycaster();const mouse=new THREE.Vector2();
 let hovered=null,selected=null,layerMode=false;
@@ -2293,17 +2313,21 @@ function pick(ev){
 }
 function onMove(ev){
   if(ev.buttons)return;
-  const b=pick(ev);const tip=document.getElementById('tip');
+  const b=tfOn?null:pick(ev);const tip=document.getElementById('tip');
   if(b!==hovered){if(hovered&&hovered!==selected)setBuildingMat(hovered,null);hovered=b;if(b&&b!==selected)setBuildingMat(b,matHover)}
   document.getElementById('view').classList.toggle('hover',!!b);
-  if(b){tip.hidden=false;tip.textContent=b.name+(b.farm?' · '+b.farm:'');tip.style.left=ev.clientX+'px';tip.style.top=ev.clientY+'px'}else tip.hidden=true;
+  if(b){tip.hidden=false;tip.textContent=b.name+(b.farm?' · '+b.farm:'');tip.style.left=ev.clientX+'px';tip.style.top=ev.clientY+'px'}
+  else if(tfOn){const g=groundAt();if(!g){tip.hidden=true;return}const k=tfKind(g.i);
+    tip.hidden=false;tip.style.left=ev.clientX+'px';tip.style.top=ev.clientY+'px';
+    tip.textContent=`X ${mcX(g.x)} · Z ${mcZ(g.z)} · `+(SEA[g.i]?'Wasser':`Boden Y ${mcY(g.top-1)}`)+(k?' · '+TF_TXT[k]:'')+(moat[g.i]?` (${PLAT-Hm[g.i]} tief, danach Wasser bis Y ${mcY(PLAT-1)})`:'')}
+  else tip.hidden=true;
 }
 let downAt=null;
 function initInput(){
   const cv=renderer.domElement;
   cv.addEventListener('pointermove',onMove);
   cv.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY]});
-  cv.addEventListener('pointerup',e=>{if(!downAt)return;const d=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(d>6)return;const b=pick(e);if(b)select(b)});
+  cv.addEventListener('pointerup',e=>{if(!downAt)return;const d=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(d>6||tfOn)return;const b=pick(e);if(b)select(b)});
   cv.addEventListener('pointerleave',()=>{document.getElementById('tip').hidden=true});
 }
 let tween=null;
@@ -2368,6 +2392,7 @@ function openPanel(title,sub,tabs,render){
   render();
 }
 function select(b){
+  if(tfOn)setTF(false);
   if(selected&&selected!==b){setBuildingMat(selected,null);exitLayerMode()}
   selected=b;setBuildingMat(b,matSel);setXray(b);
   if(!['mat','guide','farm'].includes(currentTab))currentTab='mat';
@@ -2611,6 +2636,7 @@ function start(){
   restoreJarTex();
   document.getElementById('pClose').onclick=closePanel;
   const be=document.getElementById('btnEve');be.onclick=()=>{setEvening(!evening);be.setAttribute('aria-pressed',evening)};
+  document.getElementById('btnTF').onclick=()=>setTF(!tfOn);
   const bn=document.getElementById('btnNames');bn.onclick=()=>{showNames=!showNames;bn.setAttribute('aria-pressed',showNames)};
   const sp=document.getElementById('selPlaster');sp.value=plasterChoice;
   sp.onchange=e=>{plasterChoice=e.target.value;try{localStorage.setItem('burgstadt-putz',plasterChoice)}catch(_){}applyAtlas();if(!panel.hidden){if(selected)select(selected);else if(currentTab==='tot'||currentTab==='by')showTotal()}};
