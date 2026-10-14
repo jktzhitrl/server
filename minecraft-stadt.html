@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Burgstadt-Bauplan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 3D-Stadt füllt den Bildschirm, darüber eine schmale Werkzeugleiste und rechts (Handy: unten) ein Bauplan-Panel wie ein Blatt Blaupause. */
+:root{
+  --ink:#14233a;        /* Schrift */
+  --muted:#5a6b82;      /* Nebentext */
+  --paper:#e9f0f8;      /* Seitengrund */
+  --panel:#f7faff;      /* Panelfläche */
+  --line:#c8d5e6;       /* Raster & Linien */
+  --accent:#b25f12;     /* Laternen-Kupfer */
+  --accent-ink:#ffffff;
+  --chip:#dfe8f3;
+  --sky:#a8cff0;        /* Himmel in 3D */
+  --shadow:0 10px 30px rgba(20,35,58,.18);
+  --f-display:"Pixelify Sans","Courier New",monospace;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ink:#dbe6f3;--muted:#8fa3bd;--paper:#0a1320;--panel:#0f1b2c;--line:#22344c;--accent:#f0a845;--accent-ink:#1b1206;--chip:#18283e;--sky:#1e2d47;--shadow:0 10px 30px rgba(0,0,0,.5);color-scheme:dark}}
+:root[data-theme="dark"]{--ink:#dbe6f3;--muted:#8fa3bd;--paper:#0a1320;--panel:#0f1b2c;--line:#22344c;--accent:#f0a845;--accent-ink:#1b1206;--chip:#18283e;--sky:#1e2d47;--shadow:0 10px 30px rgba(0,0,0,.5);color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.45 var(--f-body);overflow:hidden}
+#app{position:relative;height:100%;overflow:hidden}
+#view{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#view.hover{cursor:pointer}
+
+.bar{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding-block:calc(10px + env(safe-area-inset-top,0px)) 10px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));pointer-events:none}
+.bar>*{pointer-events:auto}
+.brand{display:flex;align-items:baseline;gap:10px;background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:6px;box-shadow:var(--shadow)}
+.brand h1{font:700 19px/1 var(--f-display);margin:0;letter-spacing:.02em}
+.brand .stage{font:600 11px/1 var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+button,.btn,select{font:600 13px/1 var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:9px 12px;cursor:pointer;box-shadow:var(--shadow)}
+button:hover,select:hover{border-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.toggle[aria-pressed="true"]{background:var(--chip);border-color:var(--accent)}
+
+.hint{position:absolute;left:0;bottom:0;z-index:4;padding-block:0 calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));font:12px/1.4 var(--f-body);color:var(--ink);pointer-events:none}
+.hint span{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 10px;opacity:.92}
+#tip{position:absolute;z-index:6;pointer-events:none;background:var(--ink);color:var(--panel);font:600 12px/1 var(--f-body);padding:6px 8px;border-radius:4px;white-space:nowrap;transform:translate(12px,12px)}
+.labels{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.lbl{position:absolute;transform:translate(-50%,-100%);font:600 12px/1 var(--f-display);color:#fff;background:rgba(20,35,58,.78);padding:4px 6px;border-radius:3px;white-space:nowrap}
+.lbl.farm::before{content:"";display:inline-block;width:7px;height:7px;margin-right:5px;background:#f0a845;border-radius:1px}
+
+/* Panel */
+.panel{position:absolute;z-index:7;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;padding-block:calc(12px + env(safe-area-inset-top,0px)) env(safe-area-inset-bottom,0px);
+  padding-right:env(safe-area-inset-right,0px)}
+.panel-head{display:flex;gap:10px;align-items:flex-start;padding:4px 18px 10px}
+.panel-head h2{font:700 22px/1.1 var(--f-display);margin:0;text-wrap:balance}
+.panel-head .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.panel-head .x{margin-left:auto;box-shadow:none;padding:8px 11px}
+.tabs{display:flex;gap:4px;padding:0 18px;border-bottom:1px solid var(--line)}
+.tabs button{box-shadow:none;border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:10px 8px;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.panel-body{flex:1;overflow:auto;padding:14px 18px 24px;min-width:0}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.facts div{background:var(--chip);border-radius:6px;padding:8px 10px}
+.facts b{display:block;font:600 16px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
+.facts small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.note{background:var(--chip);border-left:3px solid var(--accent);padding:9px 12px;border-radius:4px;font-size:13.5px;margin:0 0 14px}
+.desc{margin:0 0 14px;max-width:65ch}
+
+table.mats{width:100%;border-collapse:collapse;font-size:13.5px}
+table.mats th{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+table.mats td{padding:6px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.mats .num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+table.mats code{font:11px/1.2 var(--f-mono);color:var(--muted)}
+table.mats tfoot td{font-weight:700;border-bottom:0}
+.sw{width:22px;height:22px;image-rendering:pixelated;display:block;border-radius:2px;box-shadow:0 0 0 1px var(--line)}
+.tablewrap{overflow-x:auto}
+
+ol.steps{padding-left:22px;margin:0 0 18px}
+ol.steps li{margin-bottom:8px;max-width:65ch}
+h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
+.layerbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.layerbar input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
+.layerbar .lnum{font:600 13px/1 var(--f-mono);min-width:96px;text-align:right;font-variant-numeric:tabular-nums}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0 10px}
+.planwrap{overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--paper);max-height:440px}
+#plan{display:block;image-rendering:pixelated}
+.plancap{font:12px/1.4 var(--f-mono);color:var(--muted);min-height:18px;margin:6px 0 10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:4px 0 12px}
+.legend i{font-style:normal;font-family:var(--f-mono);color:var(--ink)}
+.blist{display:grid;gap:4px}
+.blist button{display:flex;justify-content:space-between;gap:12px;text-align:left;box-shadow:none;font-weight:400;width:100%}
+.blist button span:last-child{font-family:var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.group-h{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 6px}
+.farmtag{display:inline-block;font:600 11px/1 var(--f-body);background:var(--accent);color:var(--accent-ink);padding:4px 6px;border-radius:3px;margin-left:6px;vertical-align:middle}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+#loading{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:var(--paper);font:700 18px var(--f-display)}
+
+@media (max-width:720px){
+  .panel{top:auto;width:100%;height:64%;border-left:0;border-top:1px solid var(--line);border-radius:12px 12px 0 0;padding-left:env(safe-area-inset-left,0px)}
+  .brand h1{font-size:16px}
+  .hint{display:none}
+  .facts{grid-template-columns:repeat(2,1fr)}
+  table.mats td.st{font-size:12px}
+  table.mats{font-size:13px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="view" aria-label="3D-Ansicht der Stadt"></canvas>
+  <div class="labels" id="labels"></div>
+  <div class="bar">
+    <div class="brand"><h1>Burgstadt-Bauplan</h1><span class="stage">Java 1.21 · Etappe 1</span></div>
+    <div class="tools">
+      <button id="btnTotal" class="primary">Gesamt-Materialliste</button>
+      <button id="btnList">Gebäude</button>
+      <button id="btnNames" class="toggle" aria-pressed="true">Namen</button>
+      <select id="selPlaster" aria-label="Putz für die Gefache">
+        <option value="white_terracotta">Putz: Weiße Keramik</option>
+        <option value="calcite">Putz: Calcit (Survival)</option>
+        <option value="diorite">Putz: Diorit (Survival)</option>
+      </select>
+    </div>
+  </div>
+  <div class="hint"><span>Ziehen: drehen · Rechte Maustaste: verschieben · Mausrad: zoomen · Klick auf ein Gebäude: Bauplan</span></div>
+  <div id="tip" hidden></div>
+  <aside class="panel" id="panel" hidden>
+    <div class="panel-head">
+      <div><h2 id="pTitle"></h2><div class="sub" id="pSub"></div></div>
+      <button class="x" id="pClose" aria-label="Panel schließen">✕</button>
+    </div>
+    <div class="tabs" id="pTabs" role="tablist"></div>
+    <div class="panel-body" id="pBody"></div>
+  </aside>
+  <div id="loading">Stadt wird gebaut …</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+'use strict';
+/* =====================================================================
+   Burgstadt-Bauplan – Etappe 1
+   Alle Gebäude werden als Blockmodelle erzeugt. Die 3D-Ansicht, die
+   Materiallisten und die Schichtpläne lesen dieselben Blockdaten.
+   Koordinaten wie in Minecraft: x = Osten, y = oben, z = Süden.
+   ===================================================================== */
+
+// ---------- Hilfsfunktionen ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash3(x,y,z){let h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263)+Math.imul(z|0,2147483647);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+const K=(x,y,z)=>((y+64)*1024+(x+256))*1024+(z+256);
+const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];            // N O S W
+const DIR_DE=['Norden','Osten','Süden','Westen'];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function rotP(x,z,r){switch(r&3){case 0:return[x,z];case 1:return[-z,x];case 2:return[-x,-z];default:return[z,-x]}}
+function dirIndex(dx,dz){if(Math.abs(dx)>=Math.abs(dz))return dx>=0?1:3;return dz>=0?2:0}
+
+// ---------- Blöcke (deutsche Namen wie im Spiel) ----------
+const PLASTER={white_terracotta:'Weiße Keramik',calcite:'Calcit',diorite:'Diorit'};
+let plasterChoice='white_terracotta';
+const BLOCKS={
+  plaster:{shape:'cube',tex:'plaster',cat:'Putz'},
+  stripped_dark_oak_log:{de:'Entrindeter Schwarzeichenstamm',shape:'log',tex:{end:'stripped_dark_oak_log_top',side:'stripped_dark_oak_log'},cat:'Holz'},
+  spruce_planks:{de:'Fichtenholzbretter',shape:'cube',tex:'spruce_planks',cat:'Holz'},
+  dark_oak_planks:{de:'Schwarzeichenholzbretter',shape:'cube',tex:'dark_oak_planks',cat:'Holz'},
+  spruce_stairs:{de:'Fichtenholztreppe',shape:'stairs',tex:'spruce_planks',cat:'Dach'},
+  dark_oak_stairs:{de:'Schwarzeichenholztreppe',shape:'stairs',tex:'dark_oak_planks',cat:'Dach'},
+  spruce_slab:{de:'Fichtenholzstufe',shape:'slab',tex:'spruce_planks',cat:'Dach'},
+  dark_oak_slab:{de:'Schwarzeichenholzstufe',shape:'slab',tex:'dark_oak_planks',cat:'Dach'},
+  stone_bricks:{de:'Steinziegel',shape:'cube',tex:'stone_bricks',cat:'Stein'},
+  mossy_stone_bricks:{de:'Bemooste Steinziegel',shape:'cube',tex:'mossy_stone_bricks',cat:'Stein'},
+  cracked_stone_bricks:{de:'Rissige Steinziegel',shape:'cube',tex:'cracked_stone_bricks',cat:'Stein'},
+  stone_brick_stairs:{de:'Steinziegeltreppe',shape:'stairs',tex:'stone_bricks',cat:'Stein'},
+  stone_brick_slab:{de:'Steinziegelstufe',shape:'slab',tex:'stone_bricks',cat:'Stein'},
+  stone_brick_wall:{de:'Steinziegelmauer',shape:'wall',tex:'stone_bricks',cat:'Stein'},
+  cobblestone:{de:'Bruchstein',shape:'cube',tex:'cobblestone',cat:'Stein'},
+  mossy_cobblestone:{de:'Bemooster Bruchstein',shape:'cube',tex:'mossy_cobblestone',cat:'Stein'},
+  stone:{de:'Stein',shape:'cube',tex:'stone',cat:'Stein'},
+  andesite:{de:'Andesit',shape:'cube',tex:'andesite',cat:'Stein'},
+  smooth_stone_slab:{de:'Glatte Steinstufe',shape:'slab',tex:'smooth_stone',cat:'Stein'},
+  bricks:{de:'Ziegelsteine',shape:'cube',tex:'bricks',cat:'Stein'},
+  gravel:{de:'Kies',shape:'cube',tex:'gravel',cat:'Wege'},
+  dirt_path:{de:'Trampelpfad',shape:'path',tex:{top:'dirt_path_top',side:'dirt_path_side',bottom:'dirt'},cat:'Wege',note:'Gras mit der Schaufel bearbeiten'},
+  glass_pane:{de:'Glasscheibe',shape:'pane',tex:'glass',cat:'Details'},
+  iron_bars:{de:'Eisengitter',shape:'pane',tex:'iron_bars',cat:'Details'},
+  spruce_trapdoor:{de:'Fichtenholzfalltür',shape:'trapdoor',tex:'spruce_trapdoor',cat:'Details'},
+  spruce_door:{de:'Fichtenholztür',shape:'door',tex:'door',cat:'Details',countHalf:true},
+  spruce_fence:{de:'Fichtenholzzaun',shape:'fence',tex:'spruce_planks',cat:'Details'},
+  lantern:{de:'Laterne',shape:'lantern',tex:'lantern',cat:'Details'},
+  campfire:{de:'Lagerfeuer',shape:'campfire',tex:'campfire_log',cat:'Details'},
+  ladder:{de:'Leiter',shape:'ladder',tex:'ladder',cat:'Details'},
+  barrel:{de:'Fass',shape:'cube',tex:{top:'barrel_top',bottom:'barrel_top',side:'barrel_side'},cat:'Details'},
+  hay_block:{de:'Heuballen',shape:'cube',tex:{top:'hay_block_top',bottom:'hay_block_top',side:'hay_block_side'},cat:'Details'},
+  water:{de:'Wasser',shape:'water',tex:'water_still',cat:'Wasser',transparent:true,note:'Quellblöcke – mit Eimern füllen (unendliche Quelle aus 2 Eimern)'}
+};
+const blockName=b=>b==='plaster'?PLASTER[plasterChoice]:BLOCKS[b].de;
+const blockId=b=>'minecraft:'+(b==='plaster'?plasterChoice:b);
+const FULL=new Set(Object.keys(BLOCKS).filter(k=>['cube','log'].includes(BLOCKS[k].shape)));
+
+// ---------- Texturen im Minecraft-Stil (nachgebaut, 16×16) ----------
+const TILE_KEYS=['plaster','stripped_dark_oak_log','stripped_dark_oak_log_top','spruce_planks','dark_oak_planks','stone_bricks','mossy_stone_bricks','cracked_stone_bricks','cobblestone','mossy_cobblestone','stone','andesite','smooth_stone','bricks','gravel','dirt_path_top','dirt_path_side','dirt','grass_block_top','grass_block_side','glass','iron_bars','spruce_trapdoor','door_bottom','door_top','lantern','campfire_log','ladder','barrel_top','barrel_side','hay_block_top','hay_block_side','water_still'];
+const ATL_COLS=8, ATL_ROWS=Math.ceil(TILE_KEYS.length/ATL_COLS);
+const TILE={}; TILE_KEYS.forEach((k,i)=>TILE[k]={c:i%ATL_COLS,r:Math.floor(i/ATL_COLS)});
+const atlas=document.createElement('canvas'); atlas.width=ATL_COLS*16; atlas.height=ATL_ROWS*16;
+const actx=atlas.getContext('2d');
+
+function texPainter(key){
+  const R=mulberry32(key.split('').reduce((a,c)=>a*31+c.charCodeAt(0)|0,7));
+  const img=actx.createImageData(16,16), d=img.data;
+  const put=(x,y,c,a=255)=>{const i=(y*16+x)*4;d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=a};
+  const mul=(c,f)=>[Math.max(0,Math.min(255,c[0]*f)),Math.max(0,Math.min(255,c[1]*f)),Math.max(0,Math.min(255,c[2]*f))];
+  const noise=(c,amp)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul(c,1+(R()-.5)*amp))};
+  const planks=(c)=>{for(let y=0;y<16;y++){const row=y>>2,off=(row*7)%16;for(let x=0;x<16;x++){let f=1+(R()-.5)*.12+Math.sin((x+row*3)*.9)*.04;if(y%4===3)f=.68;else if((x+off)%16===0)f=.74;put(x,y,mul(c,f))}}};
+  const stoneBricks=(c)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++){const row=y>>3,yy=y%8,off=row?4:0;let f=1+(R()-.5)*.16;if(yy===7||((x+off)%8===7))f=.62;else if(yy===0||((x+off)%8===0))f=1.12;put(x,y,mul(c,f))}};
+  const bricks=(c)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++){const row=y>>2,off=row%2?4:0;let col=mul(c,1+(R()-.5)*.18);if(y%4===3||(x+off)%8===7)col=[178,170,160];put(x,y,col)}};
+  const cobble=(c,moss)=>{const pts=[];for(let i=0;i<11;i++)pts.push([R()*16,R()*16,.75+R()*.45]);for(let y=0;y<16;y++)for(let x=0;x<16;x++){let a=1e9,b=1e9,ia=0;pts.forEach((p,i)=>{for(const ox of[-16,0,16])for(const oy of[-16,0,16]){const dd=(x-p[0]-ox)**2+(y-p[1]-oy)**2;if(dd<a){b=a;a=dd;ia=i}else if(dd<b)b=dd}});let col=mul(c,pts[ia][2]*(1+(R()-.5)*.1));if(Math.sqrt(b)-Math.sqrt(a)<1.1)col=mul(c,.45);if(moss&&hash3(x>>1,y>>1,ia)<.33)col=mul([86,118,52],.9+R()*.25);put(x,y,col)}};
+  switch(key){
+    case 'plaster':{const base={white_terracotta:[209,178,161],calcite:[223,224,220],diorite:[190,190,192]}[plasterChoice];
+      for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul(base,1+(R()-.5)*(plasterChoice==='white_terracotta'?.07:.1));if(plasterChoice==='diorite'&&R()<.18)c=mul(base,R()<.5?.55:1.18);if(plasterChoice==='calcite'&&R()<.06)c=mul(base,.8);put(x,y,c)}break}
+    case 'stripped_dark_oak_log':{const cs=[];for(let x=0;x<16;x++)cs.push(1+(R()-.5)*.25);for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([96,74,50],cs[x]*(1+(R()-.5)*.08)));break}
+    case 'stripped_dark_oak_log_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);let f=.95+Math.sin(r*1.9)*.08+(R()-.5)*.06;if(x===0||y===0||x===15||y===15)f=.72;put(x,y,mul([112,88,60],f))}break;
+    case 'spruce_planks':planks([114,84,49]);break;
+    case 'dark_oak_planks':planks([70,46,22]);break;
+    case 'stone_bricks':stoneBricks([122,121,122]);break;
+    case 'mossy_stone_bricks':stoneBricks([118,119,112]);for(let i=0;i<46;i++){const x=R()*16|0,y=R()*16|0;put(x,y,mul([88,112,52],.85+R()*.3))}break;
+    case 'cracked_stone_bricks':{stoneBricks([118,117,118]);let x=3,y=1;for(let i=0;i<20;i++){put(x&15,y&15,[70,70,70]);if(R()<.5)x++;else y++;if(R()<.2)x--}break}
+    case 'cobblestone':cobble([128,127,128],false);break;
+    case 'mossy_cobblestone':cobble([120,120,118],true);break;
+    case 'stone':noise([126,126,126],.22);break;
+    case 'andesite':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let c=mul([136,136,137],1+(R()-.5)*.2);if(R()<.12)c=mul([136,136,137],1.25);put(x,y,c)}break;
+    case 'smooth_stone':for(let y=0;y<16;y++)for(let x=0;x<16;x++){let f=1+(R()-.5)*.05;if(x===0||y===0||x===15||y===15)f=.8;put(x,y,mul([160,160,160],f))}break;
+    case 'bricks':bricks([150,97,83]);break;
+    case 'gravel':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,v<.3?[95,90,88]:v<.6?[136,128,126]:v<.85?[160,152,148]:[115,108,106])}break;
+    case 'dirt':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=R();put(x,y,v<.15?[100,70,46]:v<.85?mul([134,96,67],1+(R()-.5)*.15):[160,120,86])}break;
+    case 'dirt_path_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([148,121,65],1+(R()-.5)*.22));break;
+    case 'dirt_path_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,y<3?mul([148,121,65],1+(R()-.5)*.2):mul([134,96,67],1+(R()-.5)*.2));break;
+    case 'grass_block_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([104,158,64],1+(R()-.5)*.22));break;
+    case 'grass_block_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const edge=3+((x*7)%3===0?1:0);put(x,y,y<edge?mul([104,158,64],1+(R()-.5)*.2):mul([134,96,67],1+(R()-.5)*.2))}break;
+    case 'glass':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x===0||y===0||x===15||y===15;const shine=(x-y===3||x-y===4)&&x>3&&x<11;put(x,y,fr?[208,226,232]:shine?[240,248,250]:[200,225,235],fr?255:shine?200:0)}break;
+    case 'iron_bars':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const bar=x%5===1||x%5===2,rail=y===1||y===14;put(x,y,mul([110,112,114],bar||rail?(x%5===1?1.2:.9):1),bar||rail?255:0)}break;
+    case 'spruce_trapdoor':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||y<2||x>13||y>13;const hole=(x>3&&x<7||x>8&&x<12)&&(y>3&&y<7||y>8&&y<12);put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)*(x%5===0?.8:1)),hole?0:255)}break;
+    case 'door_bottom':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||x>13||y>13;put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)*(x%4===0?.8:1)))};put(12,2,[40,40,40]);put(12,3,[40,40,40]);break;
+    case 'door_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||x>13||y<2;const win=y>3&&y<10&&(x>2&&x<7||x>8&&x<13);put(x,y,mul([104,76,44],fr?.75:(1+(R()-.5)*.14)),win?0:255)}break;
+    case 'lantern':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||x>13||y<3||y>13;put(x,y,fr?[52,56,66]:mul([255,214,120],1+(R()-.5)*.15))}break;
+    case 'campfire_log':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const glow=y>5&&y<10;put(x,y,glow?mul([255,150,40],.8+R()*.4):mul([82,62,40],1+(R()-.5)*.25))}break;
+    case 'ladder':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const rail=x===2||x===3||x===12||x===13,rung=y%4===1&&x>1&&x<14;put(x,y,mul([140,106,62],rail?.85:1),rail||rung?255:0)}break;
+    case 'barrel_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const fr=x<2||y<2||x>13||y>13;put(x,y,fr?[64,64,66]:mul([120,88,52],1+(R()-.5)*.12))}break;
+    case 'barrel_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const band=y===2||y===3||y===12||y===13;put(x,y,band?[70,70,72]:mul([120,88,52],(x%4===0?.78:1)*(1+(R()-.5)*.12)))}break;
+    case 'hay_block_top':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const r=Math.hypot(x-7.5,y-7.5);put(x,y,mul([196,160,40],(r>7?.8:1)*(1+(R()-.5)*.25)))}break;
+    case 'hay_block_side':for(let y=0;y<16;y++)for(let x=0;x<16;x++){const band=y===4||y===11;put(x,y,band?[150,60,40]:mul([196,160,40],1+(R()-.5)*.3))}break;
+    case 'water_still':for(let y=0;y<16;y++)for(let x=0;x<16;x++)put(x,y,mul([52,96,196],1+Math.sin((x+y*.6)*.8)*.07+(R()-.5)*.08));break;
+    default:noise([255,0,255],.2);
+  }
+  return img;
+}
+function paintAtlas(){TILE_KEYS.forEach(k=>{actx.putImageData(texPainter(k),TILE[k].c*16,TILE[k].r*16)})}
+paintAtlas();
+const swatchCache={};
+function swatch(key){
+  if(swatchCache[key])return swatchCache[key];
+  const c=document.createElement('canvas');c.width=c.height=16;const t=TILE[key];
+  c.getContext('2d').drawImage(atlas,t.c*16,t.r*16,16,16,0,0,16,16);
+  return swatchCache[key]=c.toDataURL();
+}
+function iconTile(b){const t=BLOCKS[b].tex;if(typeof t==='string')return t==='door'?'door_bottom':t;return t.side||t.top}
+
+// ---------- Blockmodell ----------
+class Model{
+  constructor(){this.v=new Map()}
+  set(x,y,z,b,st){const k=K(x,y,z);if(!b){this.v.delete(k);return}this.v.set(k,Object.assign({x,y,z,b},st||{}))}
+  get(x,y,z){return this.v.get(K(x,y,z))}
+  setIfEmpty(x,y,z,b,st){if(!this.get(x,y,z))this.set(x,y,z,b,st)}
+  fill(x0,y0,z0,x1,y1,z1,b,st){for(let x=Math.min(x0,x1);x<=Math.max(x0,x1);x++)for(let y=Math.min(y0,y1);y<=Math.max(y0,y1);y++)for(let z=Math.min(z0,z1);z<=Math.max(z0,z1);z++)this.set(x,y,z,typeof b==='function'?b(x,y,z):b,st)}
+  bboxRot(r){let a=[1e9,-1e9,1e9,-1e9];for(const v of this.v.values()){const[p,q]=rotP(v.x,v.z,r);if(p<a[0])a[0]=p;if(p>a[1])a[1]=p;if(q<a[2])a[2]=q;if(q>a[3])a[3]=q}return{minX:a[0],maxX:a[1],minZ:a[2],maxZ:a[3]}}
+}
+function rotState(v,r){
+  const o=Object.assign({},v);
+  if(o.f!=null)o.f=(o.f+r)&3;
+  if(o.a&&o.a!=='y'&&(r&1))o.a=o.a==='x'?'z':'x';
+  return o;
+}
+function placeModel(m,r,ox,oy,oz){
+  const out=[];
+  for(const v of m.v.values()){const[p,q]=rotP(v.x,v.z,r);const w=rotState(v,r);w.x=p+ox;w.y=v.y+oy;w.z=q+oz;out.push(w)}
+  return out;
+}
+const stoneMix=(x,y,z,moss=.14,crack=.12)=>{const h=hash3(x,y,z);return h<moss?'mossy_stone_bricks':h<moss+crack?'cracked_stone_bricks':'stone_bricks'};
+
+// ---------- Fachwerkhaus-Generator ----------
+// Ortskoordinaten: Vorderseite (Traufseite) zeigt nach Norden (-z). Bei gableFront ist der Giebel (Westen) vorne.
+function panelsOf(L){
+  const posts=new Set([0,L-1]);const inner=L-2;if(inner<=0)return{posts,panels:[]};
+  const k=Math.max(1,Math.round((inner+1)/4));const cells=inner-(k-1);const base=Math.floor(cells/k);let extra=cells-base*k;
+  const panels=[];let p=1;
+  for(let i=0;i<k;i++){const len=base+(extra-->0?1:0);panels.push([p,p+len-1]);p+=len;if(i<k-1){posts.add(p);p++}}
+  return{posts,panels};
+}
+function genHouse(o){
+  const m=new Model(),R=mulberry32(o.seed||1);
+  const w=o.w,d=o.d,F=o.floors;
+  const roofS=o.roof+'_stairs',roofSl=o.roof+'_slab';
+  const ov=i=>o.over?Math.min(i,2):0;
+  const rects=[];for(let i=0;i<F;i++)rects.push({z0:-ov(i),z1:d-1+ov(i)});
+  const frontSide=o.gableFront?3:0;
+  const meta={doorX:0,doorZ:0,front:frontSide,postsX:null};
+  // Sockel
+  for(let x=0;x<w;x++)for(let z=0;z<d;z++){const per=x===0||z===0||x===w-1||z===d-1;m.set(x,0,z,per?(o.stoneGround?stoneMix(x,0,z,.25,.1):'stone_bricks'):'spruce_planks')}
+  for(let i=0;i<F;i++){
+    const r=rects[i],yb=1+4*i,stone=o.stoneGround&&i===0;
+    const sides=[
+      {dir:0,len:w,cell:j=>[j,r.z0],axis:'x'},
+      {dir:2,len:w,cell:j=>[j,r.z1],axis:'x'},
+      {dir:3,len:r.z1-r.z0+1,cell:j=>[0,r.z0+j],axis:'z'},
+      {dir:1,len:r.z1-r.z0+1,cell:j=>[w-1,r.z0+j],axis:'z'}];
+    for(const s of sides){
+      const {posts,panels}=panelsOf(s.len);
+      const out=DIRS[s.dir];
+      let doorPanel=-1;
+      if(i===0&&s.dir===frontSide&&panels.length){
+        let best=0,bd=1e9;panels.forEach((p,pi)=>{const c=Math.abs((p[0]+p[1])/2-(s.len-1)/2);if(c<bd){bd=c;best=pi}});doorPanel=best;
+      }
+      for(let j=0;j<s.len;j++){const[x,z]=s.cell(j);for(let y=yb;y<yb+3;y++){
+        if(posts.has(j))m.set(x,y,z,stone?'stone_bricks':'stripped_dark_oak_log',{a:'y'});
+        else m.set(x,y,z,stone?(hash3(x,y,z)<.3?'stone_bricks':'cobblestone'):'plaster');
+      }}
+      panels.forEach((p,pi)=>{
+        const n=p[1]-p[0]+1;
+        if(pi===doorPanel){
+          const j=Math.floor((p[0]+p[1])/2);const[x,z]=s.cell(j);
+          m.set(x,yb,z,'spruce_door',{f:s.dir,h:0});m.set(x,yb+1,z,'spruce_door',{f:s.dir,h:1});
+          meta.doorX=x;meta.doorZ=z;meta.doorJ=j;meta.doorSide=s;
+          return;
+        }
+        const wantWin=R()<(i===0?.72:.88)&&n>=1;
+        if(!wantWin){
+          if(!stone&&n>=2&&R()<.6)for(let j=p[0];j<=p[1];j++){const[x,z]=s.cell(j);m.set(x,yb+1,z,'stripped_dark_oak_log',{a:s.axis})}
+          return;
+        }
+        const wn=n%2===0?2:(n>=5?3:1);const a=p[0]+Math.floor((n-wn)/2);
+        for(let j=a;j<a+wn;j++){const[x,z]=s.cell(j);m.set(x,yb+1,z,'glass_pane',{a:s.axis})}
+        for(const j of[a-1,a+wn]){const[x,z]=s.cell(j);const ox=x+out[0],oz=z+out[1];if(!m.get(ox,yb+1,oz))m.set(ox,yb+1,oz,'spruce_trapdoor',{f:(s.dir+2)&3,o:1})}
+      });
+    }
+    // Balkenlage / Decke
+    const rn=rects[i+1]||r,yt=yb+3;
+    for(let x=0;x<w;x++)for(let z=rn.z0;z<=rn.z1;z++){
+      const per=x===0||x===w-1||z===rn.z0||z===rn.z1;
+      m.set(x,yt,z,per?'stripped_dark_oak_log':'spruce_planks',per?{a:(z===rn.z0||z===rn.z1)?'x':'z'}:null);
+    }
+    // Konsolen unter dem Überhang
+    if(rn.z0<r.z0){const {posts}=panelsOf(w);for(const x of posts){m.set(x,yt-1,rn.z0,o.roof+'_stairs',{f:2,h:1});m.set(x,yt-1,rn.z1,o.roof+'_stairs',{f:0,h:1})}}
+  }
+  // Dach
+  const rt=rects[F-1],y0=4*F;
+  let k=0,zf=rt.z0-1,zb=rt.z1+1,roofTop=y0;
+  while(zf<=zb){
+    const y=y0+k;
+    for(let x=-1;x<=w;x++){
+      if(zf===zb)m.set(x,y,zf,roofSl,{h:0});
+      else{m.set(x,y,zf,roofS,{f:2,h:0});m.set(x,y,zb,roofS,{f:0,h:0})}
+    }
+    if(k>=1&&zf<zb){
+      for(const gx of[0,w-1])for(let z=zf+1;z<=zb-1;z++){
+        const mid=(rt.z0+rt.z1)/2;
+        if(Math.abs(z-mid)<.6)m.set(gx,y,z,'stripped_dark_oak_log',{a:'y'});
+        else if(k===2&&Math.abs(z-mid)<1.6&&zb-zf>5)m.set(gx,y,z,'glass_pane',{a:'z'});
+        else m.set(gx,y,z,'plaster');
+      }
+    }
+    roofTop=y;
+    if(zf===zb)break;
+    zf++;zb--;k++;
+  }
+  // Schornstein(e)
+  const zc=Math.floor((d-1)/2);
+  const chimX=o.gableFront?[w-2]:[1];if(o.chimneys===2)chimX.push(o.gableFront?2:w-2);
+  for(const cx of chimX){for(let y=1;y<=roofTop+1;y++)m.set(cx,y,zc,'bricks');m.set(cx,roofTop+2,zc,'campfire')}
+  // Laternen
+  const s=meta.doorSide;
+  if(s){const out=DIRS[s.dir];let placed=0;
+    for(const dj of[2,-2,3,-3]){if(placed>=2)break;const j=meta.doorJ+dj;if(j<1||j>s.len-2)continue;const[x,z]=s.cell(j);const ox=x+out[0],oz=z+out[1];
+      if(o.over&&s.dir===0&&F>1){if(!m.get(ox,3,oz)&&m.get(ox,4,oz)){m.set(ox,3,oz,'lantern',{h:1});placed++}}
+      else if(!m.get(ox,3,oz)&&!m.get(ox,2,oz)){m.set(ox,3,oz,'stripped_dark_oak_log',{a:s.dir%2?'x':'z'});m.set(ox,2,oz,'lantern',{h:1});placed++}
+    }}
+  m.ax=(w-1)/2;m.az=(d-1)/2;m.meta=meta;m.front=frontSide;
+  m.info={w,d,F,over:o.over,roof:o.roof};
+  return m;
+}
+
+// ---------- Welt & Gelände ----------
+const WX=200,WZ=250;
+const Hm=new Int16Array(WX*WZ);
+const moat=new Uint8Array(WX*WZ);
+const hAt=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?0:Hm[z*WX+x];
+function vnoise(x,z,s,seed){const xi=Math.floor(x/s),zi=Math.floor(z/s),fx=x/s-xi,fz=z/s-zi;const g=(a,b)=>hash3(a,b,seed);const sm=t=>t*t*(3-2*t);const a=g(xi,zi),b=g(xi+1,zi),c=g(xi,zi+1),e=g(xi+1,zi+1);return(a+(b-a)*sm(fx))+((c+(e-c)*sm(fx))-(a+(b-a)*sm(fx)))*sm(fz)}
+const CASTLE={x0:76,x1:124,z0:18,z1:60};
+const PLAT=7;
+for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
+  const dx=x-100,dz=z-40,rx=44,rz=38;
+  const e=Math.pow(Math.abs(dx)/rx,4)+Math.pow(Math.abs(dz)/rz,4);
+  let h=0;
+  if(e<=1)h=PLAT;else{const t=Math.pow(e,.25),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;h=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/11)))}
+  const cd=Math.max(CASTLE.x0-x,x-CASTLE.x1,CASTLE.z0-z,z-CASTLE.z1);
+  if(cd>=3&&cd<=6){h=PLAT-3;moat[z*WX+x]=1}
+  Hm[z*WX+x]=h;
+}
+
+// Stadtmauer-Verlauf (offen, die Burg schließt den Ring im Norden)
+const WALL=[[62,70],[24,84],[12,150],[32,214],[88,232],[112,232],[166,222],[190,152],[176,86],[138,70]];
+const CITY_POLY=WALL.slice();
+function inPoly(x,z,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,zi]=poly[i],[xj,zj]=poly[j];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c}return c}
+function segDist(px,pz,a,b){const vx=b[0]-a[0],vz=b[1]-a[1];const t=Math.max(0,Math.min(1,((px-a[0])*vx+(pz-a[1])*vz)/(vx*vx+vz*vz)));return Math.hypot(px-a[0]-vx*t,pz-a[1]-vz*t)}
+function polyDist(px,pz,pts){let m=1e9;for(let i=0;i<pts.length-1;i++)m=Math.min(m,segDist(px,pz,pts[i],pts[i+1]));return m}
+
+// Belegungsraster: 0 frei, 1 Straße, 2 Platz, 3 Mauer, 4 Gebäude, 5 Burg/Hügel, 6 außerhalb, 7 Vorplatz
+const occ=new Uint8Array(WX*WZ);
+const oAt=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?6:occ[z*WX+x];
+const oSet=(x,z,v)=>{if(x>=0&&z>=0&&x<WX&&z<WZ)occ[z*WX+x]=v};
+
+// ---------- Straßen & Plätze ----------
+const STREETS=[
+  {name:'Hauptstraße',w:5,kind:'main',pts:[[100,249],[100,236],[101,226],[98,212],[94,196],[96,180],[93,166],[92,150],[92,140],[92,128],[95,116],[99,104],[101,94],[100,86],[100,76],[100,67]]},
+  {name:'Westgasse',w:3,kind:'lane',pts:[[76,138],[64,134],[50,138],[36,146],[22,150]]},
+  {name:'Ostgasse',w:3,kind:'lane',pts:[[109,142],[124,137],[140,141],[158,146],[178,150]]},
+  {name:'Bäckergasse',w:3,kind:'lane',pts:[[95,184],[80,190],[64,194],[50,202],[40,208]]},
+  {name:'Schmiedgasse',w:3,kind:'lane',pts:[[97,202],[114,205],[130,206],[148,210],[160,214]]},
+  {name:'Burggasse West',w:3,kind:'lane',pts:[[96,110],[82,104],[66,100],[50,98],[34,102]]},
+  {name:'Burggasse Ost',w:3,kind:'lane',pts:[[100,100],[116,98],[132,94],[150,96],[168,102]]},
+  {name:'Krumme Gasse',w:3,kind:'lane',pts:[[50,138],[47,118],[50,98]]},
+  {name:'Kirchgasse',w:3,kind:'lane',pts:[[140,141],[146,120],[150,96]]},
+  {name:'Gerbergasse',w:3,kind:'lane',pts:[[64,194],[58,170],[50,138]]},
+  {name:'Hafengasse',w:3,kind:'lane',pts:[[130,206],[140,176],[140,141]]},
+  {name:'Hintergasse',w:2,kind:'alley',pts:[[93,168],[78,162],[66,166],[58,170]]},
+  {name:'Kesselgasse',w:2,kind:'alley',pts:[[96,174],[112,168],[126,172],[140,176]]},
+  {name:'Burghof',w:3,kind:'court',pts:[[100,62],[100,50],[100,40]]}
+];
+const MARKET=[[76,128],[90,124],[106,127],[110,138],[107,152],[92,156],[78,151],[73,140]];
+const streetCell=new Map(); // Index -> Blockart
+function streetMat(kind,x,z){
+  const h=hash3(x,7,z);
+  if(kind==='main'||kind==='court')return h<.62?'cobblestone':h<.74?'mossy_cobblestone':'gravel';
+  if(kind==='plaza')return h<.5?'stone_bricks':h<.78?'cobblestone':'andesite';
+  if(kind==='alley')return h<.65?'dirt_path':'gravel';
+  return h<.55?'dirt_path':h<.85?'gravel':'cobblestone';
+}
+for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(inPoly(x+.5,z+.5,MARKET)){streetCell.set(z*WX+x,streetMat('plaza',x,z));occ[z*WX+x]=2}
+for(const s of STREETS){
+  let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;s.pts.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
+  const r=s.w/2;
+  for(let z=Math.floor(z0-r-1);z<=z1+r+1;z++)for(let x=Math.floor(x0-r-1);x<=x1+r+1;x++){
+    if(x<0||z<0||x>=WX||z>=WZ)continue;const i=z*WX+x;
+    if(moat[i]&&s.kind==='main')continue;
+    if(polyDist(x+.5,z+.5,s.pts)<=r+(s.w%2?0:.01)){if(!streetCell.has(i))streetCell.set(i,streetMat(s.kind,x,z));if(occ[i]!==2)occ[i]=1}
+  }
+}
+// Gelände-Belegung
+for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
+  const i=z*WX+x;if(occ[i])continue;
+  if(Hm[i]>0||moat[i])occ[i]=5;
+  else if(!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]])))occ[i]=6;
+  else if(polyDist(x+.5,z+.5,WALL)<5.5)occ[i]=3;
+}
+
+// ---------- Gebäude-Registry ----------
+const buildings=[];
+function addBuilding(o){
+  o.id=buildings.length;
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
+  for(const v of o.voxels){if(v.x<x0)x0=v.x;if(v.x>x1)x1=v.x;if(v.y<y0)y0=v.y;if(v.y>y1)y1=v.y;if(v.z<z0)z0=v.z;if(v.z>z1)z1=v.z}
+  o.bb={x0,x1,y0,y1,z0,z1};
+  o.counts=countBlocks(o.voxels);
+  if(o.pickable===undefined)o.pickable=true;
+  buildings.push(o);return o;
+}
+function countBlocks(vox){const c={};for(const v of vox){if(BLOCKS[v.b].countHalf&&v.h)continue;c[v.b]=(c[v.b]||0)+1}return c}
+
+function markOcc(vox,code){for(const v of vox){if(oAt(v.x,v.z)===0||oAt(v.x,v.z)===7)oSet(v.x,v.z,code)}}
+function fitsAt(m,r,ox,oz){
+  const bb=m.bboxRot(r);
+  for(let x=ox+bb.minX;x<=ox+bb.maxX;x++)for(let z=oz+bb.minZ;z<=oz+bb.maxZ;z++)if(oAt(x,z)!==0)return false;
+  return true;
+}
+function claim(m,r,ox,oz){
+  const bb=m.bboxRot(r);
+  for(let x=ox+bb.minX;x<=ox+bb.maxX;x++)for(let z=oz+bb.minZ;z<=oz+bb.maxZ;z++)oSet(x,z,4);
+  // Vorplatz vor der Tür freihalten
+  const mt=m.meta;if(mt&&mt.doorSide){const[dx,dz]=rotP(mt.doorX,mt.doorZ,r);const od=DIRS[(mt.doorSide.dir+r)&3];for(let k=1;k<=3;k++){const x=ox+dx+od[0]*k,z=oz+dz+od[1]*k;if(oAt(x,z)===0)oSet(x,z,7)}}
+}
+function nearestStreetDir(cx,cz,maxR){
+  for(let rr=1;rr<=maxR;rr++)for(let dz=-rr;dz<=rr;dz++)for(let dx=-rr;dx<=rr;dx++){
+    if(Math.max(Math.abs(dx),Math.abs(dz))!==rr)continue;const o=oAt(cx+dx,cz+dz);if(o===1||o===2)return dirIndex(dx,dz);
+  }return -1;
+}
+function placeNear(m,tx,tz,maxR=16){
+  for(let rr=0;rr<=maxR;rr++)for(let dz=-rr;dz<=rr;dz++)for(let dx=-rr;dx<=rr;dx++){
+    if(Math.max(Math.abs(dx),Math.abs(dz))!==rr)continue;
+    const cx=tx+dx,cz=tz+dz;const sd=nearestStreetDir(cx,cz,14);if(sd<0)continue;
+    const r=(sd-m.front+4)&3;const[ax,az]=rotP(m.ax,m.az,r);const ox=Math.round(cx-ax),oz=Math.round(cz-az);
+    if(fitsAt(m,r,ox,oz)){claim(m,r,ox,oz);return{r,ox,oz,vox:placeModel(m,r,ox,0,oz)}}
+  }
+  return null;
+}
+
+// ---------- Hausbeschreibungen & Anleitungen ----------
+function houseSteps(m,r,extra){
+  const i=m.info,fd=DIR_DE[(m.front+r)&3];
+  const st=[
+    `Grundriss abstecken: ${i.w} × ${i.d} Blöcke, die Haustür zeigt nach ${fd}. Den Boden ebnen.`,
+    `Schicht 1 – Sockel: Ein Ring aus Steinziegeln rundum, innen den Boden mit Fichtenholzbrettern auslegen.`,
+    `Erdgeschoss (3 Blöcke hoch): Eckpfosten und Ständer aus entrindeten Schwarzeichenstämmen senkrecht setzen. Die Felder dazwischen (Gefache) mit ${PLASTER[plasterChoice]} füllen. Fenster als Glasscheiben, daneben offene Fichtenholzfalltüren als Fensterläden. Die Tür kommt in das mittlere Feld der Vorderseite.`,
+    `Balkenlage: Liegende Stämme rundum als Rahmen (Stamm seitlich gegen den Nachbarstamm setzen, dann liegt er waagerecht), innen Fichtenholzbretter als Decke.`
+  ];
+  if(i.F>1)st.push(i.over?`Obergeschoss${i.F>2?'e':''}: Die Balkenlage ragt vorne und hinten je 1 Block über (Überhang). Darunter an jedem Ständer eine umgedrehte Treppe als Konsole. Wände wie im Erdgeschoss aufbauen.`:`Obergeschoss${i.F>2?'e':''}: Wände wie im Erdgeschoss aufbauen, Ständer genau über den unteren Ständern.`);
+  st.push(`Dach: Reihe für Reihe von der Traufe zum First mit ${i.roof==='spruce'?'Fichtenholztreppen':'Schwarzeichenholztreppen'}. Jede Reihe steht einen Block weiter innen und höher. Das Dach steht an jeder Seite 1 Block über. Ganz oben eine Reihe Stufen als First.`);
+  st.push(`Giebel: Die dreieckigen Giebelwände mit ${PLASTER[plasterChoice]} füllen, in der Mitte ein senkrechter Stamm.`);
+  st.push(`Schornstein aus Ziegelsteinen vom Erdgeschoss bis über den First, oben ein Lagerfeuer (Rauch). Laternen neben der Tür aufhängen.`);
+  if(extra)st.push(...extra);
+  return st;
+}
+
+// ---------- Burg ----------
+function squareTower(m,x0,z0,x1,z1,baseY,h,opt={}){
+  for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++){
+    const edge=x===x0||x===x1||z===z0||z===z1;
+    const col=Math.min(baseY,hAt(x,z));
+    for(let y=col;y<baseY+h;y++){
+      if(edge)m.set(x,y,z,stoneMix(x,y,z));
+      else if(y===baseY||(y-baseY)%6===0&&y>baseY)m.set(x,y,z,'spruce_planks');
+      else if(y<baseY)m.set(x,y,z,'stone_bricks');
+      else m.set(x,y,z,null);
+    }
+    if(edge&&((x+z)&1)===0)m.set(x,baseY+h,z,stoneMix(x,baseY+h,z));
+  }
+  // Schießscharten
+  const cx=Math.round((x0+x1)/2),cz=Math.round((z0+z1)/2);
+  for(let y=baseY+3;y<baseY+h-2;y+=6){m.set(cx,y,z0,null);m.set(cx,y+1,z0,null);m.set(cx,y,z1,null);m.set(cx,y+1,z1,null);m.set(x0,y,cz,null);m.set(x0,y+1,cz,null);m.set(x1,y,cz,null);m.set(x1,y+1,cz,null)}
+  // Leiter innen
+  if(opt.ladder!==false)for(let y=baseY+1;y<baseY+h;y++)m.set(x0+1,y,z0+1,'ladder',{f:0});
+}
+function roundTower(m,cx,cz,r,h){
+  const base=hAt(cx,cz);
+  for(let dz=-r-1;dz<=r+1;dz++)for(let dx=-r-1;dx<=r+1;dx++){
+    const dist=Math.hypot(dx,dz);if(dist>r+.5)continue;
+    const x=cx+dx,z=cz+dz,ring=dist>r-.6;const col=Math.min(base,hAt(x,z));
+    for(let y=col;y<base+h;y++){
+      if(ring)m.set(x,y,z,stoneMix(x,y,z,.18,.12));
+      else if(y===base||y===base+6||y===base+h-1)m.set(x,y,z,'spruce_planks');
+      else if(y<base)m.set(x,y,z,'stone_bricks');
+      else m.set(x,y,z,null);
+    }
+    if(ring&&((dx+dz)&1)===0)m.set(x,base+h,z,stoneMix(x,base+h,z));
+  }
+  for(const[dx,dz]of[[r,0],[-r,0],[0,r],[0,-r]])for(const y of[base+3,base+4,base+9,base+10])m.set(cx+dx,y,cz+dz,null);
+  for(let y=base+1;y<base+h-1;y++)m.set(cx,y,cz-r+1,'ladder',{f:0});
+}
+
+function buildCastle(){
+  const B=PLAT;
+  // Ringmauer + Ecktürme
+  const ring=new Model();
+  for(let x=CASTLE.x0;x<=CASTLE.x1;x++)for(let z=CASTLE.z0;z<=CASTLE.z1;z++){
+    const d=Math.min(x-CASTLE.x0,CASTLE.x1-x,z-CASTLE.z0,CASTLE.z1-z);if(d>2)continue;
+    for(let y=B;y<B+9;y++)ring.set(x,y,z,stoneMix(x,y,z));
+    if(d===0&&((x+z)&1)===0)ring.set(x,B+9,z,stoneMix(x,B+9,z));
+  }
+  for(const[cx,cz]of[[CASTLE.x0,CASTLE.z0],[CASTLE.x1,CASTLE.z0],[CASTLE.x0,CASTLE.z1],[CASTLE.x1,CASTLE.z1]])squareTower(ring,cx-4,cz-4,cx+4,cz+4,B,14);
+  // Lücke fürs Torhaus
+  for(let x=93;x<=107;x++)for(let z=CASTLE.z1-3;z<=CASTLE.z1;z++)for(let y=B;y<=B+9;y++)ring.set(x,y,z,null);
+  const ringVox=placeModel(ring,0,0,0,0);
+  addBuilding({name:'Burg: Ringmauer & Ecktürme',group:'Burg',kind:'castle',voxels:ringVox,
+    desc:'Drei Blöcke dicke Ringmauer mit Wehrgang und Zinnen, vier quadratische Ecktürme (9 × 9) mit Leitern, Holzböden und Schießscharten.',
+    steps:['Grundlinie abstecken: Mauerrechteck 49 × 43 Blöcke auf dem Hügelplateau.','Ecktürme zuerst bis zur vollen Höhe hochziehen, alle 6 Blöcke einen Fichtenholzboden, Leiter in der Ecke.','Mauer zwischen den Türmen drei Blöcke dick und 9 hoch mauern. Steinziegel mit etwa 15 % bemoosten und 12 % rissigen Steinziegeln mischen, das wirkt alt.','Zinnen: Auf der Außenkante jeden zweiten Block eine Lage höher setzen.','Im Süden eine Lücke für das Torhaus lassen.'],
+    farm:'Wasserfarm im Graben (Etappe 2)'});
+  // Torhaus + Zugbrücke
+  const gate=new Model();
+  squareTower(gate,93,CASTLE.z1-4,107,CASTLE.z1+2,B,15,{ladder:true});
+  for(let x=98;x<=102;x++)for(let z=CASTLE.z1-4;z<=CASTLE.z1+2;z++)for(let y=B;y<B+5;y++)gate.set(x,y,z,y===B?null:null);
+  for(let x=98;x<=102;x++)for(let z=CASTLE.z1-4;z<=CASTLE.z1+2;z++)gate.set(x,B-1,z,'cobblestone');
+  for(let z=CASTLE.z1-4;z<=CASTLE.z1+2;z++){gate.set(98,B+4,z,'stone_brick_stairs',{f:3,h:1});gate.set(102,B+4,z,'stone_brick_stairs',{f:1,h:1})}
+  for(let x=98;x<=102;x++){gate.set(x,B+3,CASTLE.z1+1,'iron_bars',{a:'x'});gate.set(x,B+4,CASTLE.z1+1,'iron_bars',{a:'x'})}
+  // Zugbrücke (abgesenkt) über dem Graben
+  for(let z=CASTLE.z1+3;z<=CASTLE.z1+6;z++){for(let x=98;x<=102;x++)gate.set(x,B-1,z,'spruce_planks');gate.set(97,B-1,z,'stripped_dark_oak_log',{a:'z'});gate.set(103,B-1,z,'stripped_dark_oak_log',{a:'z'});gate.set(97,B,z,'spruce_fence');gate.set(103,B,z,'spruce_fence')}
+  gate.set(97,B+1,CASTLE.z1+6,'lantern',{h:0});gate.set(103,B+1,CASTLE.z1+6,'lantern',{h:0});
+  addBuilding({name:'Burg: Torhaus & Zugbrücke',group:'Burg',kind:'castle',voxels:placeModel(gate,0,0,0,0),
+    desc:'Torhaus mit fünf Blöcke breiter Durchfahrt, halb hochgezogenem Fallgatter aus Eisengittern und abgesenkter Zugbrücke über dem Wassergraben.',
+    steps:['Torhaus als hohlen Turm 15 × 7 Blöcke, 15 hoch, bauen. Böden alle 6 Blöcke.','Durchfahrt 5 breit und 4 hoch ausschlagen, oben mit umgedrehten Steinziegeltreppen einen flachen Bogen formen.','Fallgatter: Eisengitter in der äußeren Torlaibung, zwei Reihen hoch (halb hochgezogen).','Zugbrücke: Fichtenholzbretter auf Höhe des Plateaus über den Graben, seitlich liegende Stämme und ein Zaun als Geländer, Laternen am Ende.']});
+  // Bergfried
+  const keep=new Model();
+  squareTower(keep,95,26,105,36,B,30);
+  keep.set(100,B+1,36,'spruce_door',{f:2,h:0});keep.set(100,B+2,36,'spruce_door',{f:2,h:1});
+  for(let y=B+4;y<B+30;y+=6){keep.set(100,y,26,'glass_pane',{a:'x'});keep.set(95,y,31,'glass_pane',{a:'z'});keep.set(105,y,31,'glass_pane',{a:'z'})}
+  keep.set(99,B+3,37,'stripped_dark_oak_log',{a:'z'});keep.set(99,B+2,37,'lantern',{h:1});keep.set(101,B+3,37,'stripped_dark_oak_log',{a:'z'});keep.set(101,B+2,37,'lantern',{h:1});
+  addBuilding({name:'Bergfried',group:'Burg',kind:'castle',voxels:placeModel(keep,0,0,0,0),
+    desc:'Der Hauptturm der Burg: 11 × 11 Blöcke, 30 hoch, fünf Stockwerke mit Holzböden, Leiter bis zur Wehrplattform mit Zinnen.',
+    farm:'Xp-Farm (Etappe 2)',
+    steps:['Grundfläche 11 × 11 auf dem Burghof markieren, Eingang nach Süden.','Wände einen Block dick aus Steinziegel-Mischung hochziehen. Alle 6 Blöcke einen Fichtenholzboden einziehen, eine Ecke für die Leiter frei lassen.','Fenster: je Stockwerk Glasscheiben in drei Wänden.','Oben: Zinnen auf jedem zweiten Randblock.']});
+  // Palas als Fachwerkbau mit steinernem Erdgeschoss
+  const palas=genHouse({w:15,d:9,floors:2,over:true,roof:'dark_oak',stoneGround:true,chimneys:2,seed:777});
+  const r=1; // Front nach Osten
+  const[ax,az]=rotP(palas.ax,palas.az,r);const ox=Math.round(86-ax),oz=Math.round(42-az);
+  const pv=placeModel(palas,r,ox,B,oz);
+  addBuilding({name:'Palas',group:'Burg',kind:'house',voxels:pv,model:palas,rot:r,
+    desc:'Wohnbau der Burg: steinernes Erdgeschoss, Fachwerk-Obergeschoss mit Überhang, Schwarzeichendach und zwei Schornsteinen.',
+    farm:'Kerker mit Mob-Grinder darunter (Etappe 2)',
+    steps:houseSteps(palas,r)});
+  // Burggraben (Wasser)
+  const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){if(y===PLAT-1&&x>=97&&x<=103&&z>=CASTLE.z1+3&&z<=CASTLE.z1+6)continue;wv.push({x,y,z,b:'water'})}
+  addBuilding({name:'Burggraben',group:'Burg',kind:'water',voxels:wv,
+    desc:'Vier Blöcke breiter, drei Blöcke tiefer Wassergraben rund um die Burg.',
+    farm:'Wasserfarm (Etappe 2)',
+    steps:['Graben 4 breit und 3 tief rund um die Ringmauer ausheben, 2 Blöcke Abstand zur Mauer lassen.','Mit Eimern füllen: Zwei Wasserquellen nebeneinander ergeben eine unendliche Quelle. Jede Ecke einzeln füllen, damit keine Fließwasser-Blöcke bleiben.']});
+}
+
+// ---------- Stadtmauer ----------
+function buildCityWall(){
+  const m=new Model();const WH=7;
+  const towersAt=WALL.filter((p,i)=>i!==4&&i!==5);
+  let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;WALL.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
+  for(let z=z0-3;z<=z1+3;z++)for(let x=x0-3;x<=x1+3;x++){
+    const d=polyDist(x+.5,z+.5,WALL);if(d>1.5)continue;
+    const base=hAt(x,z);
+    for(let y=base;y<base+WH;y++)m.set(x,y,z,stoneMix(x,y,z,y-base<2?.3:.12,.12));
+    const outside=!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,70]]));
+    if(outside&&d>.6&&((x+z)&1)===0)m.set(x,base+WH,z,stoneMix(x,base+WH,z));
+  }
+  for(const[cx,cz]of towersAt)roundTower(m,cx,cz,4,12);
+  // Haupttor im Süden
+  squareTower(m,89,228,95,236,0,12);squareTower(m,105,228,111,236,0,12);
+  for(let x=96;x<=104;x++)for(let z=229;z<=235;z++){for(let y=0;y<11;y++)m.set(x,y,z,y>=6?stoneMix(x,y,z):null);if((x+z)%2===0&&(z===229||z===235))m.set(x,11,z,stoneMix(x,11,z))}
+  for(let x=96;x<=104;x++)for(let z=228;z<=236;z++)for(let y=0;y<6;y++)if(x>=97&&x<=103)m.set(x,y,z,null);
+  for(let z=228;z<=236;z++){m.set(97,5,z,'stone_brick_stairs',{f:3,h:1});m.set(103,5,z,'stone_brick_stairs',{f:1,h:1})}
+  for(let x=98;x<=102;x++){m.set(x,4,232,'iron_bars',{a:'x'});m.set(x,5,232,'iron_bars',{a:'x'})}
+  for(const x of[96,104]){m.set(x,4,237,'lantern',{h:1});m.set(x,5,237,'stripped_dark_oak_log',{a:'z'})}
+  const vox=placeModel(m,0,0,0,0);
+  addBuilding({name:'Stadtmauer & Haupttor',group:'Stadtbefestigung',kind:'wall',voxels:vox,
+    desc:`Krumme Stadtmauer, 3 Blöcke dick und 7 hoch, mit ${towersAt.length} runden Ecktürmen und dem Haupttor im Süden (Doppelturm-Torhaus mit Fallgatter).`,
+    steps:['Verlauf abstecken: Die Mauer folgt dem Gelände in schrägen Abschnitten, das gibt die typischen Treppenkanten.','Runde Ecktürme zuerst: Kreis mit Radius 4, 12 hoch, innen Holzböden auf Höhe 1, 7 und 12 und eine Leiter.','Mauer 3 dick, 7 hoch. Unten mehr bemooste Steinziegel mischen.','Zinnen auf der Außenseite: jeder zweite Block eine Lage höher.','Haupttor: zwei quadratische Tortürme (7 × 9), dazwischen eine 7 breite und 5 hohe Durchfahrt mit Bogen aus Treppen, Fallgatter aus Eisengittern, Laternen außen.']});
+  markOcc(vox,3);
+}
+
+// ---------- Marktbrunnen ----------
+function buildFountain(cx,cz){
+  const m=new Model();
+  for(let dz=-4;dz<=4;dz++)for(let dx=-4;dx<=4;dx++){
+    const d=Math.max(Math.abs(dx),Math.abs(dz))+Math.min(Math.abs(dx),Math.abs(dz))*.42;
+    if(d>4.3)continue;
+    if(d>3.3){m.set(dx,0,dz,'stone_bricks');m.set(dx,1,dz,'stone_brick_slab',{h:0})}
+    else m.set(dx,0,dz,'water');
+  }
+  m.fill(0,0,0,0,2,0,'stone_bricks');m.set(0,3,0,'water');
+  for(const[dx,dz]of[[-4,-4],[4,-4],[-4,4],[4,4]]){m.set(dx,0,dz,'spruce_fence');m.set(dx,1,dz,'spruce_fence');m.set(dx,2,dz,'lantern',{h:0})}
+  const vox=placeModel(m,0,cx,0,cz);
+  addBuilding({name:'Marktbrunnen',group:'Plätze',kind:'fountain',voxels:vox,
+    desc:'Achteckiges Brunnenbecken auf dem Marktplatz mit Wassersäule und vier Laternenpfosten.',
+    steps:['Achteck mit 9 Blöcken Durchmesser abstecken.','Beckenrand: Steinziegel, darauf Steinziegelstufen als Sitzkante.','Becken mit Wasser füllen.','Mitte: Säule aus 3 Steinziegeln, oben eine Wasserquelle. Das Wasser fließt an der Säule herab.','An den vier Ecken Zaunpfosten mit Laterne.']});
+}
+
+// ---------- Stadt aufbauen ----------
+const HOUSE_NAMES=['Wohnhaus','Bürgerhaus','Giebelhaus','Handwerkerhaus','Häuschen','Eckhaus'];
+function buildCity(){
+  buildCityWall();
+  buildCastle();
+  buildFountain(92,140);
+  // Benannte Gebäude (Farmen folgen in Etappe 2)
+  const named=[
+    {name:'Taverne',farm:'Bienen & Honig (Etappe 2)',at:[114,124],o:{w:13,d:11,floors:3,over:true,roof:'dark_oak',chimneys:2,seed:11},desc:'Große Taverne am Marktplatz: drei Stockwerke mit Überhängen, zwei Schornsteine.'},
+    {name:'Bäckerei',farm:'Karotten & Kartoffeln (Etappe 2)',at:[72,124],o:{w:11,d:9,floors:2,over:true,roof:'spruce',chimneys:2,seed:12},desc:'Bäckerei am Markt mit Backofen-Schornstein auf beiden Giebelseiten.'},
+    {name:'Schmiede',farm:'Eisengolem-Farm (Etappe 2)',at:[110,212],o:{w:11,d:9,floors:2,over:false,roof:'dark_oak',stoneGround:true,seed:13},desc:'Schmiede nahe dem Stadttor: steinernes Erdgeschoss gegen Funkenflug, Fachwerk darüber.'},
+  ];
+  for(const n of named){
+    const m=genHouse(n.o);const p=placeNear(m,n.at[0],n.at[1],18);
+    if(!p){console.warn('Kein Platz für',n.name);continue}
+    addBuilding({name:n.name,group:'Gebäude mit Farm',kind:'house',voxels:p.vox,model:m,rot:p.r,farm:n.farm,desc:n.desc,steps:houseSteps(m,p.r),label:true});
+  }
+  // Wohnhäuser entlang der Gassen
+  const R=mulberry32(4242);let count=0;
+  const order=STREETS.filter(s=>s.kind!=='court');
+  for(const s of order){
+    const pts=[];for(let i=0;i<s.pts.length-1;i++){const a=s.pts[i],b=s.pts[i+1];const L=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let t=0;t<L;t+=1)pts.push({x:a[0]+(b[0]-a[0])*t/L,z:a[1]+(b[1]-a[1])*t/L,tx:(b[0]-a[0])/L,tz:(b[1]-a[1])/L})}
+    const hw=Math.ceil(s.w/2);
+    for(const side of[1,-1]){
+      let t=3;
+      while(t<pts.length-3){
+        const p=pts[t];const nx=-p.tz*side,nz=p.tx*side;
+        const D=dirIndex(-nx,-nz); // Front zeigt zur Straße
+        const big=s.kind==='main'?1:0;
+        const o={w:5+Math.floor(R()*(6+big*2)),d:[5,7,7,9,9][Math.floor(R()*5)]+(big&&R()<.4?2:0),floors:R()<.15?1:R()<.8?2:3,over:R()<.7,roof:R()<.55?'spruce':'dark_oak',gableFront:R()<.35,seed:Math.floor(R()*1e9)};
+        if(o.floors===3&&o.w<7)o.floors=2;
+        const m=genHouse(o);const r=(D-m.front+4)&3;const bb=m.bboxRot(r);
+        let ox,oz;const px=Math.round(p.x),pz=Math.round(p.z);
+        if(D===0){oz=pz+hw+1-bb.minZ;ox=Math.round(px-(bb.minX+bb.maxX)/2)}
+        else if(D===2){oz=pz-hw-1-bb.maxZ;ox=Math.round(px-(bb.minX+bb.maxX)/2)}
+        else if(D===1){ox=px-hw-1-bb.maxX;oz=Math.round(pz-(bb.minZ+bb.maxZ)/2)}
+        else{ox=px+hw+1-bb.minX;oz=Math.round(pz-(bb.minZ+bb.maxZ)/2)}
+        if(fitsAt(m,r,ox,oz)){
+          claim(m,r,ox,oz);count++;
+          const kind=o.floors===1?'Häuschen':o.gableFront?'Giebelhaus':o.floors===3?'Bürgerhaus':'Wohnhaus';
+          addBuilding({name:`${kind} ${count}`,group:'Wohnhäuser',kind:'house',voxels:placeModel(m,r,ox,0,oz),model:m,rot:r,
+            desc:`Leeres Fachwerkhaus an der ${s.name}: ${o.w} × ${o.d} Blöcke, ${o.floors} Stockwerk${o.floors>1?'e':''}${o.over?' mit Überhang':''}, ${o.roof==='spruce'?'Fichten':'Schwarzeichen'}dach${o.gableFront?', Giebel zur Gasse':''}.`,
+            steps:houseSteps(m,r)});
+          t+=(r&1?bb.maxZ-bb.minZ:bb.maxX-bb.minX)+1+Math.floor(R()*2);
+        }else t+=2;
+      }
+    }
+  }
+  // Straßen & Plätze als eigener Posten
+  const sv=[];for(const[i,b]of streetCell){const x=i%WX,z=Math.floor(i/WX);sv.push({x,y:hAt(x,z)-1,z,b})}
+  addBuilding({name:'Straßen & Plätze',group:'Plätze',kind:'street',voxels:sv,pickable:false,
+    desc:'Hauptstraße vom Tor über den Markt zur Burg (Bruchstein und Kies), Gassen aus Trampelpfad und Kies, Marktplatz aus Steinziegeln, Bruchstein und Andesit.',
+    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, Bruchstein und Andesit.']});
+}
+
+// ---------- Meshing ----------
+const FACE=[
+  {n:[1,0,0],a:0,s:1,ua:2,su:-1,va:1,sv:1,sh:.62},
+  {n:[-1,0,0],a:0,s:-1,ua:2,su:1,va:1,sv:1,sh:.62},
+  {n:[0,1,0],a:1,s:1,ua:0,su:1,va:2,sv:-1,sh:1},
+  {n:[0,-1,0],a:1,s:-1,ua:0,su:1,va:2,sv:1,sh:.5},
+  {n:[0,0,1],a:2,s:1,ua:0,su:1,va:1,sv:1,sh:.8},
+  {n:[0,0,-1],a:2,s:-1,ua:0,su:-1,va:1,sv:1,sh:.8}];
+const AXI={x:0,y:1,z:2};
+function texOf(v,fi){
+  const t=BLOCKS[v.b].tex;
+  if(t==='door')return v.h?'door_top':'door_bottom';
+  if(typeof t==='string')return t;
+  if(t.end){const ax=AXI[v.a||'y'];return FACE[fi].a===ax?t.end:t.side}
+  if(FACE[fi].a===1)return FACE[fi].s>0?t.top:(t.bottom||t.top);
+  return t.side;
+}
+const s16=1/16;
+function boxesOf(v,get){
+  const sh=BLOCKS[v.b].shape;
+  switch(sh){
+    case 'cube':case 'log':return[[0,0,0,1,1,1]];
+    case 'path':return[[0,0,0,1,15*s16,1]];
+    case 'slab':return v.h?[[0,.5,0,1,1,1]]:[[0,0,0,1,.5,1]];
+    case 'stairs':{const lo=v.h?.5:0,hi=v.h?0:.5;const st=[[0,hi,0,1,hi+.5,.5],[.5,hi,0,1,hi+.5,1],[0,hi,.5,1,hi+.5,1],[0,hi,0,.5,hi+.5,1]][v.f||0];return[[0,lo,0,1,lo+.5,1],st]}
+    case 'pane':return v.a==='z'?[[7*s16,0,0,9*s16,1,1]]:[[0,0,7*s16,1,1,9*s16]];
+    case 'trapdoor':case 'ladder':case 'door':{
+      const t=sh==='ladder'?s16:3*s16;const side=sh==='door'?((v.f+2)&3):v.f;
+      return[[[0,0,0,1,1,t],[1-t,0,0,1,1,1],[0,0,1-t,1,1,1],[0,0,0,t,1,1]][side]]}
+    case 'lantern':return v.h?[[5*s16,s16,5*s16,11*s16,8*s16,11*s16],[7*s16,8*s16,7*s16,9*s16,1,9*s16]]:[[5*s16,0,5*s16,11*s16,7*s16,11*s16],[6*s16,7*s16,6*s16,10*s16,9*s16,10*s16]];
+    case 'campfire':return[[0,0,0,1,7*s16,1]];
+    case 'fence':case 'wall':{
+      const isW=sh==='wall';const out=isW?[[4*s16,0,4*s16,12*s16,1,12*s16]]:[[6*s16,0,6*s16,10*s16,1,10*s16]];
+      DIRS.forEach(([dx,dz],i)=>{const n=get(v.x+dx,v.y,v.z+dz);if(!n||!(FULL.has(n.b)||BLOCKS[n.b].shape===sh))return;
+        const lo=isW?5*s16:7*s16,hi=isW?11*s16:9*s16;
+        const rails=isW?[[0,14*s16]]:[[6*s16,9*s16],[12*s16,15*s16]];
+        for(const[y0,y1]of rails){if(i===0)out.push([lo,y0,0,hi,y1,.5]);if(i===2)out.push([lo,y0,.5,hi,y1,1]);if(i===1)out.push([.5,y0,lo,1,y1,hi]);if(i===3)out.push([0,y0,lo,.5,y1,hi])}});
+      return out}
+  }
+  return[[0,0,0,1,1,1]];
+}
+function newGeo(){return{p:[],u:[],c:[],i:[]}}
+const EPS=.002;
+function addFace(G,x,y,z,mn,mx,fi,tile,bright){
+  const F=FACE[fi],t=TILE[tile];
+  const c=[0,0,0];c[F.a]=F.s>0?mx[F.a]:mn[F.a];c[F.ua]=F.su>0?mn[F.ua]:mx[F.ua];c[F.va]=F.sv>0?mn[F.va]:mx[F.va];
+  const ul=mx[F.ua]-mn[F.ua],vl=mx[F.va]-mn[F.va];
+  const U=[0,0,0];U[F.ua]=F.su*ul;const V=[0,0,0];V[F.va]=F.sv*vl;
+  const tu0=F.su>0?mn[F.ua]:1-mx[F.ua],tv0=F.sv>0?mn[F.va]:1-mx[F.va];
+  const cl=q=>Math.min(1-EPS,Math.max(EPS,q));
+  const uv=(tu,tv)=>[(t.c+cl(tu))/ATL_COLS,1-(t.r+1-cl(tv))/ATL_ROWS];
+  const b=G.p.length/3;
+  const P=[[c[0],c[1],c[2]],[c[0]+U[0],c[1]+U[1],c[2]+U[2]],[c[0]+U[0]+V[0],c[1]+U[1]+V[1],c[2]+U[2]+V[2]],[c[0]+V[0],c[1]+V[1],c[2]+V[2]]];
+  const T=[uv(tu0,tv0),uv(tu0+ul,tv0),uv(tu0+ul,tv0+vl),uv(tu0,tv0+vl)];
+  const sh=F.sh*bright;
+  for(let k=0;k<4;k++){G.p.push(x+P[k][0],y+P[k][1],z+P[k][2]);G.u.push(T[k][0],T[k][1]);G.c.push(sh,sh,sh)}
+  G.i.push(b,b+1,b+2,b,b+2,b+3);
+}
+function meshVoxels(vox,solidAt,getAt){
+  const O=newGeo(),Wt=newGeo();
+  for(const v of vox){
+    const def=BLOCKS[v.b];
+    if(def.shape==='water'){
+      const up=getAt(v.x,v.y+1,v.z);const top=up&&up.b==='water'?1:14*s16;
+      for(let fi=0;fi<6;fi++){const n=FACE[fi].n;const nb=getAt(v.x+n[0],v.y+n[1],v.z+n[2]);if(nb&&nb.b==='water')continue;if(solidAt(v.x+n[0],v.y+n[1],v.z+n[2]))continue;addFace(Wt,v.x,v.y,v.z,[0,0,0],[1,top,1],fi,'water_still',1)}
+      continue;
+    }
+    const full=FULL.has(v.b);
+    const br=hash3(v.x,v.y,v.z)*.08+.94;
+    for(const bx of boxesOf(v,getAt)){
+      const mn=[bx[0],bx[1],bx[2]],mx=[bx[3],bx[4],bx[5]];
+      for(let fi=0;fi<6;fi++){
+        if(full){const n=FACE[fi].n;if(solidAt(v.x+n[0],v.y+n[1],v.z+n[2]))continue}
+        addFace(O,v.x,v.y,v.z,mn,mx,fi,texOf(v,fi),br);
+      }
+    }
+  }
+  return{O,W:Wt};
+}
+function toGeometry(G){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(G.p,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(G.u,2));
+  g.setAttribute('color',new THREE.Float32BufferAttribute(G.c,3));
+  g.setIndex(G.p.length/3>65535?new THREE.Uint32BufferAttribute(G.i,1):new THREE.Uint16BufferAttribute(G.i,1));
+  g.computeBoundingSphere();
+  return g;
+}
+function meshTerrain(){
+  const G=newGeo();
+  const topOf=(x,z)=>{if(x<0||z<0||x>=WX||z>=WZ)return -5;const i=z*WX+x;return Hm[i]-(streetCell.has(i)?1:0)};
+  for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
+    const i=z*WX+x,t=topOf(x,z),isStreet=streetCell.has(i),isMoat=moat[i];
+    const br=.95+hash3(x,1,z)*.07;
+    if(!isStreet)addFace(G,x,t-1,z,[0,0,0],[1,1,1],2,isMoat?'dirt':'grass_block_top',br);
+    for(const fi of[0,1,4,5]){
+      const n=FACE[fi].n;const nt=topOf(x+n[0],z+n[2]);
+      for(let y=Math.max(nt,-5);y<t;y++){
+        const tile=(y===t-1&&!isStreet&&!isMoat)?'grass_block_side':'dirt';
+        addFace(G,x,y,z,[0,0,0],[1,1,1],fi,tile,br);
+      }
+    }
+  }
+  return G;
+}
+
+// ---------- Three.js ----------
+let renderer,scene,camera,controls,world,atlasTex,matO,matW,matHover,matSel,matLayer,terrainMesh;
+const solid=new Set();const allVox=new Map();
+function solidAt(x,y,z){if(y<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;return solid.has(K(x,y,z))}
+function initThree(){
+  const cv=document.getElementById('view');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(50,1,.5,3000);
+  controls=new THREE.OrbitControls(camera,cv);
+  controls.enableDamping=true;controls.dampingFactor=.12;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=8;controls.maxDistance=520;controls.screenSpacePanning=false;
+  world=new THREE.Group();world.position.set(-WX/2,0,-WZ/2);scene.add(world);
+  atlasTex=new THREE.CanvasTexture(atlas);atlasTex.magFilter=THREE.NearestFilter;atlasTex.minFilter=THREE.NearestFilter;atlasTex.generateMipmaps=false;
+  matO=new THREE.MeshBasicMaterial({map:atlasTex,vertexColors:true,alphaTest:.5});
+  matW=new THREE.MeshBasicMaterial({map:atlasTex,vertexColors:true,transparent:true,opacity:.72,depthWrite:false});
+  matHover=matO.clone();matHover.color=new THREE.Color(1.22,1.16,1.0);
+  matSel=matO.clone();matSel.color=new THREE.Color(1.35,1.18,.86);
+  matLayer=matO.clone();matLayer.color=new THREE.Color(1.55,1.22,.62);
+  applyTheme();
+  camera.position.set(-20,150,175);controls.target.set(0,4,10);controls.update();
+  resize();window.addEventListener('resize',resize);
+}
+function applyTheme(){
+  const sky=getComputedStyle(document.documentElement).getPropertyValue('--sky').trim()||'#a8cff0';
+  scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,320,900);
+}
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+
+function buildMeshes(){
+  for(const b of buildings)for(const v of b.voxels){const k=K(v.x,v.y,v.z);allVox.set(k,v);if(FULL.has(v.b))solid.add(k)}
+  const getAt=(x,y,z)=>allVox.get(K(x,y,z));
+  terrainMesh=new THREE.Mesh(toGeometry(meshTerrain()),matO);world.add(terrainMesh);
+  for(const b of buildings)makeBuildingMeshes(b,b.voxels,solidAt,getAt);
+}
+function makeBuildingMeshes(b,vox,sAt,gAt,layerY){
+  if(b.meshes)b.meshes.forEach(m=>{world.remove(m);m.geometry.dispose()});
+  b.meshes=[];
+  const parts=layerY==null?[[vox,matO]]:[[vox.filter(v=>v.y<layerY),matO],[vox.filter(v=>v.y===layerY),matLayer]];
+  for(const[vv,mat]of parts){
+    const{O,W}=meshVoxels(vv,sAt,gAt);
+    if(O.i.length){const m=new THREE.Mesh(toGeometry(O),mat);m.userData.bid=b.id;m.userData.base=mat;b.meshes.push(m);world.add(m)}
+    if(W.i.length){const m=new THREE.Mesh(toGeometry(W),matW);m.userData.bid=b.id;m.userData.base=matW;m.userData.water=true;b.meshes.push(m);world.add(m)}
+  }
+}
+function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
+
+// ---------- Interaktion ----------
+const ray=new THREE.Raycaster();const mouse=new THREE.Vector2();
+let hovered=null,selected=null,layerMode=false;
+function pick(ev){
+  const r=renderer.domElement.getBoundingClientRect();
+  mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(mouse,camera);
+  const targets=[];for(const b of buildings)if(b.pickable&&b.meshes)for(const m of b.meshes)if(m.visible)targets.push(m);
+  const hit=ray.intersectObjects(targets,false)[0];
+  return hit?buildings[hit.object.userData.bid]:null;
+}
+function onMove(ev){
+  if(ev.buttons)return;
+  const b=pick(ev);const tip=document.getElementById('tip');
+  if(b!==hovered){if(hovered&&hovered!==selected)setBuildingMat(hovered,null);hovered=b;if(b&&b!==selected)setBuildingMat(b,matHover)}
+  document.getElementById('view').classList.toggle('hover',!!b);
+  if(b){tip.hidden=false;tip.textContent=b.name+(b.farm?' · '+b.farm:'');tip.style.left=ev.clientX+'px';tip.style.top=ev.clientY+'px'}else tip.hidden=true;
+}
+let downAt=null;
+function initInput(){
+  const cv=renderer.domElement;
+  cv.addEventListener('pointermove',onMove);
+  cv.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY]});
+  cv.addEventListener('pointerup',e=>{if(!downAt)return;const d=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(d>6)return;const b=pick(e);if(b)select(b)});
+  cv.addEventListener('pointerleave',()=>{document.getElementById('tip').hidden=true});
+}
+let tween=null;
+function focusOn(b){
+  const c=new THREE.Vector3((b.bb.x0+b.bb.x1)/2+.5-WX/2,(b.bb.y0+b.bb.y1)/2,(b.bb.z0+b.bb.z1)/2+.5-WZ/2);
+  const size=Math.max(b.bb.x1-b.bb.x0,b.bb.y1-b.bb.y0,b.bb.z1-b.bb.z0)+1;
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  const dist=Math.min(480,Math.max(22,size*1.9));
+  tween={t0:performance.now(),dur:650,fromT:controls.target.clone(),toT:c,fromP:camera.position.clone(),toP:c.clone().add(dir.multiplyScalar(dist))};
+}
+function stepTween(now){
+  if(!tween)return;let k=Math.min(1,(now-tween.t0)/tween.dur);if(matchMedia('(prefers-reduced-motion: reduce)').matches)k=1;
+  const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+  controls.target.lerpVectors(tween.fromT,tween.toT,e);camera.position.lerpVectors(tween.fromP,tween.toP,e);
+  if(k>=1)tween=null;
+}
+
+// ---------- Labels ----------
+const labelEls=[];let showNames=true;
+function initLabels(){
+  const host=document.getElementById('labels');
+  for(const b of buildings){if(!(b.label||b.group==='Burg'||b.kind==='fountain'||b.kind==='wall'))continue;if(b.kind==='water')continue;
+    const el=document.createElement('div');el.className='lbl'+(b.farm?' farm':'');el.textContent=b.name.replace('Burg: ','');host.appendChild(el);
+    let ax=(b.bb.x0+b.bb.x1)/2,az=(b.bb.z0+b.bb.z1)/2;
+    if(b.kind==='wall'){ax=100;az=238}
+    if(b.name.startsWith('Burg: Ring')){ax=CASTLE.x0;az=CASTLE.z0}
+    if(b.name.startsWith('Burg: Tor')){az=CASTLE.z1+4}
+    labelEls.push({el,b,p:new THREE.Vector3(ax+.5-WX/2,b.bb.y1+2,az+.5-WZ/2)})}
+}
+const tmpV=new THREE.Vector3();
+function updateLabels(){
+  const w=innerWidth,h=innerHeight;
+  for(const L of labelEls){
+    const vis=showNames&&L.b.meshes&&L.b.meshes.some(m=>m.visible);
+    if(!vis){L.el.hidden=true;continue}
+    tmpV.copy(L.p).project(camera);
+    if(tmpV.z>1||tmpV.x<-1.1||tmpV.x>1.1||tmpV.y<-1.1||tmpV.y>1.1){L.el.hidden=true;continue}
+    L.el.hidden=false;L.el.style.left=((tmpV.x+1)/2*w)+'px';L.el.style.top=((1-tmpV.y)/2*h)+'px';
+  }
+}
+
+// ---------- Panel ----------
+const panel=document.getElementById('panel');
+let currentTab='mat',layer=0;
+function fmtStacks(b,n){if(b==='water')return'—';const s=Math.floor(n/64),r=n%64;if(n>=1728){const sh=Math.floor(n/1728);return`${sh} Kiste${sh>1?'n':''} + ${Math.floor((n%1728)/64)} St.`}return s?`${s} St.${r?' + '+r:''}`:String(r)}
+function matTable(counts){
+  const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const total=rows.reduce((s,r)=>s+(r[0]==='water'?0:r[1]),0);
+  return `<div class="tablewrap"><table class="mats"><thead><tr><th></th><th>Block</th><th class="num">Anzahl</th><th class="num">Stacks à 64</th></tr></thead><tbody>${
+    rows.map(([b,n])=>`<tr><td><img class="sw" alt="" src="${swatch(iconTile(b))}"></td><td>${esc(blockName(b))}<br><code>${blockId(b)}</code>${BLOCKS[b].note?`<br><code>${esc(BLOCKS[b].note)}</code>`:''}</td><td class="num">${n.toLocaleString('de-DE')}</td><td class="num st">${fmtStacks(b,n)}</td></tr>`).join('')
+  }</tbody><tfoot><tr><td></td><td>Blöcke gesamt (ohne Wasser)</td><td class="num">${total.toLocaleString('de-DE')}</td><td class="num st">${fmtStacks('',total)}</td></tr></tfoot></table></div>`;
+}
+function matText(counts,title){
+  return title+'\n'+Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([b,n])=>`${n}\t${blockName(b)}\t${blockId(b)}`).join('\n');
+}
+function openPanel(title,sub,tabs,render){
+  panel.hidden=false;document.getElementById('pTitle').textContent=title;document.getElementById('pSub').innerHTML=sub;
+  const tb=document.getElementById('pTabs');tb.innerHTML=tabs.map(t=>`<button role="tab" data-tab="${t[0]}" aria-selected="${t[0]===currentTab}">${t[1]}</button>`).join('');
+  tb.hidden=tabs.length<2;
+  tb.querySelectorAll('button').forEach(bt=>bt.onclick=()=>{currentTab=bt.dataset.tab;tb.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===bt));render()});
+  render();
+}
+function select(b){
+  if(selected&&selected!==b){setBuildingMat(selected,null);exitLayerMode()}
+  selected=b;setBuildingMat(b,matSel);
+  if(!['mat','guide','farm'].includes(currentTab))currentTab='mat';
+  const w=b.bb.x1-b.bb.x0+1,d=b.bb.z1-b.bb.z0+1,h=b.bb.y1-b.bb.y0+1;
+  const tabs=[['mat','Materialliste'],['guide','Bauanleitung']];if(b.farm)tabs.push(['farm','Farm']);
+  if(currentTab==='farm'&&!b.farm)currentTab='mat';
+  openPanel(b.name,`${esc(b.group)}${b.farm?`<span class="farmtag">${esc(b.farm.replace(' (Etappe 2)',''))}</span>`:''}`,tabs,()=>renderBuilding(b,w,d,h));
+  focusOn(b);
+}
+function renderBuilding(b,w,d,h){
+  const body=document.getElementById('pBody');
+  if(currentTab!=='guide')exitLayerMode();
+  const total=Object.entries(b.counts).reduce((s,[k,n])=>s+(k==='water'?0:n),0);
+  const facts=`<div class="facts"><div><small>Grundfläche</small><b>${w} × ${d}</b></div><div><small>Höhe</small><b>${h}</b></div><div><small>Blöcke</small><b>${total.toLocaleString('de-DE')}</b></div></div>`;
+  if(currentTab==='mat'){
+    body.innerHTML=`${facts}<p class="desc">${esc(b.desc||'')}</p><div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(b.counts)}`;
+    document.getElementById('cpy').onclick=e=>copyText(matText(b.counts,b.name),e.target);
+  }else if(currentTab==='guide'){
+    const nL=b.bb.y1-b.bb.y0+1;if(!layerMode)layer=0;
+    body.innerHTML=`<h3>Schritte</h3><ol class="steps">${(b.steps||[]).map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+      <h3>Schicht für Schicht</h3>
+      <div class="layerbar"><button id="lPrev" aria-label="Schicht tiefer">◀</button><input type="range" id="lRange" min="0" max="${nL-1}" value="${layer}" aria-label="Schicht"><button id="lNext" aria-label="Schicht höher">▶</button><span class="lnum" id="lNum"></span></div>
+      <label class="chk"><input type="checkbox" id="lIso" checked> In 3D nur dieses Gebäude bis zu dieser Schicht zeigen</label>
+      <div class="legend"><span><i>▲</i> Treppe (Spitze = hohe Seite)</span><span><i>△</i> umgedrehte Treppe</span><span><i>▁</i>/<i>▔</i> Stufe unten/oben</span><span><i>│</i> Scheibe/Gitter</span><span><i>▌</i> Falltür, Tür, Leiter (Wandseite)</span><span><i>═</i> liegender Stamm</span><span>blass: Schicht darunter</span></div>
+      <div class="planwrap"><canvas id="plan"></canvas></div><div class="plancap" id="planCap">Norden ist oben. Zeiger über ein Feld halten zeigt den Block.</div>
+      <div id="layerMats"></div>`;
+    const set=v=>{layer=Math.max(0,Math.min(nL-1,v));document.getElementById('lRange').value=layer;renderLayer(b)};
+    document.getElementById('lRange').oninput=e=>set(+e.target.value);
+    document.getElementById('lPrev').onclick=()=>set(layer-1);
+    document.getElementById('lNext').onclick=()=>set(layer+1);
+    document.getElementById('lIso').onchange=e=>{if(e.target.checked)renderLayer(b);else exitLayerMode()};
+    renderLayer(b);
+  }else{
+    body.innerHTML=`${facts}<p class="note">Hier entsteht in Etappe 2 die versteckte Farm: <b>${esc(b.farm.replace(' (Etappe 2)',''))}</b>. Sie wird mit eigener Materialliste und Bauanleitung ins Blockmodell eingebaut und per Hopper-Linie mit dem Lagerhaus verbunden.</p>`;
+  }
+}
+function exitLayerMode(){
+  if(!layerMode)return;layerMode=false;
+  const getAt=(x,y,z)=>allVox.get(K(x,y,z));
+  if(selected){makeBuildingMeshes(selected,selected.voxels,solidAt,getAt);setBuildingMat(selected,matSel)}
+  for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=true);
+}
+function renderLayer(b){
+  const y=b.bb.y0+layer,nL=b.bb.y1-b.bb.y0+1;
+  document.getElementById('lNum').textContent=`Schicht ${layer+1} / ${nL}`;
+  const iso=document.getElementById('lIso');
+  if(iso&&iso.checked){
+    layerMode=true;
+    const own=new Map();for(const v of b.voxels)if(v.y<=y)own.set(K(v.x,v.y,v.z),v);
+    const sAt=(x,yy,z)=>{if(yy<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;const v=own.get(K(x,yy,z));return!!v&&FULL.has(v.b)};
+    makeBuildingMeshes(b,b.voxels.filter(v=>v.y<=y),sAt,(x,yy,z)=>own.get(K(x,yy,z)),y);
+    for(const o of buildings)if(o!==b&&o.meshes&&o.kind!=='street')o.meshes.forEach(m=>m.visible=false);
+  }
+  drawPlan(b,y);
+  const cnt=countBlocks(b.voxels.filter(v=>v.y===y));
+  const hgt=y-b.bb.y0;
+  document.getElementById('layerMats').innerHTML=`<h3>Material für Schicht ${layer+1} <span style="font:400 12px var(--f-body);color:var(--muted)">(Höhe +${hgt} über dem Fundament${b.bb.y0?`, Weltkoordinate y = ${y}`:''})</span></h3>`+(Object.keys(cnt).length?matTable(cnt):'<p class="desc">Diese Schicht ist leer.</p>');
+}
+const FACING_GLYPH=[0,1,2,3];
+function stateText(v){
+  const s=BLOCKS[v.b].shape;const parts=[blockName(v.b)];
+  if(s==='stairs')parts.push(`steigt nach ${DIR_DE[v.f]} an${v.h?', umgedreht (obere Hälfte)':''}`);
+  else if(s==='slab')parts.push(v.h?'obere Hälfte':'untere Hälfte');
+  else if(s==='log')parts.push(v.a==='y'?'stehend':v.a==='x'?'liegend Ost–West':'liegend Nord–Süd');
+  else if(s==='pane')parts.push(v.a==='x'?'Ost–West':'Nord–Süd');
+  else if(s==='trapdoor')parts.push(`offen, an der Wand im ${DIR_DE[v.f]}`);
+  else if(s==='ladder')parts.push(`an der Wand im ${DIR_DE[v.f]}`);
+  else if(s==='door')parts.push(`${v.h?'obere':'untere'} Hälfte, Außenseite ${DIR_DE[v.f]}`);
+  else if(s==='lantern')parts.push(v.h?'hängend':'stehend');
+  return parts.join(' · ');
+}
+function drawPlan(b,y){
+  const cv=document.getElementById('plan');if(!cv)return;
+  const w=b.bb.x1-b.bb.x0+1,d=b.bb.z1-b.bb.z0+1;
+  const avail=Math.max(200,(cv.parentElement.clientWidth||400)-2);
+  const cs=Math.max(6,Math.min(28,Math.floor((avail-22)/w)));
+  const M=22;cv.width=M+w*cs+2;cv.height=M+d*cs+2;
+  const g=cv.getContext('2d');g.imageSmoothingEnabled=false;
+  const css=getComputedStyle(document.documentElement);const ink=css.getPropertyValue('--ink').trim(),line=css.getPropertyValue('--line').trim(),muted=css.getPropertyValue('--muted').trim();
+  g.clearRect(0,0,cv.width,cv.height);
+  const cur=new Map(),below=new Map();
+  for(const v of b.voxels){if(v.y===y)cur.set(v.x+','+v.z,v);else if(v.y===y-1)below.set(v.x+','+v.z,v)}
+  const tileFor=v=>{const sh=BLOCKS[v.b].shape;return texOf(v,['pane','door','trapdoor','ladder'].includes(sh)?4:2)};
+  const drawTile=(v,px,py,alpha)=>{const t=TILE[tileFor(v)];g.globalAlpha=alpha;g.drawImage(atlas,t.c*16,t.r*16,16,16,px,py,cs,cs);g.globalAlpha=1};
+  for(const[k,v]of below)if(!cur.has(k))drawTile(v,M+(v.x-b.bb.x0)*cs,M+(v.z-b.bb.z0)*cs,.2);
+  for(const v of cur.values()){
+    const px=M+(v.x-b.bb.x0)*cs,py=M+(v.z-b.bb.z0)*cs,sh=BLOCKS[v.b].shape;
+    if(['pane','door','trapdoor','ladder','lantern','fence','wall'].includes(sh)){g.fillStyle='rgba(127,127,127,.18)';g.fillRect(px,py,cs,cs)}else drawTile(v,px,py,1);
+    if(cs<9)continue;
+    g.save();g.translate(px+cs/2,py+cs/2);g.lineWidth=Math.max(1.5,cs/9);g.strokeStyle='#111';g.fillStyle='#fff';
+    const q=cs*.32;
+    if(sh==='stairs'){g.rotate([0,Math.PI/2,Math.PI,-Math.PI/2][v.f]);g.beginPath();g.moveTo(0,-q);g.lineTo(q,q*.8);g.lineTo(-q,q*.8);g.closePath();if(v.h){g.fillStyle='rgba(0,0,0,.25)';g.fill();g.strokeStyle='#fff';g.stroke()}else{g.fill();g.stroke()}}
+    else if(sh==='slab'){g.fillStyle='#fff';g.strokeStyle='#111';const yy=v.h?-q:q*.55;g.fillRect(-q,yy,2*q,q*.45);g.strokeRect(-q,yy,2*q,q*.45)}
+    else if(sh==='pane'){g.strokeStyle=v.b==='iron_bars'?'#555':'#7fc8e8';g.lineWidth=Math.max(2,cs/6);g.beginPath();if(v.a==='z'){g.moveTo(0,-cs/2);g.lineTo(0,cs/2)}else{g.moveTo(-cs/2,0);g.lineTo(cs/2,0)}g.stroke()}
+    else if(['trapdoor','door','ladder'].includes(sh)){const side=sh==='door'?((v.f+2)&3):v.f;g.rotate([0,Math.PI/2,Math.PI,-Math.PI/2][side]);g.fillStyle=sh==='door'?'#8a5a2b':sh==='ladder'?'#b88a4a':'#6b4a2a';g.fillRect(-cs/2,-cs/2,cs,cs*.28);g.strokeStyle='#111';g.lineWidth=1;g.strokeRect(-cs/2,-cs/2,cs,cs*.28)}
+    else if(sh==='log'&&v.a!=='y'){g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=Math.max(1,cs/12);if(v.a==='z')g.rotate(Math.PI/2);g.beginPath();g.moveTo(-q,-q*.4);g.lineTo(q,-q*.4);g.moveTo(-q,q*.4);g.lineTo(q,q*.4);g.stroke()}
+    else if(sh==='lantern'){g.fillStyle='#ffc94a';g.beginPath();g.arc(0,0,q*.6,0,7);g.fill();g.stroke()}
+    else if(sh==='campfire'){g.fillStyle='#ff8a2a';g.beginPath();g.arc(0,0,q*.7,0,7);g.fill()}
+    else if(sh==='fence'||sh==='wall'){g.fillStyle='#8b6a44';g.fillRect(-q*.4,-q*.4,q*.8,q*.8)}
+    else if(sh==='water'){g.fillStyle='rgba(60,110,220,.35)';g.fillRect(-cs/2,-cs/2,cs,cs)}
+    g.restore();
+  }
+  // Raster
+  g.strokeStyle=line;g.lineWidth=1;g.beginPath();
+  for(let x=0;x<=w;x++){g.moveTo(M+x*cs+.5,M);g.lineTo(M+x*cs+.5,M+d*cs)}
+  for(let z=0;z<=d;z++){g.moveTo(M,M+z*cs+.5);g.lineTo(M+w*cs,M+z*cs+.5)}
+  g.stroke();
+  g.strokeStyle=ink;g.lineWidth=1.5;g.beginPath();
+  for(let x=0;x<=w;x+=5){g.moveTo(M+x*cs+.5,M);g.lineTo(M+x*cs+.5,M+d*cs)}
+  for(let z=0;z<=d;z+=5){g.moveTo(M,M+z*cs+.5);g.lineTo(M+w*cs,M+z*cs+.5)}
+  g.globalAlpha=.35;g.stroke();g.globalAlpha=1;
+  g.fillStyle=muted;g.font='10px '+css.getPropertyValue('--f-mono');g.textAlign='center';g.textBaseline='middle';
+  for(let x=0;x<w;x+=5)g.fillText(String(x+1),M+x*cs+cs/2,M/2);
+  g.textAlign='right';for(let z=0;z<d;z+=5)g.fillText(String(z+1),M-4,M+z*cs+cs/2);
+  g.fillStyle=ink;g.textAlign='left';g.font='bold 11px '+css.getPropertyValue('--f-mono');g.fillText('N↑',2,9);
+  cv.onmousemove=e=>{const r=cv.getBoundingClientRect();const cx=Math.floor((e.clientX-r.left-M)/cs),cz=Math.floor((e.clientY-r.top-M)/cs);const v=cur.get((cx+b.bb.x0)+','+(cz+b.bb.z0));document.getElementById('planCap').textContent=cx>=0&&cz>=0&&cx<w&&cz<d?`Spalte ${cx+1}, Reihe ${cz+1}: ${v?stateText(v):'leer'}`:'Norden ist oben.'};
+}
+async function copyText(t,btn){
+  try{await navigator.clipboard.writeText(t);btn.textContent='Kopiert'}catch(e){
+    const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');btn.textContent='Kopiert'}catch(_){btn.textContent='Kopieren nicht möglich'}ta.remove()}
+  setTimeout(()=>btn.textContent='Liste kopieren',1800);
+}
+function showTotal(){
+  if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
+  const tot={};for(const b of buildings)for(const[k,n]of Object.entries(b.counts))tot[k]=(tot[k]||0)+n;
+  currentTab='tot';
+  const groups={};for(const b of buildings)(groups[b.group]=groups[b.group]||[]).push(b);
+  openPanel('Gesamt-Materialliste',`Alle ${buildings.length} Bauwerke der Stadt, automatisch aus den Blockmodellen gezählt`,[['tot','Material'],['by','Nach Gebäude']],()=>{
+    const body=document.getElementById('pBody');
+    if(currentTab==='tot'){
+      body.innerHTML=`<p class="note">Etappe 1: Stadtmauer, Burg, Straßen, Markt und Häuser. Die Farmen kommen in Etappe 2 dazu und erscheinen dann automatisch in dieser Liste.</p><div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(tot)}`;
+      document.getElementById('cpy').onclick=e=>copyText(matText(tot,'Gesamt-Materialliste Burgstadt'),e.target);
+    }else body.innerHTML=listHTML(groups);
+    bindList();
+  });
+}
+function listHTML(groups){
+  const order=['Burg','Stadtbefestigung','Gebäude mit Farm','Plätze','Wohnhäuser'];
+  return order.filter(g=>groups[g]).map(g=>`<div class="group-h">${esc(g)} (${groups[g].length})</div><div class="blist">${groups[g].map(b=>{const n=Object.entries(b.counts).reduce((s,[k,v])=>s+(k==='water'?0:v),0);return`<button data-bid="${b.id}"><span>${esc(b.name)}${b.farm?` <span class="farmtag">Farm</span>`:''}</span><span>${n.toLocaleString('de-DE')}</span></button>`}).join('')}</div>`).join('');
+}
+function bindList(){document.querySelectorAll('[data-bid]').forEach(bt=>bt.onclick=()=>{currentTab='mat';select(buildings[+bt.dataset.bid])})}
+function showList(){
+  if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
+  currentTab='list';
+  const groups={};for(const b of buildings)(groups[b.group]=groups[b.group]||[]).push(b);
+  openPanel('Gebäude',`${buildings.length} Bauwerke · Zahl = Blöcke`,[['list','Liste']],()=>{document.getElementById('pBody').innerHTML=listHTML(groups);bindList()});
+}
+function closePanel(){panel.hidden=true;if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}}
+
+// ---------- Start ----------
+function loop(now){requestAnimationFrame(loop);stepTween(now);controls.update();updateLabels();renderer.render(scene,camera)}
+function start(){
+  if(!window.THREE||!THREE.OrbitControls){document.getElementById('loading').textContent='Three.js konnte nicht geladen werden. Bitte mit Internetverbindung öffnen.';return}
+  buildCity();
+  initThree();buildMeshes();initInput();initLabels();
+  document.getElementById('btnTotal').onclick=showTotal;
+  document.getElementById('btnList').onclick=showList;
+  document.getElementById('pClose').onclick=closePanel;
+  const bn=document.getElementById('btnNames');bn.onclick=()=>{showNames=!showNames;bn.setAttribute('aria-pressed',showNames)};
+  document.getElementById('selPlaster').onchange=e=>{plasterChoice=e.target.value;paintAtlas();atlasTex.needsUpdate=true;for(const k in swatchCache)delete swatchCache[k];if(!panel.hidden){if(selected)select(selected);else if(currentTab==='tot'||currentTab==='by')showTotal()}};
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+  new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  document.getElementById('loading').remove();
+  window.__city={buildings,occ};
+  requestAnimationFrame(loop);
+}
+start();
+</script>
+</body>
+</html>
