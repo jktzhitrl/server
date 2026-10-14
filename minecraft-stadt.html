@@ -561,7 +561,7 @@ function genHouse(o){
 
 // ---------- Welt & Gelände: deine Insel ----------
 // Der Ausschnitt ist die Karte deiner Welt. Lokales x/z + Ursprung = Minecraft-X/Z, y + 64 = Minecraft-Y.
-const X0=-2828,Z0=-2050,Y0=64;
+const X0=-2826,Z0=-2054,Y0=64;
 const mcX=x=>x+X0,mcY=y=>y+Y0,mcZ=z=>z+Z0;
 const WX=303,WZ=279;
 // Inselkarte, Zeile für Zeile: w Wasser, g Wiese, s Sand, f Wald (Lauflängen)
@@ -607,7 +607,7 @@ function landH(x,z,i){
   if(MASK[i]===2)l=Math.min(l,1+(d>5?1:0));
   return Math.max(0,Math.round(l));
 }
-const LIGHT=[198,27];
+const LIGHT=[201,25];
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
   const i=z*WX+x,[cx,cz]=w2c(x,z);
   const dx=cx-100,dz=cz-42,rx=40,rz=44;
