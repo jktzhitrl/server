@@ -439,7 +439,7 @@ class Model{
 }
 function rotState(v,r){
   const o=Object.assign({},v);
-  if(o.f!=null)o.f=(o.f+r)&3;
+  if(o.f!=null&&o.f<4)o.f=(o.f+r)&3;
   if(o.a&&o.a!=='y'&&(r&1))o.a=o.a==='x'?'z':'x';
   return o;
 }
@@ -559,85 +559,120 @@ function genHouse(o){
   return m;
 }
 
-// ---------- Welt & Gelände ----------
-const WX=262,WZ=250;
+// ---------- Welt & Gelände: deine Insel ----------
+// Der Ausschnitt ist die Karte deiner Welt. Lokales x/z + Ursprung = Minecraft-X/Z, y + 64 = Minecraft-Y.
+const X0=-2828,Z0=-2050,Y0=64;
+const mcX=x=>x+X0,mcY=y=>y+Y0,mcZ=z=>z+Z0;
+const WX=303,WZ=279;
+// Inselkarte, Zeile für Zeile: w Wasser, g Wiese, s Sand, f Wald (Lauflängen)
+const ISLAND_RLE='g8f6g120s4w82g4w4g29w46g8f7g119w86g4w4g30w45g8f13g108w91g3w5g31w44g9f13g106w92g3w5g31w44g10f12g105w93g3w5g31w44g12f10g104w94g7wg30w45g14f8g103w96g39f4w39g19fg103w104g32f5w39g122w105g31f6w39g121w106g31f6w39g121w105g33f5w39g120w107sg31f5w39g120w107sg33f3w39g120w107s2g32f3w39g120w79g2w26sg33f3w39g120w79g3w26g32f4w39g121w78g2w27g33f3w39g121w107g34f2w39g121w107g16f2g18w39g2f3g115w109g14f4g17w39gf5g114w80s4w26g13f5g16w39gf5g114w78s9w23g12f6g15f11g3f3w23f6g115w74gs9g3w23g10f7g7f3g5f17w23f5g117w71g4s7g6w22g8f8g6f5g4f17w23gf4g117w70g8sg11w21g7f7g7f4g4f18w23g122w69g23w19gsgs2g3f6g7f4g4f18w23g122w68g25w20s5g2f3g9f3g5f17gw23g122w68g25w22s3g15f2g5f16g2w24g104wg15w68g26w25g17f16g7w26g98w88g26w27g15f14g9w26g98w87g27w28g14f11g12w25g99w86g28w29g15f8g13w24g98w87g29w30g17f5g4f9w23g94w92g29w31g7f4g6f3g4f10w23g93w95g17w3g7w31f4g2f11g6f11w23g93w99s3g9w4g7w30f18g6f11w23g93w101sg8w4g8w26g4f11g2f6g6f10w23g93w106g3w3g10w26g4f10g3f6g8f2g2f3g16w8g96w79g4w20g2w3g11w26g4f9g4f5g13f3g10fg5w8g98w76g9w20g12w25g2f11g6f3g5fg7f4g8f4g4w8g99w73g12w15g16w21g5f12g4fg8f4g4f6g7f5g3w8g99w71g14w15g16w20g2f16g2f4g6f6g3f9g4f5g3w8g99w71g15w15g15w20gf16g2f5g7f5g3f10g3f5g3w8g98w72g15w15g15w20gf16g2f6g7f5g2f11g2f5g3w8g98w72g15w16g15w19gf16g2f5g8f18g4f2g4w8g96s2w72g15w18g13w19f7g2f8g2f5g8f18g8f2w8g93sw77g14w18g9f3gw19gf6g2f9g2f5g8f16g9f2w8g92s2w77g14w18g7f5gw18f8g3f8g3f5g7f11g2f2g10f2w8g91s3w80sg10w15g9f6g2w15f9g4f8g2f7g10f7g5f3g6f2w8g91s3w82sg8w8g17f5g2w15f9g6f6g2f7g10f7g4f5g7w8g91s3w81s2g9w4g21f5gw15f10g6f16g9f6g3f6g7w8g90s4w80s3g35f3g2w15f10g7f16g8f6g2f9g5w8g91s3w78s5g40w15f10g7f16g5f2g2f4g3f10g4w8g91s3w77s6g39w16gf9g7f16g4f5g7f10g4w8g91s2w77gs5g33f4g4w16f10g7f15g3f6g7f11g3w8g92w77g4sg34f6g5w14gf10gf4gf8g2f5g3f6g7f11g3w8g91w77g40f8g3w14g4f21g10f6g7f11g3w8g90w77g41f10gw14g5f24g7f5g8f10g3w8g89w77g42f11w15g5f25g5f4g9f9g4w8g87w79g43f4g2f3gw15g6f25g17f9g4w8g86w79g50f2g2w16g10f7g2f12g16f9g4w8g85w79g35f4g11f4gw16g10f6g5f11g14f10g4w8g84w79g36f4g10f5gw17g8f6g7f11g12f12g3w8g74sg8w80g35f6g8f6gw17g8f6g9f9g12f11g4w8g72s5g5w80g37f8g4f7gw17g8f6g10f8g12f6gf3g5w8g72sw2s2g3w83g36f9g2f7g3w16g8f6g11f7g12f5g10w8g70w93g37f16g5w16g7f6g14f3g14f4g10w8g67s3w93gsg35f17g5w16g6f6g45w8g66s3w94s4g33f18g4w17g5f6g45w8g65s4w95s3g34f18g3w17g5f6g45w8g65s3w97s3g34f18g3w16f2g3f6g45w8g65sw100sg36f17g3w15f5g5f4g14fg28w8g64w103g18f3g4f3g9f16g3w15f5g5f5g11f4g27w8g64w33g7w9s2g2w50g17f11g9f15g3w16f5g4f6g11f5g26w8g63w34g9w6s3g3w50g16f11g10f7g2f4g3w18f5g3f6g10f6g26w8g63w33s2g10w3gsg6w49g16f12g10f6g3fg3sw19f5g3f8g8f6g18fg7w8g30s5g25s2w33s2g11w2g10w49g15f12g10f7g5w21f5g4f8g5f8g16f5g5w8g29s7g23s2w33s3g24w47g18f2g2f6g9f10g3w20f6g4f9g3f12g12f7g4w8g28s7g23s2w33s4g24w47g23f5g9f10g3w20f6g4f9g2f14g11f7g4w8g28s3g2s2g23sw34s3g26w46g11f7g5f5g9f11gw20g3f2g6f10gf14g11f8g3w8g27s3g27sw34sg29w45g11f10g3f4g10f11gw20g9f11g2f14g6f2g3f11w8g23sg2s4g26w36g31w43g12f10g3f4g8f12g2w20g8f9g6f12g5f5g2f11w8g16sg5s9g23w38g32w42g13f10g2f4g7f9g6sw18g8f10g10f5g8f18w8g15s3g3s10g20w40g34w40g15f8g3f5g5f9g4f3sw18g8f11g22f12g3f3w8g9s2gs7g2s10g3s2g12w42g36w38g17f6g4f5g5f9g3f5w17g8f13g4f3g14f12g3f3w8g9s11gs11g2sg13w41g37w37g19f4g5f6gf11g4f5w17gf3g4f13g3f10g9f3gf7g3f3w8g9s26g14w39g38w36g20f4g5f16g6f5w17f5g2s2f12g3f11g13f6g3f3w8g9s28g12w37g41w34g20f5g3f2g3f9g10f5w17f5g2sf6gf6g3f12g12f6g3f3w8g9s28g12w35g44w32g20f7g2f3g2f9g4f2g5f4w17f5g4f4g3f4g4f15g10f4g5f2w8g10s27g12w34g46w30g22f5g3f13g4f4g8w17f5sg19f15g20w8g10s27g13w32g47w29g24f3g4f13g2f7g7w16gf5g25f11g15fg3w8g10s26g14w30g51w25g37f9gf8g7w16g3w5g14f3g6f11g14f3g2w8g10s19gs5g13s2w29g61s5gw8g39f18g7w6g2w8g2w8g11f5g5f11g13f6w8g9s18g18s6w20sg69s2g50f23g2w5g3w18g11f5g4f13g12f6w8g10s16g6sg11s7w18s2g125f21gw6g2w19g10f5g4f15g11f5w8gs3g6s24g11s6w16s4g127f19gw27g9f6g4f15g2f5g5f4w8s7gs25g9w2gsg2s3w16gsg130f18gw27g9f5g5f16gf6g8w8s30w4g3w12s3w14g133f7gf2g3f5gw27g9f5g5f23g8w8s29w21s2w13g135f5g8f5w27g9f4g6f16gf5g9w8s28w23sw13g107f3g16f4g4f5g10f5w26g9f4g6f15g3f3g18s28w36g107f5g14f6g3f5g10f5w27g9f2g7f10g2f2g25s28w35g108f5g14f6g3f9g6f5w29g16f10g19f4g6s28w34g108f6g14f6g2f11g5f6w30g7f5g2f10g18f6g5s27w34g109f6g8fg5f6g3f10g6f4g2w31g4f17g6f2g11f6g5s25w36g109f6g6f4g5f6g2f10g12w31g4f17g4f5g11f5g5s23w38g110f5g5f6g4f6g6f6g12w35f16g5f8g8f6g4s21w40g110f5g5f16g7f5g13w33f17g5f9g7f6g4s19w42g110f3g7f16g7f7g11w32fg3f6g2f6g5f10g6f6g4s7w4s6w44g120f17g2fg2f10g4f5gw31g5f4g5f2g8f8g7f6g4s5w55g122f41gw30g5f3g17f6g9f5g4s4w56g123f41w31g8f2g4fg11f2g12fg7s3w57g122f43w32g4f11g23fg8sw57g122f2g2f6g2f33w31g4f12g20f5g5sw58g121f3g2f6g2f33w30g4f13g4f2g14f5g5w58g128f4g5f22g3f7w27fg6f13gf5g13f5g5w58g136f15g3f2g6f7w25g9f20g12f6g4w57g132f19g11f9w22g11f6g2f17g8f5g4w57g115f3g9f25g9f9g2w19g12f6g3f17g9f5g3w56g115f4g8f27g7f9g4w17g6f4g2f7g3f18g8f5g3w54g116f5g7f28g7f9g3sw17g2f8g2f20g2f5g8f6g3w52g113f3g2f5g7f28g7f10gsfw17gf9g2f10g4f6g2f4g10f5g3w50g114f5g2f5g7f10g2f15g2f3g3f14w15f10g2f10g4f11g5f2g4f4g4w49g114f6g2f6g6f6g6f14g2f5g3f14w14f2g2f6g2f10g4f12g3f5g9fw49g114f6g3f6g6f4g7f10g6f5g7f10w14g11f11g4f12g3f6g8fw48g116f5g3f6g6f5g5f11g6f5g8f9w14g12f9g6f10g4f7g7fw45s3g117f3g4f6g6f6g4f11g6f5g2f3g4f7w15g12f4g11f3g3f4g5f7g5f2w44s3g126f5g6f6g4f11g8f2gf6g3f4g3w15g17sg8f4g3f3g7f7g3f3w41s6g117f2g8f3g7f6g3f13g10f6g2f5gs2w16g15s3g6f6gf5g7f12w40s6g118f3g18f4g3f14g10f6g2f5gs2w16g15s5gf15g8f11w40s3g121f3g25f19g5f6g2f5gs2w16g2s7g3s3gs4f16g9f7g2fw37gs4g122f3g8f4g13f20g6f3g3f5g2sw16gs6w9s4f10gf5g10f6g3w36g129f2g7f6g12f20g7fg5f3g2s2w33s3f9g3f3g12f6g2w35g139f6g11f21g2f9g9w33s3f4g24f7w34g140f6g9f13g4f6g2f9g9w33s4f2g26f6w33g141f11g4f12g6f4g2f11g3f5sw32s4g28f6w30s8g94fg36fg4f12g3f6g3f2g12f12g2f6gsw6gw24s2g13f2g15f6w29s11g92fg35f3g4f11g3f6g14f16gf6g3sw2g5w21s2g13f4g15f5w29s13g126f3g4f3g2f6g3f5g14f17gf6g16w16sg13f6g15f4w28s14g126f4gf4g4f4g6f2g14f18g2f5g17s4w11g14f6g19w21s14g9s3g122f8g30f18g3fg6f2g16sw15g9f5g4f4g11fw19s16g8s5g123f6g30f19g8f5g15s2w13g8f6g4f5g10fw19s16g7s6g123f9g16f4g6f20g7f6g16s2w13g7f6g4f6g9fw18s22g2s6g124f10g13f8g3f20g7f6g17s2w12g7f6g4f6g9fw18s23g5s5g121f12g11f9g2f20g8f5g18s2w11g7f18g7fw19s22g5s6g14wg102f5gf11g9f9g2f20g4f2g2f5g16f2g2s2w10g6f18g8w19s23g3s8g12w4g99f6gf11g9f9g3f5g6f8g2f5g21f4g3s2w8g6f18g8w19s23g2s9g12w7g95f19g4f14g16f6g2f8g18f4g6w9g4f11g2f5g8w19s36g10w10g92f19g3f15g16f5g2f10g16f5g7w8g5f11gf5g8w18s37g10w11g92f18g3f11g5f3g13f4g3f10g15f4g9w8g9f7g13w18s38g9w12g91f18g3f11g4f5g19f10g14f5g10w7g10f6g13w17s41g4sg2w13g91f18g2f22g22f5g13f6g11w7g10f5g13w11s52g2w13g92f7g2f8g3f4g4f14g22f3g14f6g12w6g10f5g4f6g3w9s54g2w14g90f6g6f5g13f16g36f6g5f3g5w7g8f4g3f9g2w7s56g2w14g90f5g7f4g7fg6f16g19f2g11f10g4f5g4sw6g5f7g2f10g2w6s57g2w14g89f6g6f4g7f4g3f6gf11g17f4g9f10g5f6g3sw7g3f20g2w5s15g10sgs31g2w14g90f5g5f5g6f13g4f9g11f3g3f5g8f6g8f7g3s2w6g3f20g2w5s16g8sg5s29gw14g91f3g5f6g6f12g8f6g6f9g2f11g2f6g8f7g3s2w7g2f19g3s22g13s28g2w15g81f4g13f6g6f12g10f3g6f10g2f19g3f12g4s2w6g2f16g6s17g17s29g2w15g81f4g13f6g6f15g16f11g2f12g2f4g2f12g6w7g3f15g3f3s17g17s29g2w15g80f5g14f4g7f16g14f11g3f12g3f16g6w8g10f8g3f3s16g7w6g5s29g2w15g80f5g24f7g2f8g13f11g5f11g2f12w3fg6w9g10f8g3f3gs15g4w11g3s28g4w15g80f3g25f7g3f7g12f7g11f24w7g2w10g4f15gf4w5g14w13g13s2g8s7g4w15g23w2g55f2g25f7g2f8g13f6g14f20w21g4f20w7g12w14g22s7g4w15g22w4g81f6g3f8g13f6g17f15g2w21g4f20w8g10w16g21s4g7w15g22w4g80f7g2f9g13f10g3f4g6f15gw21g4wf20w13g4w18g22s2g7w16g21w4g80f6g3f9g14f3gf6g2f5g5f15gw19g6w2f19w15gsw22g27w16g22wg69f4g9f6g4f7g20f5gf6g5f15gw18g7w3f18w16sw31g18w17g81f5g4f6g8f6g8fg22f5g2f5g6f5g6fg2w18g9w2g2f14g2w16s2w36g13w16g81f6g3f6g8f5g25f3g4f5g2f4g21w18g8w3g2f6gf6g3w16s3w37g11w16g80f7g3f6g4f4g29f13g22f3g2w17g7w6f7g2f5g3w57g10w20g76f7g4f5g3f5g17f4g8f13g10fg4f4g2f5gw17g7w6f6g5fg5w58g9w24g73f5g13f6g16f5g7f14g8f4gf15w16g5w7f6g11w59fg7w27g71f3g14f6g5f2g8f6g7f14g7f22w15g5w8f3g13w60g7w28g86f7g3f5g6f7g8f13g7f5gf16w15g5w8g16w61g3w32g67f3g15f7g3f6g4f8g8f13g8f3g2f6g4f9w13g4w7g17w97g65f5g14f7g3f5g4f7gf4g3f11g17f6g6f7w13g4w7g17w98g64f5g14f6g3f6g4f6g3f16g6f2g10f6g7f6w13g4w8g16w99g63f6g12f7g2f8g4f5g2f16g5f5g10f5g8f5g2w11g4w14g10w99g63f6g11f19g4f4g2f11g10f5g11f4g8f4g4w11g3w17g7w100g62f6g11f21g3f11g14f6g12f2g10fg6w31g7w106g56f6g11f22g2f11g15f4g21f6g5w31g4w2gw107g55f7g11f34g15f4g20f8g4w145g56f5g12f10gf23g6f4g5f5g6f4g9f9g4w145g55f6g10f10g3f22g3f8g4f5g5f6g8f10g4sgw144g4w6g36f3g7f4g7f9g6f22g2f9g3f7g4f6g8f10g4f6w152g32f6g6f5g5f10g6f12g5f16g3f6g5f6g8f11gf11w150g31f6g5f6g4f10g7f11g7f15g4f5g5f6g6f25w151g30f6g4f7g4f6g12f10g7f14g5f5g5f6g6f5g2f18w153g28f6g4f8g4f4g30f11g9f7g2f6g6f5g2f18w155g27f5g3f9g30f4g5f5g14f8gf7g5f24w157g27f17g17f4g8f5g5f3g14f9g2f6g7f6g4f10gsw157g27f17g17f4g8f5g22f17g7f6g5f9gsw158g26f17g17f5g7f5g2f4g15f18g8f5g8f6gsw158g27f16g17f5g8f3g3f5g14f17g9f5g3f3g3f5gsw159g28f14g17f7g11f6g10f8g2f11g11f2g3f5g3f3gs3w159g31f3g2f6g6f4g6f9g9f6g10f5g6f11g15f5g6s4w160g35f6g5f6g5f10g8f6g10f5g6f11g14f5g7s4w160g35f6g5f6g5f11g8f4g11f5g6f11g4f3g8f3g10s2w160g36f5g5f6g6f11g2w4g17f4g5f11g4f6g6f3g11w161g29f2g16f4g8f9w11g9f2g3fg6f11g5f10g2f4g10w161g28f4g16f2g9f9w12g7f4g9f11g5f16g10w161g27f5g27f7w15g6f4g8f13g5f16g9w162g26f5g26f5w19g5f5g6f14g8f14g8w162g26f5g26f5w21g3f5g7f5g2f6g8f14g8w163g25f5g14w2g4w7f3w23g2f5g7f5g2f6g8f14g9w163g12w3g10f3g14w41g6wg7f3g4f5g8f14g10w165g7w6g25w43g4w2g14f6g7f13g11w181g19w52g15f6g6f7g3fg13w185g13w54g15f6g6f5g20w185g10w56g15f6g8f2g22w186g6w58g16f4g33w250g33f3g17w250g32f5g10sg5w251g30f6g15w252g23f3g4f6g15w252g21f6g3f6g15w252g8f3g10f6g3f5g3f3g11w251g7f5g9f6g3f5g2f5g10w251g6f6g9f6g3f5gf6g10w251g3f9g9f5g4f5g2f5g11w250g2f10g7f5g6f5g2f4g13w249gf15g2f6g6f5g2f5g13w248gf16gf6g6f12g15w246gf25g4f13g16w244g2f15gf9g4f12g16w244g2f15g2f9g4f10g18w242g3f14g4f9g4f8g19w242g3f6g12f10g3f6g21w243g2f6g12f10g3f5g22w244gf7w5g5f10g4f5g22w248f3w7g4f10g4f5g22w258g4f10g4f5g22w257g5f11g30w258g5f10g30w258g5f10g30w258g4f11g29w257g4f12g30w257g3f13g30w257g2f14g4f2g24w257g2f15gf6g22w257g2f5g4f13g18w263f5g5f12g18w262f6g7f10g17w263f6g7f9g18w263f6g8f3g23w263f6g33w264f7g32w264f7g4f4g24w264gf6g3f6g11s3g9w171g10w83gf6g3f6g11s3g8w171g17w77g2f4g4f6g11s2g9w169g3f4g13w76g9wf6g22w168g3f9g5f3g2w76g8w2f4wg18s2g2w167g4f10g3f5g5w72g8w7g18s2g6w162g4f12g2f6g5w72g6w8g18sg8w160g4f13g2f6g6w72g5w8g17sg5w164g4f12g3f5g8w72g4w9g22w163g5f6g2f3g5f3g10w73g2w9sg13s2g6w162g7f5g3f2g19w83g14s4g4w161g9f4g2f5g17w84g14s3g4w162g9f11g4f3g10w84g14sg5w161g10f11g3f6g9w85g18w160fg10f11g2f8g8sw84g18w158f4g9f10g3f8g9w83g6s5g8w158f5g8f5g3fg3f9g9w83g6s5g8w158gf4g9f4g7f10g8w82sg6s4g9w158gf4g9f4g7f10g7w82g8s4g9w158g2f3g9f7g4f7w8gw83g9sg11w154g18f9g2f6gw92g21w153g19f10gf5w94g21w153g19f10g3w97g5w168g21f8g5w96g5w166g23f8g4fw97g4w165g7f2g26f4w95g4w164g7f5g23f6w94g4w163g7f10g19f7g6w88g3w162g8f11g13f3g2f7g7w88g2w161g10f10g9f17g6w88g2w161g10f10g8f10gf7g7w88gw39';
+const MASK=new Uint8Array(WX*WZ);
+{let i=0;const re=/([wgsf])(\d*)/g;let mm;while((mm=re.exec(ISLAND_RLE))){const n=mm[2]?+mm[2]:1;MASK.fill('wgsf'.indexOf(mm[1]),i,i+n);i+=n}}
 const Hm=new Int16Array(WX*WZ);
 const moat=new Uint8Array(WX*WZ);
-const SEA=new Uint8Array(WX*WZ),ROCK=new Uint8Array(WX*WZ),SAND=new Uint8Array(WX*WZ);
-const hAt=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?0:Hm[z*WX+x];
+const SEA=new Uint8Array(WX*WZ),ROCK=new Uint8Array(WX*WZ),SAND=new Uint8Array(WX*WZ),FOREST=new Uint8Array(WX*WZ);
+const hAtW=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?-6:Hm[z*WX+x];
+let hAt=hAtW;
 function vnoise(x,z,s,seed){const xi=Math.floor(x/s),zi=Math.floor(z/s),fx=x/s-xi,fz=z/s-zi;const g=(a,b)=>hash3(a,b,seed);const sm=t=>t*t*(3-2*t);const a=g(xi,zi),b=g(xi+1,zi),c=g(xi,zi+1),e=g(xi+1,zi+1);return(a+(b-a)*sm(fx))+((c+(e-c)*sm(fx))-(a+(b-a)*sm(fx)))*sm(fz)}
+function inPoly(x,z,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,zi]=poly[i],[xj,zj]=poly[j];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c}return c}
+function segDist(px,pz,a,b){const vx=b[0]-a[0],vz=b[1]-a[1];const t=Math.max(0,Math.min(1,((px-a[0])*vx+(pz-a[1])*vz)/(vx*vx+vz*vz)));return Math.hypot(px-a[0]-vx*t,pz-a[1]-vz*t)}
+function polyDist(px,pz,pts){let m=1e9;for(let i=0;i<pts.length-1;i++)m=Math.min(m,segDist(px,pz,pts[i],pts[i+1]));return m}
+
+// Die Burg wird in eigenen Koordinaten geplant und gedreht auf den Hügel gesetzt: Burgtor nach Osten zur Stadt.
+const CAS={r:3,ox:76,oz:234};
+const c2w=(x,z)=>{const[p,q]=rotP(x,z,CAS.r);return[p+CAS.ox,q+CAS.oz]};
+const w2c=(X,Z)=>[CAS.oz-Z,X-CAS.ox];
 const CASTLE={x0:72,x1:128,z0:8,z1:76};
-// Hauptburg (oben) und Vorburg (davor), beide folgen dem Hügel
+// Hauptburg (hinten) und Vorburg (vor dem Tor), beide folgen dem Hügel
 const HAUPT=[[76,16],[92,8],[110,8],[124,16],[128,32],[122,48],[78,48],[72,32]];
 const VOR=[[78,48],[70,58],[76,72],[92,76],[108,76],[124,72],[130,58],[122,48]];
 const OUTER=[[76,16],[92,8],[110,8],[124,16],[128,32],[122,48],[130,58],[124,72],[108,76],[92,76],[76,72],[70,58],[78,48],[72,32]];
 const OUTER_C=OUTER.concat([OUTER[0]]),HAUPT_C=HAUPT.concat([HAUPT[0]]);
 const PLAT=12;
 const HILL=new Uint8Array(WX*WZ);
-// Sanfte Hügel: die Stadt steigt von Süden zur Burg hin an, dazu Wellen im Gelände
-function liftAt(x,z){
-  const t=Math.max(0,Math.min(1,(205-z)/150));
-  let l=t*4.4+(vnoise(x,z,28,5)-.5)*4.6+(vnoise(x,z,12,6)-.5)*1.8;
-  if(x>182)l*=Math.max(0,(204-x)/22);
-  for(const[gx,gz,r]of[[100,232,16],[193,143,13]]){const d=Math.hypot(x-gx,z-gz);if(d<r)l*=Math.max(0,(d-r*.45)/(r*.55))}
+// Abstand zum Wasser bzw. zum Land
+function bfsDist(isSrc){
+  const N=WX*WZ,d=new Int16Array(N).fill(999),q=new Int32Array(N);let h=0,t=0;
+  for(let i=0;i<N;i++)if(isSrc(i)){d[i]=0;q[t++]=i}
+  while(h<t){const i=q[h++],x=i%WX,nd=d[i]+1;
+    for(const j of[x>0?i-1:-1,x<WX-1?i+1:-1,i-WX,i+WX])if(j>=0&&j<N&&d[j]>nd){d[j]=nd;q[t++]=j}}
+  return d;
+}
+const dWater=bfsDist(i=>MASK[i]===0),dLand=bfsDist(i=>MASK[i]!==0);
+// Gelände: flache Ufer, landeinwärts sanfte Wellen. Mitten auf der Insel der Burghügel.
+function landH(x,z,i){
+  const d=dWater[i];
+  let l=(1-Math.exp(-d/10))*6+(vnoise(x,z,28,5)-.5)*4.6+(vnoise(x,z,12,6)-.5)*1.8;
+  if(d<=3)l=Math.min(l,d*.7);
+  if(MASK[i]===2)l=Math.min(l,1+(d>5?1:0));
   return Math.max(0,Math.round(l));
 }
+const LIGHT=[198,27];
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
-  const dx=x-100,dz=z-42,rx=47,rz=45,i=z*WX+x;
+  const i=z*WX+x,[cx,cz]=w2c(x,z);
+  const dx=cx-100,dz=cz-42,rx=40,rz=44;
   const e=Math.pow(Math.abs(dx)/rx,6)+Math.pow(Math.abs(dz)/rz,6);
   let hill=0;
-  if(e<=1)hill=PLAT;else{const t=Math.pow(e,1/6),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;hill=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/15)))}
-  const lift=liftAt(x,z);let h=Math.max(lift,hill);
+  if(e<=1)hill=PLAT;else{const t=Math.pow(e,1/6),dist=Math.hypot(dx,dz)*(1-1/t)+(vnoise(x,z,9,3)-.5)*5;hill=Math.max(0,Math.min(PLAT,Math.round(PLAT-dist*PLAT/12)))}
+  const water=MASK[i]===0&&hill<PLAT-2;
+  if(water){SEA[i]=1;const dl=dLand[i];Hm[i]=dl<=1?-2:dl<=3?-3:dl<=7?-4:-6;continue}
+  const lift=landH(x,z,i);let h=Math.max(lift,hill);
   if(hill>0&&hill>=lift)HILL[i]=1;
-  if(x>=56&&x<=144&&z<=90&&!inPoly(x+.5,z+.5,OUTER)){const d=polyDist(x+.5,z+.5,OUTER_C);if(d>3.5&&d<=7.5){h=PLAT-3;moat[i]=1;HILL[i]=1}}
-  // Küste im Osten, Landzunge mit Leuchtturm
-  const cx=coastX(z);
-  const hd=segDist(x+.5,z+.5,[214,100],[242,106]),hr=5+vnoise(x,z,5,4)*2.5;
-  if(hd<hr&&x>=cx-6){ROCK[i]=1;h=Math.max(1,Math.min(6,Math.round((x-cx+6)/4.5)+(hd<hr-2.5?1:0)))}
-  else if(x>=cx){SEA[i]=1;h=x>cx+9?-5:-3}
-  else if(x>=cx-3)SAND[i]=1;
+  if(cx>=56&&cx<=144&&cz<=90&&!inPoly(cx+.5,cz+.5,OUTER)){const d=polyDist(cx+.5,cz+.5,OUTER_C);if(d>3.5&&d<=7.5){h=PLAT-3;moat[i]=1;HILL[i]=1}}
+  if(MASK[i]===2&&!HILL[i])SAND[i]=1;
+  if(MASK[i]===3&&!HILL[i])FOREST[i]=1;
+  if(Math.hypot(x-LIGHT[0],z-LIGHT[1])<6.5)ROCK[i]=1;
   Hm[i]=h;
 }
-function coastX(z){return 217+Math.round((vnoise(3,z,13,9)-.5)*7)}
+// Steile Hänge am Burghügel zeigen Fels
+for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){const i=z*WX+x;if(!HILL[i]||moat[i]||SEA[i])continue;
+  let m=0;for(const j of[i-1,i+1,i-WX,i+WX])if(!moat[j])m=Math.max(m,Hm[i]-Hm[j]);
+  if(m>=3)ROCK[i]=1;}
 
-// Stadtmauer-Verlauf (offen, die Burg schließt den Ring im Norden)
-const WALL=[[58,76],[24,86],[12,150],[32,214],[88,232],[112,232],[166,222],[192,166],[194,120],[176,88],[142,76]];
-const HARBOR_GATE_Z=143;
-const CITY_POLY=WALL.slice();
-function inPoly(x,z,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,zi]=poly[i],[xj,zj]=poly[j];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/(zj-zi)+xi))c=!c}return c}
-function segDist(px,pz,a,b){const vx=b[0]-a[0],vz=b[1]-a[1];const t=Math.max(0,Math.min(1,((px-a[0])*vx+(pz-a[1])*vz)/(vx*vx+vz*vz)));return Math.hypot(px-a[0]-vx*t,pz-a[1]-vz*t)}
-function polyDist(px,pz,pts){let m=1e9;for(let i=0;i<pts.length-1;i++)m=Math.min(m,segDist(px,pz,pts[i],pts[i+1]));return m}
+// ---------- Stadt-Grundriss ----------
+// Stadtmauer (offen, die Burg schließt den Ring im Westen)
+const WALL=[[154,96],[183,94],[185,57],[199,52],[212,58],[214,118],[228,136],[238,160],[232,186],[214,194],[186,198],[166,190],[152,176]];
+const GATE_MAIN=[213,88],GATE_HARBOR=[184,76],GATE_SMALL=[176,194];
+const CITY_POLY=WALL.concat([c2w(100,80)]);
+// Tore und Brückenköpfe einebnen
+const GATE_Y=Math.max(2,Hm[GATE_MAIN[1]*WX+GATE_MAIN[0]]);
+for(const[gx,gz,r,g0]of[[GATE_MAIN[0],GATE_MAIN[1],12,GATE_Y],[240,88,8,GATE_Y],[GATE_HARBOR[0],GATE_HARBOR[1],9,null],[GATE_SMALL[0],GATE_SMALL[1],6,null]]){
+  const g=g0!=null?g0:Hm[gz*WX+gx];
+  for(let z=gz-r;z<=gz+r;z++)for(let x=gx-r;x<=gx+r;x++){if(x<0||z<0||x>=WX||z>=WZ)continue;const i=z*WX+x;if(SEA[i]||HILL[i])continue;
+    const d=Math.hypot(x-gx,z-gz);if(d>=r)continue;const t=Math.max(0,(d-r*.45)/(r*.55));Hm[i]=Math.round(g+(Hm[i]-g)*t)}
+}
+const BRIDGE={z0:86,z1:90,y:GATE_Y};
+{let xa=1e9,xb=-1e9;for(let z=BRIDGE.z0;z<=BRIDGE.z1;z++)for(let x=200;x<250;x++)if(SEA[z*WX+x]){xa=Math.min(xa,x);xb=Math.max(xb,x)}BRIDGE.xa=xa-1;BRIDGE.xb=xb+1}
 
-// Belegungsraster: 0 frei, 1 Straße, 2 Platz, 3 Mauer, 4 Gebäude, 5 Burg/Hügel, 6 außerhalb, 7 Vorplatz
+// Belegungsraster: 0 frei, 1 Straße, 2 Platz, 3 Mauer, 4 Gebäude, 5 Burg/Hügel, 6 außerhalb, 7 Vorplatz, 8 Deko/Farm, 9 Wasser
 const occ=new Uint8Array(WX*WZ);
-const oAt=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?6:occ[z*WX+x];
+const oAtW=(x,z)=>(x<0||z<0||x>=WX||z>=WZ)?6:occ[z*WX+x];
+let oAt=oAtW;
 const oSet=(x,z,v)=>{if(x>=0&&z>=0&&x<WX&&z<WZ)occ[z*WX+x]=v};
 
 // ---------- Straßen & Plätze ----------
 const STREETS=[
-  {name:'Hauptstraße',w:5,kind:'main',pts:[[100,249],[100,236],[101,226],[98,212],[94,196],[96,180],[93,166],[92,150],[92,140],[92,128],[95,116],[99,104],[101,94],[100,88],[100,84]]},
-  {name:'Westgasse',w:3,kind:'lane',pts:[[76,138],[64,134],[50,138],[36,146],[22,150]]},
-  {name:'Ostgasse',w:3,kind:'lane',pts:[[109,142],[124,137],[140,141],[158,146],[178,150]]},
-  {name:'Bäckergasse',w:3,kind:'lane',pts:[[95,184],[80,190],[64,194],[50,202],[40,208]]},
-  {name:'Schmiedgasse',w:3,kind:'lane',pts:[[97,202],[114,205],[130,206],[148,210],[160,214]]},
-  {name:'Burggasse West',w:3,kind:'lane',pts:[[96,110],[82,104],[66,100],[50,98],[34,102]]},
-  {name:'Burggasse Ost',w:3,kind:'lane',pts:[[100,100],[116,98],[132,94],[150,96],[168,102]]},
-  {name:'Krumme Gasse',w:3,kind:'lane',pts:[[50,138],[47,118],[50,98]]},
-  {name:'Kirchgasse',w:3,kind:'lane',pts:[[140,141],[146,120],[150,96]]},
-  {name:'Gerbergasse',w:3,kind:'lane',pts:[[64,194],[58,170],[50,138]]},
-  {name:'Hafengasse',w:3,kind:'lane',pts:[[130,206],[140,176],[140,141]]},
-  {name:'Hintergasse',w:2,kind:'alley',pts:[[93,168],[78,162],[66,166],[58,170]]},
-  {name:'Kesselgasse',w:2,kind:'alley',pts:[[96,174],[112,168],[126,172],[140,176]]},
-  {name:'Burghof',w:3,kind:'court',pts:[[100,79],[100,52],[100,44],[95,36],[91,28]]},
-  {name:'Hafenweg',w:3,kind:'lane',pts:[[178,150],[186,147],[193,143],[202,142],[210,141]]},
-  {name:'Kai',w:3,kind:'quay',pts:[[210,108],[209,126],[210,141],[210,158],[209,174]]}
+  {name:'Hauptstraße',w:5,kind:'main',pts:[[c2w(100,84)[0],134],[166,133],[174,131],[182,129],[190,127],[198,122],[204,112],[208,100],[212,90],[220,88],[236,88],[246,90],[256,94]]},
+  {name:'Hafengasse',w:3,kind:'lane',pts:[[190,114],[188,100],[187,88],[186,80],[184,76],[178,76],[171,77]]},
+  {name:'Nordgasse',w:3,kind:'lane',pts:[[195,111],[196,98],[198,84],[200,72],[202,62]]},
+  {name:'Quergasse',w:3,kind:'lane',pts:[[188,100],[198,99],[207,102]]},
+  {name:'Südgasse',w:3,kind:'lane',pts:[[198,137],[202,150],[206,164],[208,178],[206,190]]},
+  {name:'Kirchgasse',w:3,kind:'lane',pts:[[202,150],[214,154],[222,164],[224,176]]},
+  {name:'Schmiedgasse',w:3,kind:'lane',pts:[[182,129],[184,142],[186,156],[184,170],[178,184],[176,194]]},
+  {name:'Bäckergasse',w:3,kind:'lane',pts:[[184,142],[194,146],[202,150]]},
+  {name:'Hintergasse',w:2,kind:'alley',pts:[[186,156],[196,160],[206,164]]},
+  {name:'Feldweg',w:3,kind:'lane',pts:[[176,194],[168,199],[156,200],[144,196],[136,190],[128,184],[116,180],[106,175],[92,170],[80,158],[68,148],[58,142]]},
+  {name:'Burghof',w:3,kind:'court',pts:[[100,79],[100,52],[100,44],[95,36],[91,28]].map(p=>c2w(p[0],p[1]))},
+  {name:'Kai',w:3,kind:'quay',pts:[[172,54],[168,60],[165,66],[168,72],[171,77],[169,82],[165,88],[160,93]]}
 ];
-const MARKET=[[76,128],[90,124],[106,127],[110,138],[107,152],[92,156],[78,151],[73,140]];
-const PLAZA_Y=Hm[140*WX+92];
-for(let z=110;z<175;z++)for(let x=55;x<130;x++){
-  const i=z*WX+x;if(inPoly(x+.5,z+.5,MARKET)){Hm[i]=PLAZA_Y;continue}
+const MARKET=[[184,116],[194,111],[206,113],[210,123],[207,134],[196,138],[186,135],[182,125]];
+const MARKET_C=[196,125];
+const PLAZA_Y=Hm[MARKET_C[1]*WX+MARKET_C[0]];
+{let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;MARKET.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
+for(let z=z0-8;z<=z1+8;z++)for(let x=x0-8;x<=x1+8;x++){
+  const i=z*WX+x;if(SEA[i]||HILL[i])continue;if(inPoly(x+.5,z+.5,MARKET)){Hm[i]=PLAZA_Y;continue}
   const d=polyDist(x+.5,z+.5,MARKET.concat([MARKET[0]]));if(d<7)Hm[i]=Math.round(PLAZA_Y+(Hm[i]-PLAZA_Y)*d/7);
-}
+}}
 const streetCell=new Map(); // Index -> Blockart
 const sideWalk=new Set(),sideCenter=new Set();
 function streetMat(kind,x,z){
@@ -650,29 +685,48 @@ function streetMat(kind,x,z){
   return h<.5?'dirt_path':h<.78?'gravel':'cobblestone';
 }
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(inPoly(x+.5,z+.5,MARKET)){streetCell.set(z*WX+x,streetMat('plaza',x,z));occ[z*WX+x]=2}
-for(const s of STREETS){
+function paintStreet(s){
   let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;s.pts.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
   const r=s.w/2;
   for(let z=Math.floor(z0-r-1);z<=z1+r+1;z++)for(let x=Math.floor(x0-r-1);x<=x1+r+1;x++){
     if(x<0||z<0||x>=WX||z>=WZ)continue;const i=z*WX+x;
-    if(moat[i]&&s.kind==='main')continue;
+    if(SEA[i]||(moat[i]&&s.kind==='main'))continue;
     const sd=polyDist(x+.5,z+.5,s.pts);
     if(sd<=r+(s.w%2?0:.01)){if(!streetCell.has(i))streetCell.set(i,streetMat(s.kind,x,z));if(occ[i]!==2)occ[i]=1;if(s.kind==='main'&&sd>r-1&&!sideCenter.has(i))sideWalk.add(i);if(sd<=r-1){sideCenter.add(i);sideWalk.delete(i)}}
   }
 }
+STREETS.forEach(paintStreet);
+// Weg über Land suchen (um Wasser, Mauern und Häuser herum) und als Gasse anlegen
+function roadTo(name,from,to){
+  const N=WX*WZ,dist=new Float32Array(N).fill(1e9),prev=new Int32Array(N).fill(-1),heap=[];
+  const ok=i=>!SEA[i]&&![3,4,5,9].includes(occ[i]);
+  const push=(d,i)=>{heap.push([d,i]);let k=heap.length-1;while(k>0){const p=(k-1)>>1;if(heap[p][0]<=heap[k][0])break;[heap[p],heap[k]]=[heap[k],heap[p]];k=p}};
+  const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let k=0;for(;;){const l=2*k+1,r=l+1;let m=k;if(l<heap.length&&heap[l][0]<heap[m][0])m=l;if(r<heap.length&&heap[r][0]<heap[m][0])m=r;if(m===k)break;[heap[m],heap[k]]=[heap[k],heap[m]];k=m}}return top};
+  const s0=from[1]*WX+from[0],t0=to[1]*WX+to[0];dist[s0]=0;push(0,s0);
+  while(heap.length){const[d,i]=pop();if(d>dist[i])continue;if(i===t0)break;const x=i%WX;
+    for(const j of[x>0?i-1:-1,x<WX-1?i+1:-1,i-WX,i+WX]){if(j<0||j>=N||(!ok(j)&&j!==t0))continue;
+      const c=1+(FOREST[j]?.4:0)+(occ[j]===8?2:0)+Math.abs(Hm[j]-Hm[i])*3+(occ[j]===1?-.5:0);
+      if(d+c<dist[j]){dist[j]=d+c;prev[j]=i;push(d+c,j)}}}
+  if(prev[t0]<0)return null;
+  const cells=[];for(let i=t0;i>=0;i=prev[i])cells.push([i%WX,Math.floor(i/WX)]);cells.reverse();
+  const pts=cells.filter((c,k)=>k%4===0||k===cells.length-1);
+  const st={name,w:3,kind:'lane',pts};STREETS.push(st);paintStreet(st);return st;
+}
+// Hafenviertel zwischen Bucht und Mauer
+const inHarbor=(x,z)=>x>=160&&x<=182&&z>=50&&z<=95;
 // Gelände-Belegung
 for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
   const i=z*WX+x;if(occ[i])continue;
   if(SEA[i])occ[i]=9;
   else if(HILL[i]||moat[i]||ROCK[i])occ[i]=5;
-  else if(polyDist(x+.5,z+.5,WALL)<(x>=196?3.5:5.5))occ[i]=3;
-  else if(!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,80]])))occ[i]=(x>=196&&z>=106&&z<=178)?0:6; // Hafenviertel vor der Mauer
+  else if(polyDist(x+.5,z+.5,WALL)<3.5)occ[i]=3;
+  else if(!inPoly(x+.5,z+.5,CITY_POLY))occ[i]=inHarbor(x,z)?0:6;
 }
-const inHarbor=(x,z)=>x>=196&&z>=106&&z<=178;
 
 // ---------- Gebäude-Registry ----------
 const buildings=[];
-function addBuilding(o){
+function addBuilding(o){return addBuildingW(o)}
+function addBuildingW(o){
   o.id=buildings.length;
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
   for(const v of o.voxels){if(v.x<x0)x0=v.x;if(v.x>x1)x1=v.x;if(v.y<y0)y0=v.y;if(v.y>y1)y1=v.y;if(v.z<z0)z0=v.z;if(v.z>z1)z1=v.z}
@@ -857,8 +911,16 @@ function castleWall(m,pts,closed,H,lanternEvery){
 function towerLanterns(m,cx,cz,r,top){for(const[dx,dz]of[[r,0],[-r,0],[0,r],[0,-r]]){let y=top;while(m.get(cx+dx,y,cz+dz))y++;m.set(cx+dx,y,cz+dz,'spruce_fence');m.set(cx+dx,y+1,cz+dz,'lantern',{h:0})}}
 function banner(m,x,y,z,len,c1='blue_wool',c2='yellow_wool'){for(let k=0;k<len;k++)m.set(x,y-k,z,k%2?c2:c1)}
 
+// Burg-Bauteile in Burgkoordinaten an ihren Platz auf dem Hügel drehen
+function castleToWorld(vox){return vox.map(v=>{const w=rotState(v,CAS.r);[w.x,w.z]=c2w(v.x,v.z);return w})}
 function buildCastle(){
+  hAt=(x,z)=>{const[X,Z]=c2w(x,z);return hAtW(X,Z)};
+  oAt=(x,z)=>{const[X,Z]=c2w(x,z);return oAtW(X,Z)};
+  try{buildCastleParts()}finally{hAt=hAtW;oAt=oAtW}
+}
+function buildCastleParts(){
   const B=PLAT;
+  const addBuilding=o=>{o.voxels=castleToWorld(o.voxels);if(o.rot!=null)o.rot=(o.rot+CAS.r)&3;return addBuildingW(o)};
   // ---- Befestigung: alles in einem Modell, danach nach Bauteil aufgeteilt
   const F=new Model();
   castleWall(F,HAUPT,true,12,9);
@@ -897,13 +959,13 @@ function buildCastle(){
     steps:['Grundriss als unregelmäßiges Achteck abstecken (siehe Schichtplan), er folgt der Hügelkuppe.','Runde Türme zuerst: Radius 3 oder 4, innen hohl mit Leiter und Holzböden alle 6 Blöcke, Schießscharten.','Mauer zwischen den Türmen 3 dick und 12 hoch. Unten mehr bemooste Steinziegel, oben mehr rissige.','Unter dem Wehrgang außen eine Reihe umgedrehter Steinziegeltreppen als Konsolen, darüber auf der Außenkante jeden zweiten Block eine Zinne.','Turmhelme: Treppenring mit 1 Block Überstand, dann pro Ring einen Block nach innen und zwei höher (Brett, darauf Treppe). Türme ohne Helm bekommen Zaunpfosten mit Laternen auf den Zinnen.','Ranken an den Außenwänden wachsen lassen.']});
   addBuilding({name:'Burg: Vorburg-Mauer & Türme',group:'Burg',kind:'castle',voxels:parts.vor,
     desc:'Niedrigere Mauer der Vorburg (8 hoch) mit vier kleineren Rundtürmen.',
-    steps:['Mauerverlauf von den beiden großen Türmen am inneren Tor im Bogen nach Süden abstecken.','Mauer 3 dick und 8 hoch, Konsolen und Zinnen wie an der Hauptburg.','Vier Rundtürme mit Radius 3, zwei mit Fichtenhelm.']});
+    steps:['Mauerverlauf von den beiden großen Türmen am inneren Tor im Bogen nach Osten abstecken.','Mauer 3 dick und 8 hoch, Konsolen und Zinnen wie an der Hauptburg.','Vier Rundtürme mit Radius 3, zwei mit Fichtenhelm.']});
   addBuilding({name:'Burg: Torhaus & Zugbrücke',group:'Burg',kind:'castle',voxels:parts.gate,label:true,
     desc:'Doppelturm-Torhaus mit Torbau, halb hochgezogenem Fallgatter, blau-gelben Wandbehängen, Laternen und abgesenkter Zugbrücke an Eisenketten.',
     steps:['Zwei quadratische Tortürme 7 × 7, 16 hoch, mit Schwarzeichenhelm.','Dazwischen der Torbau: Durchfahrt 5 breit und 4 hoch, oben Bogen aus umgedrehten Steinziegeltreppen, darüber Steinziegel bis Höhe 12 mit Zinnen.','Fallgatter aus Eisengittern außen in der Durchfahrt.','Wandbehänge: senkrechte Streifen aus blauer und gelber Wolle an der Außenseite der Türme.','Zugbrücke aus Fichtenholzbrettern über den Graben, liegende Stämme am Rand, Zaungeländer, Eisenketten und Laternen.']});
   addBuilding({name:'Burg: Inneres Tor',group:'Burg',kind:'castle',voxels:parts.inner,
     desc:'Torturm zwischen Vorburg und Hauptburg mit Durchfahrt und Fichtenhelm.',
-    steps:['Torturm 11 × 8, 18 hoch, in die Mauer zwischen Vor- und Hauptburg setzen.','Durchfahrt 5 breit und 4 hoch mit Treppenbogen.','Helm aus Fichtenholz, Wandbehänge an der Südseite.']});
+    steps:['Torturm 8 × 11, 18 hoch, in die Mauer zwischen Vor- und Hauptburg setzen.','Durchfahrt 5 breit und 4 hoch mit Treppenbogen.','Helm aus Fichtenholz, Wandbehänge an der Ostseite.']});
 
   // ---- Bergfried mit Ecktürmchen
   const keep=new Model(),kx0=86,kz0=16,kx1=96,kz1=26,kxm=91;
@@ -921,14 +983,14 @@ function buildCastle(){
   addBuilding({name:'Bergfried',group:'Burg',kind:'castle',voxels:placeModel(keep,0,0,0,0),
     desc:'Hauptturm der Burg: 11 × 11 Blöcke, 32 hoch, fünf Stockwerke mit Holzböden und Leiter, Doppelfenster, Wandbehang, vier Ecktürmchen und ein steiler Schwarzeichenhelm mit Fahne.',
     farm:'Xp-Farm, darunter der Kerker mit Mob-Grinder',
-    steps:['Grundfläche 11 × 11 in der Nordwestecke der Hauptburg, Eingang nach Süden.','Wände einen Block dick aus Steinziegel-Mischung 32 hoch. Alle 6 Blöcke einen Fichtenholzboden, eine Ecke für die Leiter frei lassen.','Doppelfenster aus Glasscheiben in jedem Stockwerk.','Ecktürmchen: ab Höhe 26 an jeder Ecke ein 2 × 2 Erker, unten mit umgedrehten Treppen abgestützt, oben ein kleiner Helm.','Hauptturmhelm: Treppenring mit Überstand, pro Ring einen Block nach innen und zwei höher. Oben Fahnenmast aus Zaun mit Wollfahne.','Wandbehang über der Tür aus blauer und gelber Wolle, Laternen neben der Tür.']});
+    steps:['Grundfläche 11 × 11 in der Südwestecke der Hauptburg, Eingang nach Osten.','Wände einen Block dick aus Steinziegel-Mischung 32 hoch. Alle 6 Blöcke einen Fichtenholzboden, eine Ecke für die Leiter frei lassen.','Doppelfenster aus Glasscheiben in jedem Stockwerk.','Ecktürmchen: ab Höhe 26 an jeder Ecke ein 2 × 2 Erker, unten mit umgedrehten Treppen abgestützt, oben ein kleiner Helm.','Hauptturmhelm: Treppenring mit Überstand, pro Ring einen Block nach innen und zwei höher. Oben Fahnenmast aus Zaun mit Wollfahne.','Wandbehang über der Tür aus blauer und gelber Wolle, Laternen neben der Tür.']});
 
   // ---- Palas: großer Saalbau mit Steinsockel und Fachwerk
   const palas=genHouse({w:17,d:11,floors:3,over:true,roof:'dark_oak',stoneGround:true,chimneys:2,seed:777});
   const pr=2,[pax,paz]=rotP(palas.ax,palas.az,pr);
   addBuilding({name:'Palas',group:'Burg',kind:'house',voxels:placeModel(palas,pr,Math.round(109-pax),B,Math.round(27-paz)),model:palas,rot:pr,label:true,
     desc:'Wohn- und Saalbau der Burg: steinernes Erdgeschoss, zwei Fachwerk-Obergeschosse mit Überhang, Schwarzeichendach und zwei Schornsteine.',
-    steps:houseSteps(palas,pr)});
+    steps:houseSteps(palas,(pr+CAS.r)&3)});
 
   // ---- Burgkapelle mit Glockenturm
   const ch=new Model(),cx0=78,cx1=86,cz0=31,cz1=43;
@@ -949,16 +1011,16 @@ function buildCastle(){
   ch.set(82,B+13,28,'lantern',{h:1});
   addBuilding({name:'Burgkapelle',group:'Burg',kind:'castle',voxels:placeModel(ch,0,0,0,0),label:true,
     desc:'Kleine Steinkapelle mit hohen Spitzbogenfenstern, Rosettenfenster über der Doppeltür, Bänken aus Treppen und einem Glockenturm mit Fichtenhelm.',
-    steps:['Rechteck 9 × 13 abstecken, Eingang nach Süden. Boden aus poliertem Andesit, Rand aus Steinziegeln.','Wände 7 hoch aus Steinziegel-Mischung.','Hohe Fenster: je 3 Glasscheiben übereinander, oben eine umgedrehte Treppe als Spitzbogen.','Doppeltür mit Steinpfeiler in der Mitte, davor drei Steinziegeltreppen als Stufe. Darüber ein Rautenfenster aus Glasscheiben im Giebel.','Bänke aus Fichtenholztreppen in Reihen, vorne ein Altar aus Steinziegel mit Laterne.','Satteldach aus Schwarzeichenholztreppen, Giebel mit Steinziegeln schließen.','Glockenturm 5 × 5 an der Nordseite, 16 hoch, Schallöffnungen oben, Fichtenhelm.']});
+    steps:['Rechteck 13 × 9 abstecken, Eingang nach Osten. Boden aus poliertem Andesit, Rand aus Steinziegeln.','Wände 7 hoch aus Steinziegel-Mischung.','Hohe Fenster: je 3 Glasscheiben übereinander, oben eine umgedrehte Treppe als Spitzbogen.','Doppeltür mit Steinpfeiler in der Mitte, davor drei Steinziegeltreppen als Stufe. Darüber ein Rautenfenster aus Glasscheiben im Giebel.','Bänke aus Fichtenholztreppen in Reihen, vorne ein Altar aus Steinziegel mit Laterne.','Satteldach aus Schwarzeichenholztreppen, Giebel mit Steinziegeln schließen.','Glockenturm 5 × 5 an der Westseite, 16 hoch, Schallöffnungen oben, Fichtenhelm.']});
 
   // ---- Vorburg: Stall und Wirtschaftshaus
   const st=genStable(),sr=1,[sax,saz]=rotP(st.ax,st.az,sr);
   addBuilding({name:'Stall',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(st,sr,Math.round(81-sax),B,Math.round(62-saz)),farm:'Tierzucht',label:true,
     desc:'Offener Stall in der Vorburg: Steinrückwand, vier Boxen mit Zäunen, Heuboden unter dem Satteldach.',
-    steps:['Grundriss 13 × 7 an der Westmauer der Vorburg, offene Seite nach Osten.','Rückwand aus Bruchstein und Steinziegeln, Seitenwände aus Fichtenholzbrettern, Ecken aus entrindeten Schwarzeichenstämmen.','Vorne alle 3 Blöcke ein Stammpfosten, dazwischen Zäune als Boxentüren. Innen Zäune als Trennwände.','Balkenlage auf Höhe 5 mit Brettern als Heuboden, darauf Heuballen.','Satteldach aus Fichtenholztreppen mit Stufen als First.']});
+    steps:['Grundriss 7 × 13 an der Südmauer der Vorburg, offene Seite nach Norden.','Rückwand aus Bruchstein und Steinziegeln, Seitenwände aus Fichtenholzbrettern, Ecken aus entrindeten Schwarzeichenstämmen.','Vorne alle 3 Blöcke ein Stammpfosten, dazwischen Zäune als Boxentüren. Innen Zäune als Trennwände.','Balkenlage auf Höhe 5 mit Brettern als Heuboden, darauf Heuballen.','Satteldach aus Fichtenholztreppen mit Stufen als First.']});
   const wh=genHouse({w:11,d:7,floors:2,over:true,roof:'spruce',stoneGround:true,chimneys:2,seed:778}),wr=3,[wax,waz]=rotP(wh.ax,wh.az,wr);
   addBuilding({name:'Wirtschaftshaus',group:'Burg',kind:'house',voxels:placeModel(wh,wr,Math.round(118-wax),B,Math.round(61-waz)),model:wh,rot:wr,
-    desc:'Küche und Vorratshaus der Burg in der Vorburg, mit zwei Schornsteinen.',steps:houseSteps(wh,wr)});
+    desc:'Küche und Vorratshaus der Burg in der Vorburg, mit zwei Schornsteinen.',steps:houseSteps(wh,(wr+CAS.r)&3)});
 
   // ---- Brunnen in der Hauptburg
   const well=new Model();
@@ -970,11 +1032,12 @@ function buildCastle(){
     desc:'Ziehbrunnen mit Holzdach im Hof der Hauptburg.',steps:['3 × 3 Ring aus Steinziegeln, in die Mitte eine Wasserquelle.','Auf die Ecken je zwei Zaunpfosten, darauf ein Dach aus Schwarzeichenholzstufen.','Unter das Dach eine Laterne hängen.']});
 
   // ---- Gärten, Büsche und Bäume in beiden Höfen
-  const used=new Set();for(const b of buildings)for(const v of b.voxels)if(v.y>=B-1&&v.y<=B+4)used.add(v.x+','+v.z);
+  const used=new Set();for(const b of buildings)for(const v of b.voxels)if(v.y>=B-1&&v.y<=B+4)used.add(w2c(v.x,v.z).join(','));
+  const sAt=(x,z)=>{const[X,Z]=c2w(x,z);return streetCell.has(Z*WX+X)};
   const gm=new Model(),Rg=mulberry32(99);
   for(let x=CASTLE.x0;x<=CASTLE.x1;x++)for(let z=CASTLE.z0;z<=CASTLE.z1;z++){
-    if(!inPoly(x+.5,z+.5,OUTER)||used.has(x+','+z)||streetCell.has(z*WX+x))continue;
-    let near=false;for(let a=-1;a<=1&&!near;a++)for(let c=-1;c<=1;c++)if(used.has((x+a)+','+(z+c))||streetCell.has((z+c)*WX+x+a))near=true;
+    if(!inPoly(x+.5,z+.5,OUTER)||used.has(x+','+z)||sAt(x,z))continue;
+    let near=false;for(let a=-1;a<=1&&!near;a++)for(let c=-1;c<=1;c++)if(used.has((x+a)+','+(z+c))||sAt(x+a,z+c))near=true;
     if(near)continue;
     const n=vnoise(x,z,4,21);
     if(n>.58){const r=Rg();if(r<.5)gm.setIfEmpty(x,B,z,FLOWERS[Math.floor(Rg()*5)]);else if(r<.68)bush(gm,x,B,z,Rg)}
@@ -986,48 +1049,80 @@ function buildCastle(){
     desc:'Blumenbeete, Büsche und Bäume in Haupt- und Vorburg, dazu Heuballen und Fässer.',steps:['Beete frei auf dem Gras verteilen und Blumen setzen (Knochenmehl auf Gras erzeugt sie auch von selbst).','Büsche aus Laub (mit der Schere abgebaut verfällt es nicht).','Bäume aus Setzlingen wachsen lassen.']});
 
   // ---- Burggraben
-  const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){if(y===PLAT-1&&x>=97&&x<=103&&z>=80&&z<=83)continue;wv.push({x,y,z,b:'water'})}
-  addBuilding({name:'Burggraben',group:'Burg',kind:'water',voxels:wv,
+  const wv=[];for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++)if(moat[z*WX+x])for(let y=PLAT-3;y<PLAT;y++){const[cx,cz]=w2c(x,z);if(y===PLAT-1&&cx>=97&&cx<=103&&cz>=80&&cz<=83)continue;wv.push({x,y,z,b:'water'})}
+  addBuildingW({name:'Burggraben',group:'Burg',kind:'water',voxels:wv,
     desc:'Vier Blöcke breiter, drei Blöcke tiefer Wassergraben rund um Haupt- und Vorburg.',
     farm:'Wasserfarm (noch offen)',
     steps:['Graben 4 breit und 3 tief rund um die ganze Burg ausheben, gut 3 Blöcke Abstand zur Mauer lassen.','Mit Eimern füllen: Zwei Wasserquellen nebeneinander ergeben eine unendliche Quelle. Jede Ecke einzeln füllen, damit kein Fließwasser bleibt.']});
 }
 
 // ---------- Stadtmauer ----------
+// Tor in einer Nord-Süd-Mauer: Durchfahrt von Westen nach Osten. out = Seite, die nach draußen zeigt (+1 Osten, -1 Westen)
+function gateEW(m,gx,gz,big,out){
+  const base=hAt(gx,gz);
+  if(big){
+    squareTower(m,gx-4,gz-11,gx+4,gz-5,base,12);squareTower(m,gx-4,gz+5,gx+4,gz+11,base,12);
+    for(let a=-4;a<=4;a++)for(let c=-4;c<=4;c++){const x=gx+c,z=gz+a;
+      for(let y=base;y<base+11;y++)m.set(x,y,z,y>=base+6&&Math.abs(c)<=3?stoneMix(x,y,z):null);
+      if(Math.abs(c)===3&&((x+z)&1)===0)m.set(x,base+11,z,stoneMix(x,base+11,z));
+      if(Math.abs(c)===4)for(let y=base+6;y<base+11;y++)m.set(x,y,z,null);
+    }
+    for(let c=-4;c<=4;c++){m.set(gx+c,base+5,gz-3,'stone_brick_stairs',{f:0,h:1});m.set(gx+c,base+5,gz+3,'stone_brick_stairs',{f:2,h:1})}
+    for(let a=-2;a<=2;a++){m.set(gx,base+4,gz+a,'iron_bars',{a:'z'});m.set(gx,base+5,gz+a,'iron_bars',{a:'z'})}
+    for(const a of[-4,4]){m.set(gx+5*out,base+5,gz+a,'stripped_dark_oak_log',{a:'x'});m.set(gx+5*out,base+4,gz+a,'lantern',{h:1})}
+    for(const a of[-9,-7,7,9])banner(m,gx+5*out,base+11,gz+a,4,a<0?'blue_wool':'yellow_wool',a<0?'yellow_wool':'blue_wool');
+  }else{
+    squareTower(m,gx-3,gz-8,gx+3,gz-4,base,11,{spire:'spruce'});squareTower(m,gx-3,gz+4,gx+3,gz+8,base,11,{spire:'spruce'});
+    for(let x=gx-7;x<=gx+7;x++)for(let z=gz-2;z<=gz+2;z++){
+      if(!m.get(x,base+5,z))continue;
+      for(let y=base;y<base+4;y++)m.set(x,y,z,null);
+      if(Math.abs(z-gz)===2)m.set(x,base+4,z,'stone_brick_stairs',{f:z<gz?0:2,h:1});else m.set(x,base+4,z,null);
+    }
+    for(const z of[gz-4,gz+4]){m.set(gx+4*out,base+3,z,'stripped_dark_oak_log',{a:'x'});m.set(gx+4*out,base+2,z,'lantern',{h:1})}
+  }
+}
 function buildCityWall(){
   const m=new Model();const WH=7;
-  const towersAt=WALL.filter((p,i)=>i!==4&&i!==5);
   let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;WALL.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])});
   for(let z=z0-3;z<=z1+3;z++)for(let x=x0-3;x<=x1+3;x++){
     const d=polyDist(x+.5,z+.5,WALL);if(d>1.5)continue;
-    const base=hAt(x,z);
-    for(let y=base;y<base+WH;y++)m.set(x,y,z,stoneMix(x,y,z,y-base<2?.3:.12,.12));
-    const outside=!inPoly(x+.5,z+.5,CITY_POLY.concat([[100,80]]));
+    const base=Math.max(hAt(x,z),-1);
+    for(let y=hAt(x,z);y<base+WH;y++)m.set(x,y,z,stoneMix(x,y,z,y-base<2?.3:.12,.12));
+    const outside=!inPoly(x+.5,z+.5,CITY_POLY);
     if(outside&&d>.6&&((x+z)&1)===0)m.set(x,base+WH,z,stoneMix(x,base+WH,z));
   }
-  towersAt.forEach(([cx,cz],i)=>roundTower(m,cx,cz,4,12,i%2===0?'dark_oak':(i%4===1?'spruce':null)));
-  // Hafentor im Osten
-  const gz=HARBOR_GATE_Z;
-  squareTower(m,190,gz-8,196,gz-4,0,11,{spire:'spruce'});squareTower(m,190,gz+4,196,gz+8,0,11,{spire:'spruce'});
-  for(let x=186;x<=200;x++)for(let z=gz-2;z<=gz+2;z++){
-    if(!m.get(x,5,z))continue;
-    for(let y=0;y<4;y++)m.set(x,y,z,null);
-    if(Math.abs(z-gz)===2)m.set(x,4,z,'stone_brick_stairs',{f:z<gz?0:2,h:1});else m.set(x,4,z,null);
-  }
-  for(const z of[gz-4,gz+4]){m.set(197,3,z,'stripped_dark_oak_log',{a:'x'});m.set(197,2,z,'lantern',{h:1})}
-  // Haupttor im Süden
-  squareTower(m,89,228,95,236,0,12);squareTower(m,105,228,111,236,0,12);
-  for(let x=96;x<=104;x++)for(let z=229;z<=235;z++){for(let y=0;y<11;y++)m.set(x,y,z,y>=6?stoneMix(x,y,z):null);if((x+z)%2===0&&(z===229||z===235))m.set(x,11,z,stoneMix(x,11,z))}
-  for(let x=96;x<=104;x++)for(let z=228;z<=236;z++)for(let y=0;y<6;y++)if(x>=97&&x<=103)m.set(x,y,z,null);
-  for(let z=228;z<=236;z++){m.set(97,5,z,'stone_brick_stairs',{f:3,h:1});m.set(103,5,z,'stone_brick_stairs',{f:1,h:1})}
-  for(let x=98;x<=102;x++){m.set(x,4,232,'iron_bars',{a:'x'});m.set(x,5,232,'iron_bars',{a:'x'})}
-  for(const x of[96,104]){m.set(x,4,237,'lantern',{h:1});m.set(x,5,237,'stripped_dark_oak_log',{a:'z'})}
+  WALL.forEach(([cx,cz],i)=>roundTower(m,cx,cz,4,12,i%2===0?'dark_oak':(i%4===1?'spruce':null)));
+  gateEW(m,GATE_MAIN[0],GATE_MAIN[1],true,1);
+  gateEW(m,GATE_HARBOR[0],GATE_HARBOR[1],false,-1);
+  // Pforte im Süden zum Feldweg
+  {const[gx,gz]=GATE_SMALL;for(let x=gx-1;x<=gx+1;x++)for(let z=gz-4;z<=gz+4;z++){const g=hAt(x,z);if(!m.get(x,g+4,z))continue;for(let y=g;y<g+3;y++)m.set(x,y,z,null);m.set(x,g+3,z,x===gx?null:'stone_brick_stairs',{f:x<gx?3:1,h:1})}
+   for(const x of[gx-2,gx+2]){const g=hAt(x,gz+4);m.set(x,g+3,gz+4,'lantern',{h:0})}}
   addVines(m,.66);
   const vox=placeModel(m,0,0,0,0);
-  addBuilding({name:'Stadtmauer & Haupttor',group:'Stadtbefestigung',kind:'wall',voxels:vox,
-    desc:`Krumme Stadtmauer, 3 Blöcke dick und 7 hoch, mit ${towersAt.length} runden Ecktürmen (teils mit spitzen Helmen und Fahnen), dem Haupttor im Süden und dem kleinen Hafentor im Osten.`,
-    steps:['Verlauf abstecken: Die Mauer folgt dem Gelände in schrägen Abschnitten, das gibt die typischen Treppenkanten.','Runde Ecktürme zuerst: Kreis mit Radius 4, 12 hoch, innen Holzböden auf Höhe 1, 7 und 12 und eine Leiter.','Mauer 3 dick, 7 hoch. Unten mehr bemooste Steinziegel mischen.','Zinnen auf der Außenseite: jeder zweite Block eine Lage höher.','Haupttor: zwei quadratische Tortürme (7 × 9), dazwischen eine 7 breite und 5 hohe Durchfahrt mit Bogen aus Treppen, Fallgatter aus Eisengittern, Laternen außen.','Turmhelme: Ring aus Treppen mit 1 Block Überstand, dann jeder Ring einen Block nach innen und zwei höher (Brett, darauf Treppe). Oben ein Zaun als Fahnenmast mit blau-gelber Wolle.','Hafentor im Osten: 5 breite Durchfahrt mit Treppenbogen zwischen zwei kleinen Tortürmen mit Fichtenhelm.']});
+  addBuilding({name:'Stadtmauer & Tore',group:'Stadtbefestigung',kind:'wall',voxels:vox,
+    desc:`Krumme Stadtmauer, 3 Blöcke dick und 7 hoch, mit ${WALL.length} runden Ecktürmen (teils mit spitzen Helmen und Fahnen). Das Haupttor liegt im Osten am Fluss, dahinter führt die Steinbrücke ans andere Ufer. Das Hafentor im Westen öffnet sich zur Bucht, eine kleine Pforte im Süden zum Feldweg um den Burghügel. Im Westen schließt die Burg den Ring.`,
+    steps:['Verlauf abstecken: Die Mauer folgt dem Gelände in schrägen Abschnitten, das gibt die typischen Treppenkanten. Sie beginnt am Burggraben über der Bucht und endet am Burggraben im Süden.','Runde Ecktürme zuerst: Kreis mit Radius 4, 12 hoch, innen Holzböden auf Höhe 1, 7 und 12 und eine Leiter.','Mauer 3 dick, 7 hoch. Unten mehr bemooste Steinziegel mischen. Wo der Boden unter Wasser liegt, die Mauer vom Grund aus hochziehen.','Zinnen auf der Außenseite: jeder zweite Block eine Lage höher.','Haupttor im Osten: zwei quadratische Tortürme (9 × 7), dazwischen eine 7 breite und 5 hohe Durchfahrt mit Bogen aus Treppen, Fallgatter aus Eisengittern, Laternen und Wandbehänge außen.','Turmhelme: Ring aus Treppen mit 1 Block Überstand, dann jeder Ring einen Block nach innen und zwei höher (Brett, darauf Treppe). Oben ein Zaun als Fahnenmast mit blau-gelber Wolle.','Hafentor im Westen: 3 breite Durchfahrt mit Treppenbogen zwischen zwei kleinen Tortürmen mit Fichtenhelm.','Pforte im Süden: 3 breit und 3 hoch durch die Mauer brechen, oben umgedrehte Treppen als Bogen.']});
   markOcc(vox,3);
+}
+
+// ---------- Steinbrücke über den Fluss ----------
+function buildBridge(){
+  const m=new Model(),{xa,xb,z0,z1,y}=BRIDGE,dk=y-1;
+  for(let x=xa;x<=xb;x++){
+    const k=x-xa,pier=k%6===3&&k>1&&xb-x>1;
+    for(let z=z0;z<=z1;z++){
+      const edge=z===z0||z===z1,g=hAt(x,z);
+      m.set(x,dk,z,edge?stoneMix(x,dk,z,.25,.1):(hash3(x,dk,z)<.5?'cobblestone':'stone_bricks'));
+      if(edge){m.set(x,y,z,'stone_brick_wall');if(k%6===0)m.set(x,y+1,z,'lantern',{h:0})}
+      if(pier){for(let yy=Math.min(g,dk);yy<dk;yy++)m.set(x,yy,z,stoneMix(x,yy,z,.35,.1))}
+      else if(dk-1>=g&&(k%6===2||k%6===4)&&k>1&&xb-x>1)m.set(x,dk-1,z,'stone_brick_stairs',{f:k%6===2?1:3,h:1});
+      else for(let yy=g;yy<dk;yy++)if(!SEA[z*WX+x])m.set(x,yy,z,'stone_bricks');
+    }
+    if(pier){for(const z of[z0-1,z1+1]){const g=hAt(x,z);for(let yy=Math.min(g,dk-1);yy<=dk;yy++)m.set(x,yy,z,stoneMix(x,yy,z,.35,.1));m.set(x,dk+1,z,'stone_brick_slab',{h:0})}}
+  }
+  addBuilding({name:'Steinbrücke',group:'Stadtbefestigung',kind:'wall',voxels:placeModel(m,0,0,0,0),label:true,
+    desc:`Steinbrücke vor dem Haupttor über den Fluss im Osten, ${xb-xa+1} Blöcke lang und 5 breit, mit Pfeilern im Wasser, Bögen aus Treppen, Brüstung aus Steinziegelmauern und Laternen.`,
+    steps:['Brückenachse vom Haupttor gerade nach Osten über den Fluss abstecken, 5 Blöcke breit.','Pfeiler: alle 6 Blöcke eine Reihe Steinziegel vom Flussgrund bis unter die Fahrbahn, an den Seiten je ein Block als Vorsprung mit Stufe obendrauf.','Bögen: neben jedem Pfeiler unter der Fahrbahn eine umgedrehte Steinziegeltreppe.','Fahrbahn aus Bruchstein und Steinziegeln, außen eine Reihe Steinziegel als Kante.','Brüstung aus Steinziegelmauern auf beiden Kanten, alle 6 Blöcke eine Laterne darauf.']});
 }
 
 // ---------- Marktbrunnen ----------
@@ -1135,7 +1230,7 @@ function buildFields(){
   const setGround=(x,z,b)=>{const i=z*WX+x,y=hAt(x,z);streetCell.set(i,b);fieldIdx.add(i);occ[i]=8;m.set(x,y-1,z,b)};
   // Felder als runde, unregelmäßige Flächen vor der Mauer (Rauschen statt Rechtecke)
   const isF=new Uint8Array(WX*WZ);let cells=0;
-  const okCell=(x,z)=>{if(x<1||z<1||x>=WX-1||z>=WZ-1)return false;const i=z*WX+x;return occ[i]===6&&!SAND[i]&&!SEA[i]&&!ROCK[i]&&!HILL[i]};
+  const okCell=(x,z)=>{if(x<1||z<1||x>=WX-1||z>=WZ-1)return false;const i=z*WX+x;return occ[i]===6&&!SAND[i]&&!SEA[i]&&!ROCK[i]&&!HILL[i]&&!FOREST[i]};
   for(let z=1;z<WZ-1;z++)for(let x=1;x<WX-1;x++){
     if(!okCell(x,z))continue;
     const f=vnoise(x,z,16,41)*.75+vnoise(x,z,6,42)*.25;if(f<.6)continue;
@@ -1170,7 +1265,7 @@ function buildFields(){
     for(let z=z0;z<z0+D;z++)for(const x of[x0-1,x0+W]){if(z===z0+(D>>1)&&x===x0-1)continue;m.set(x,g0,z,'spruce_fence');oSet(x,z,8)}
   }
   addBuilding({name:'Felder & Gärten',group:'Felder',kind:'deco',voxels:placeModel(m,0,0,0,0),pickable:false,farm:'Weizen für die Windmühle',
-    desc:`Rund geschwungene Felder vor der Mauer (${cells} Ackerblöcke) mit Hecken und Zaunstücken als Rand, dazu ${gardens} kleine Gemüsegärten in den Hinterhöfen.`,
+    desc:`Rund geschwungene Felder auf den Wiesen der Insel (${cells} Ackerblöcke) mit Hecken und Zaunstücken als Rand, dazu ${gardens} kleine Gemüsegärten in den Hinterhöfen.`,
     steps:['Feldform frei und rund abstecken, gern dem Gelände folgend.','Alle 8 Blöcke in beide Richtungen einen Block Wasser setzen: Wasser bewässert 4 Blöcke in jede Richtung, so bleibt der ganze Acker feucht.','Erde mit der Hacke zu Ackerboden machen und Weizen, Karotten, Kartoffeln oder Rote Bete in Flecken pflanzen.','Rand: Laubhecken (mit der Schere abgebautes Laub verfällt nicht), dazwischen kurze Zaunstücke und Lücken als Durchgang.','Vogelscheuche: Zaun, darauf Heuballen und Kürbis.','Gärten in den Höfen: 5 × 3 oder 3 × 5 Beet mit einem Wasserblock in der Mitte und Zaun rundherum.']});
 }
 
@@ -1183,29 +1278,32 @@ function boat(m,ox,oz,sail){
   if(sail){for(let y=0;y<=5;y++)m.set(ox+3,y,oz+1,'spruce_fence');for(let y=2;y<=4;y++){m.set(ox+3,y,oz,'white_wool');m.set(ox+3,y,oz+2,'white_wool')}}
   else{m.set(ox+2,0,oz+1,'barrel');m.set(ox+4,0,oz+1,'spruce_slab',{h:0})}
 }
+// Ostufer der Bucht: erstes Wasser von Osten her
+function shoreX(z){for(let x=200;x>130;x--)if(SEA[z*WX+x])return x;return 160}
+const PIERS=[54,63,84];
 function buildHarbor(){
   const m=new Model(),len=15;
-  [122,134,150,162].forEach((pz,pi)=>{
-    for(let z=pz;z<=pz+2;z++){const c=coastX(z);
-      for(let x=c;x<c+len;x++){
+  PIERS.forEach((pz,pi)=>{
+    for(let z=pz;z<=pz+2;z++){const c=shoreX(z);
+      for(let k=0;k<len;k++){const x=c-k;
         const edge=z===pz||z===pz+2;
-        if(edge&&(x-c)%4===0){for(let y=hAt(x,z);y<=0;y++)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});if((x-c)%8===4)m.set(x,1,z,'lantern',{h:0})}
-        else{m.set(x,-1,z,'spruce_planks');if(edge&&x-c>1)m.set(x,0,z,'spruce_fence')}
+        if(edge&&k%4===0){for(let y=hAt(x,z);y<=0;y++)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});if(k%8===4)m.set(x,1,z,'lantern',{h:0})}
+        else{m.set(x,-1,z,'spruce_planks');if(edge&&k>1)m.set(x,0,z,'spruce_fence')}
       }}
-    const c0=coastX(pz+1)+len;
-    for(let x=c0;x<c0+3;x++)for(let z=pz-2;z<=pz+4;z++){
-      const post=x===c0+2&&(z===pz-2||z===pz+4||z===pz+1);
+    const c0=shoreX(pz+1)-len;
+    for(let x=c0-2;x<=c0;x++)for(let z=pz-2;z<=pz+4;z++){
+      const post=x===c0-2&&(z===pz-2||z===pz+4||z===pz+1);
       if(post){for(let y=hAt(x,z);y<=0;y++)m.set(x,y,z,'stripped_dark_oak_log',{a:'y'});m.set(x,1,z,'lantern',{h:0})}
-      else{m.set(x,-1,z,'spruce_planks');if(x===c0+2||((z===pz-2||z===pz+4)&&x>c0))m.set(x,0,z,'spruce_fence')}
+      else{m.set(x,-1,z,'spruce_planks');if(x===c0-2||((z===pz-2||z===pz+4)&&x<c0))m.set(x,0,z,'spruce_fence')}
     }
-    m.set(c0+1,0,pz-1,'barrel');m.set(c0,0,pz-1,'barrel');m.set(c0+1,0,pz+3,'hay_block');
-    boat(m,coastX(pz+6)+4,pz+5,pi%2===0);
+    m.set(c0-1,0,pz-1,'barrel');m.set(c0,0,pz-1,'barrel');m.set(c0-1,0,pz+3,'hay_block');
+    boat(m,shoreX(pz+6)-10,pz+5,pi%2===0);
   });
   addBuilding({name:'Hafen: Stege & Boote',group:'Hafen',kind:'harbor',voxels:placeModel(m,0,0,0,0),farm:'Kelp & Fische',label:true,
-    desc:'Vier Holzstege mit Pfählen, Geländern und Laternen, jeweils mit breitem Querkopf am Ende. An jedem Steg liegt ein Boot, zwei davon mit Segel.',
-    steps:['Stegverlauf vom Ufer gerade aufs Wasser abstecken, 3 Blöcke breit und 15 lang.','Pfähle: entrindete Schwarzeichenstämme vom Grund bis 1 Block über den Steg, an den Rändern alle 4 Blöcke.','Belag aus Fichtenholzbrettern auf Wasserhöhe, Geländer aus Fichtenholzzaun an beiden Seiten.','Querkopf am Ende: 3 × 7 Bretter, Ecken mit Pfahl und Laterne.','Boote: Rumpf 7 × 3 aus Brettern, Bord aus Stufen, Bug und Heck aus Treppen. Segelboot mit Zaun als Mast und weißer Wolle als Segel.','Fässer und Heuballen als Ladung verteilen.']});
+    desc:'Drei Holzstege am Ostufer der Bucht mit Pfählen, Geländern und Laternen, jeweils mit breitem Querkopf am Ende. An jedem Steg liegt ein Boot, zwei davon mit Segel.',
+    steps:['Stegverlauf vom Kai gerade nach Westen aufs Wasser der Bucht abstecken, 3 Blöcke breit und 15 lang.','Pfähle: entrindete Schwarzeichenstämme vom Grund bis 1 Block über den Steg, an den Rändern alle 4 Blöcke.','Belag aus Fichtenholzbrettern auf Wasserhöhe, Geländer aus Fichtenholzzaun an beiden Seiten.','Querkopf am Ende: 3 × 7 Bretter, Ecken mit Pfahl und Laterne.','Boote: Rumpf 7 × 3 aus Brettern, Bord aus Stufen, Bug und Heck aus Treppen. Segelboot mit Zaun als Mast und weißer Wolle als Segel.','Fässer und Heuballen als Ladung verteilen.']});
   // Leuchtturm auf der Landzunge
-  const L=new Model(),lx=238,lz=105,lb=hAt(lx,lz),H=18;
+  const L=new Model(),[lx,lz]=LIGHT,lb=hAt(lx,lz),H=18;
   for(let dz=-5;dz<=5;dz++)for(let dx=-5;dx<=5;dx++){
     const d=Math.hypot(dx,dz),x=lx+dx,z=lz+dz;
     if(d<=3.5){const col=Math.min(lb,hAt(x,z));
@@ -1219,20 +1317,20 @@ function buildHarbor(){
   for(let y=lb+1;y<lb+H;y++)L.set(lx,y,lz-2,'ladder',{f:0});
   L.set(lx,lb,lz+3,'spruce_door',{f:2,h:0});L.set(lx,lb+1,lz+3,'spruce_door',{f:2,h:1});
   addBuilding({name:'Leuchtturm',group:'Hafen',kind:'tower',voxels:placeModel(L,0,0,0,0),label:true,
-    desc:'Runder Leuchtturm auf der felsigen Landzunge: Steinziegel mit Bändern aus poliertem Andesit, umlaufender Balkon, Laternenraum aus Glasscheiben mit Leuchtstein und spitzer Schwarzeichenhelm.',
+    desc:'Runder Leuchtturm auf der felsigen Spitze der Landzunge an der Einfahrt zur Bucht: Steinziegel mit Bändern aus poliertem Andesit, umlaufender Balkon, Laternenraum aus Glasscheiben mit Leuchtstein und spitzer Schwarzeichenhelm.',
     steps:['Kreis mit Radius 3 auf der Felsspitze abstecken, Tür nach Süden.','Wand 18 hoch hochziehen, alle 4 Lagen zwischen Steinziegeln und poliertem Andesit wechseln. Innen alle 6 Blöcke ein Boden, Leiter an der Nordwand.','Oben eine volle Steinziegelscheibe als Boden, außen herum ein Balkon aus oberen Steinziegelstufen mit Zaungeländer.','Laternenraum: Ring aus Glasscheiben, an den Diagonalen Steinziegelmauern, in der Mitte zwei Leuchtsteine.','Spitzer Helm aus Schwarzeichenholz darüber.']});
 }
 
 // ---------- Marktstände, Laternen, Natur ----------
 function placeStalls(){
   const main=STREETS[0].pts,R=mulberry32(55);const cand=[];
-  for(let z=118;z<=162;z++)for(let x=66;x<=116;x++)cand.push([x,z]);
+  const[mcx,mcz]=MARKET_C;for(let z=mcz-22;z<=mcz+22;z++)for(let x=mcx-26;x<=mcx+26;x++)cand.push([x,z]);
   for(let i=cand.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[cand[i],cand[j]]=[cand[j],cand[i]]}
   let n=0;
   for(const[x,z]of cand){
     if(n>=8)break;
-    if(Math.hypot(x-92,z-140)<9)continue;
-    const m=genStall(n);const D=dirIndex(92-x,140-z);const r=(D-m.front+4)&3;
+    if(Math.hypot(x-mcx,z-mcz)<9)continue;
+    const m=genStall(n);const D=dirIndex(mcx-x,mcz-z);const r=(D-m.front+4)&3;
     const[ax,az]=rotP(m.ax,m.az,r);const ox=Math.round(x-ax),oz=Math.round(z-az);const bb=m.bboxRot(r);
     let ok=true;
     for(let xx=ox+bb.minX-1;xx<=ox+bb.maxX+1&&ok;xx++)for(let zz=oz+bb.minZ-1;zz<=oz+bb.maxZ+1;zz++){if(oAt(xx,zz)!==2||polyDist(xx+.5,zz+.5,main)<4){ok=false;break}}
@@ -1315,7 +1413,7 @@ function buildNature(){
   const T=new Model(),R=mulberry32(3131);let trees=0,bushes=0;
   const clear=(x,z,r,codes)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++){const xx=x+dx,zz=z+dz;if(!codes.includes(oAt(xx,zz)))return false;if(xx>=0&&zz>=0&&xx<WX&&zz<WZ&&(moat[zz*WX+xx]||SEA[zz*WX+xx]||SAND[zz*WX+xx]))return false}return true};
   const mark=(x,z,r)=>{for(let dx=-r;dx<=r;dx++)for(let dz=-r;dz<=r;dz++)oSet(x+dx,z+dz,8)};
-  const forest=(x,z)=>vnoise(x,z,26,8)*.8+vnoise(x,z,9,10)*.2;
+  const forest=(x,z)=>{const n=vnoise(x,z,26,8)*.8+vnoise(x,z,9,10)*.2,i=z*WX+x;return x>=0&&z>=0&&x<WX&&z<WZ&&FOREST[i]?.5+n*.5:n*.62};
   // Wälder und Wiesen vor der Mauer und am Burghügel
   for(let gz=0;gz<WZ;gz+=4)for(let gx=0;gx<WX;gx+=4){
     const x=gx+Math.floor(R()*4),z=gz+Math.floor(R()*4),p=R(),k=R();
@@ -1323,16 +1421,16 @@ function buildNature(){
     const onHill=o===5&&HILL[i]&&!moat[i]&&Hm[i]<PLAT&&!ROCK[i];
     if(!(o===6||onHill))continue;
     if(o===6&&polyDist(x+.5,z+.5,WALL)<7)continue;
-    const dens=forest(x,z),prob=dens>.56?.62:dens>.44?.24:.07;
+    const dens=forest(x,z),prob=dens>.56?.8:dens>.44?.24:.07,inF=FOREST[i];
     if(p>prob){ if(p<prob+.16&&clear(x,z,1,[o])){bush(T,x,hAt(x,z),z,R);mark(x,z,1);bushes++} continue }
     const big=dens>.56&&k<.55;
-    if(!clear(x,z,big?3:2,[o]))continue;
+    if(!clear(x,z,inF?(big?2:1):(big?3:2),[o]))continue;
     const b=hAt(x,z),sp=vnoise(x,z,40,19);
     if(onHill)(k<.45?spruceTree:k<.75?oakTree:birchTree)(T,x,z,b,R);
     else if(dens>.56)(k<.3?darkOakTree:k<.55?bigOakTree:k<.75?spruceTree:k<.88?oakTree:birchTree)(T,x,z,b,R);
     else if(sp>.68&&k<.5)cherryTree(T,x,z,b,R);
     else (k<.4?oakTree:k<.7?birchTree:k<.85?bigOakTree:spruceTree)(T,x,z,b,R);
-    mark(x,z,big?3:2);trees++;
+    mark(x,z,inF?(big?2:1):(big?3:2));trees++;
   }
   // Höfe in der Stadt: einzelne Bäume und viele Büsche
   for(let gz=0;gz<WZ;gz+=6)for(let gx=0;gx<WX;gx+=6){
@@ -1348,8 +1446,8 @@ function buildNature(){
     else if((o===0||o===6||o===8||(o===5&&!moat[i]&&Hm[i]<PLAT))&&h<(o===6||o===8?.24:.12)*(.4+vnoise(x,z,7,13)*1.2))T.setIfEmpty(x,y,z,h<.035?'fern':'short_grass');
   }
   addBuilding({name:'Bäume & Blumen',group:'Bäume & Deko',kind:'deco',voxels:placeModel(T,0,0,0,0),pickable:false,
-    desc:`${trees} Bäume (Eiche, große Eiche, Birke, Fichte, Schwarzeiche, Kirsche) in Wäldern und Wiesen, ${bushes} Büsche aus verschiedenem Laub, dazu Blumen, Gras und Farn.`,
-    steps:['Bäume am einfachsten aus Setzlingen ziehen und mit Knochenmehl wachsen lassen. Schwarzeichen brauchen 4 Setzlinge im Quadrat.','Wälder dicht setzen, Wiesen nur mit einzelnen Bäumen, so wirkt es natürlich.','Büsche: kleine Laubhaufen (mit der Schere abgebaut verfallen sie nicht), dazwischen Süßbeerensträucher.','Blumen, Gras und Farn: Knochenmehl auf Grasblöcke streuen.']});
+    desc:`${trees} Bäume (Eiche, große Eiche, Birke, Fichte, Schwarzeiche, Kirsche) in den Wäldern der Insel und auf den Wiesen, ${bushes} Büsche aus verschiedenem Laub, dazu Blumen, Gras und Farn.`,
+    steps:['Der Wald im Osten bleibt stehen, nur innerhalb der Stadtmauer, für die Felder und den Obsthof wird gerodet. Fehlende Bäume aus Setzlingen ziehen und mit Knochenmehl wachsen lassen. Schwarzeichen brauchen 4 Setzlinge im Quadrat.','Wälder dicht setzen, Wiesen nur mit einzelnen Bäumen, so wirkt es natürlich.','Büsche: kleine Laubhaufen (mit der Schere abgebaut verfallen sie nicht), dazwischen Süßbeerensträucher.','Blumen, Gras und Farn: Knochenmehl auf Grasblöcke streuen.']});
 }
 // ===================== Farmen =====================
 // Jede Farm ist ein eigenes Bauwerk mit Materialliste und Schichtplan.
@@ -1447,16 +1545,18 @@ function farmBakery(){
 function farmKeep(){
   const host=hostByName('Bergfried');if(!host)return;
   const B=PLAT,F=new Model(),C=new Set(),RM=new Set();
+  // in Burgkoordinaten geplant wie der Bergfried selbst
+  const KC=(x,y,z)=>{const[X,Z]=c2w(x,z);return K(X,y,Z)};
   const ix0=87,ix1=95,iz0=17,iz1=25,hx=[90,91],hz=[20,21],yS=B+18;
   for(const[x,z]of[[91,16],[86,21],[96,21]])for(const y of[B+22,B+23])F.set(x,y,z,'stone_bricks');
   let water=0;
   for(let x=ix0;x<=ix1;x++)for(let z=iz0;z<=iz1;z++){const edge=x===ix0||x===ix1||z===iz0||z===iz1;if(edge&&!(x<=ix0+1&&z<=iz0+1)){F.set(x,yS+1,z,'water');water++}}
-  for(const y of[yS,B+12,B+6,B])for(const x of hx)for(const z of hz)RM.add(K(x,y,z));
+  for(const y of[yS,B+12,B+6,B])for(const x of hx)for(const z of hz)RM.add(KC(x,y,z));
   for(let y=B;y<yS;y++)for(let x=89;x<=92;x++)for(let z=19;z<=22;z++){if(hx.includes(x)&&hz.includes(z))continue;F.set(x,y,z,'glass')}
   for(const y of[B+1,B+7,B+13])for(const[x,z]of[[ix0+1,iz1-1],[ix1-1,iz0+1],[ix1-1,iz1-1]])F.set(x,y,z,'lantern',{h:0});
   // Kerker
   const yk=B-7;
-  for(let x=86;x<=96;x++)for(let z=16;z<=26;z++){const ins=x>86&&x<96&&z>16&&z<26;for(let y=yk;y<B;y++){if(!ins||y===yk)F.set(x,y,z,ins?'cobblestone':stoneMix(x,y,z,.35,.2));else C.add(K(x,y,z))}}
+  for(let x=86;x<=96;x++)for(let z=16;z<=26;z++){const ins=x>86&&x<96&&z>16&&z<26;for(let y=yk;y<B;y++){if(!ins||y===yk)F.set(x,y,z,ins?'cobblestone':stoneMix(x,y,z,.35,.2));else C.add(KC(x,y,z))}}
   for(let y=yk+1;y<=B;y++)F.set(87,y,17,'ladder',{f:0});
   const yH=B-4;
   F.set(91,yH,20,'hopper',{f:3});F.set(91,yH,21,'hopper',{f:3});F.set(90,yH,21,'hopper',{f:0});F.set(90,yH,20,'hopper',{f:4});
@@ -1472,9 +1572,9 @@ function farmKeep(){
   for(const z of[18,21,24]){F.set(94,B-1,z,'iron_chain');F.set(94,B-2,z,'lantern',{h:1})}
   F.set(95,yk+1,18,'hay_block');F.set(95,yk+1,22,'barrel');
   for(const[x,z]of[[88,24],[88,19],[92,25]])F.set(x,B-1,z,'lantern',{h:1});
-  addFarm(host,{name:'Bergfried: Mob-Farm & Kerker',short:'Xp-Farm & Mob-Grinder',voxels:placeModel(F,0,0,0,0),carve:C,remove:RM,auto:'automatisch (Xp: selbst zuschlagen)',out:{x:90,y:yH-1,z:20},
+  addFarm(host,{name:'Bergfried: Mob-Farm & Kerker',short:'Xp-Farm & Mob-Grinder',voxels:castleToWorld(placeModel(F,0,0,0,0)),carve:C,remove:RM,auto:'automatisch (Xp: selbst zuschlagen)',out:(()=>{const[ox,oz]=c2w(90,20);return{x:ox,y:yH-1,z:oz}})(),
     desc:'Das vierte Stockwerk des Bergfrieds ist ein stockdunkler Spawnraum. Wasser schiebt die Monster in einen Schacht, sie fallen 22 Blöcke tief in den Kerker und landen mit einem halben Herz in der Schlagkammer. Ein Schlag genügt, die Erfahrung bekommst du, die Beute fällt in eine Truhe.',
-    steps:['Spawnraum (Boden auf Höhe 18 im Turm): Fenster zumauern, keine Lichtquelle. Monster spawnen nur bei Blocklicht 0.','Am Rand des Bodens ringsum Wasserquellen setzen, in der Mitte ein 2 × 2 Loch. Das Wasser schiebt die Monster ins Loch.','Durch die Stockwerke darunter einen Glasschacht um das Loch bauen, damit niemand hineinfällt. Die anderen Stockwerke mit Laternen hell machen.','Kerker unter dem Turm ausheben (6 Blöcke hoch). Die Monster fallen genau 22 Blöcke und landen auf 4 Trichtern, die in eine Truhe führen.','Schlagkammer: Glas rundherum, auf der Spielerseite unten eine obere Steinziegelstufe. Durch den halben Spalt triffst du die Füße der Monster.','Wichtig: Monster spawnen nur 24 bis 128 Blöcke vom Spieler entfernt. Steh beim Warten in der Schlagkammer und leuchte Höhlen in der Umgebung aus, sonst spawnen die Monster dort.','Im Kerker an der Ostwand Gefängniszellen aus Eisengittern als Dekoration.'],
+    steps:['Spawnraum (Boden auf Höhe 18 im Turm): Fenster zumauern, keine Lichtquelle. Monster spawnen nur bei Blocklicht 0.','Am Rand des Bodens ringsum Wasserquellen setzen, in der Mitte ein 2 × 2 Loch. Das Wasser schiebt die Monster ins Loch.','Durch die Stockwerke darunter einen Glasschacht um das Loch bauen, damit niemand hineinfällt. Die anderen Stockwerke mit Laternen hell machen.','Kerker unter dem Turm ausheben (6 Blöcke hoch). Die Monster fallen genau 22 Blöcke und landen auf 4 Trichtern, die in eine Truhe führen.','Schlagkammer: Glas rundherum, auf der Spielerseite unten eine obere Steinziegelstufe. Durch den halben Spalt triffst du die Füße der Monster.','Wichtig: Monster spawnen nur 24 bis 128 Blöcke vom Spieler entfernt. Steh beim Warten in der Schlagkammer und leuchte Höhlen in der Umgebung aus, sonst spawnen die Monster dort.','Im Kerker an der Nordwand Gefängniszellen aus Eisengittern als Dekoration.'],
     extras:[{n:'Wassereimer',c:water},{n:'Schwert',c:1,note:'am besten mit Plünderung'}]});
 }
 
@@ -1560,19 +1660,19 @@ function farmBees(){
 // ---- Angelsteg am Fischerhaus
 function farmFisher(){
   const host=hostByName('Fischerhaus');if(!host)return;
-  const zc=Math.round((host.bb.z0+host.bb.z1)/2),F=new Model();
-  const c=coastX(zc);
-  for(let x=c;x<c+9;x++)for(let z=zc-1;z<=zc+1;z++){
-    const edge=z!==zc,post=edge&&(x-c)%4===0;
+  const zc=Math.max(76,Math.min(79,Math.round((host.bb.z0+host.bb.z1)/2))),F=new Model();
+  const c=shoreX(zc),X=k=>c-k;
+  for(let k=0;k<9;k++)for(let z=zc-1;z<=zc+1;z++){
+    const edge=z!==zc,post=edge&&k%4===0,x=X(k);
     if(post){for(let y=hAt(x,z);y<=0;y++)F.set(x,y,z,'stripped_dark_oak_log',{a:'y'})}
-    else{F.set(x,-1,z,'spruce_planks');if(edge&&x<c+6&&x>c)F.set(x,0,z,'spruce_fence')}
+    else{F.set(x,-1,z,'spruce_planks');if(edge&&k<6&&k>0)F.set(x,0,z,'spruce_fence')}
   }
-  for(const[x,z]of[[c+6,zc-1],[c+8,zc-1],[c+6,zc+1],[c+8,zc+1]])for(let y=0;y<=2;y++)F.set(x,y,z,'spruce_fence');
-  for(let x=c+5;x<=c+9;x++)for(let z=zc-2;z<=zc+2;z++)F.set(x,3,z,'spruce_slab',{h:0});
-  F.set(c+7,0,zc-1,'chest');F.set(c+7,0,zc+1,'barrel');F.set(c+7,2,zc,'lantern',{h:1});F.set(c+8,0,zc,'spruce_stairs',{f:3,h:0});
+  for(const[k,z]of[[6,zc-1],[8,zc-1],[6,zc+1],[8,zc+1]])for(let y=0;y<=2;y++)F.set(X(k),y,z,'spruce_fence');
+  for(let k=5;k<=9;k++)for(let z=zc-2;z<=zc+2;z++)F.set(X(k),3,z,'spruce_slab',{h:0});
+  F.set(X(7),0,zc-1,'chest');F.set(X(7),0,zc+1,'barrel');F.set(X(7),2,zc,'lantern',{h:1});F.set(X(8),0,zc,'spruce_stairs',{f:1,h:0});
   addFarm(host,{name:'Fischerhaus: Angelsteg',short:'Fischfarm',voxels:placeModel(F,0,0,0,0),auto:'von Hand',
     desc:'Ein überdachter Steg vor dem Fischerhaus, weit draußen über offenem Wasser. Dort angelst du Fische und mit Glück Schätze.',
-    steps:['Steg aus Fichtenholzbrettern 9 Blöcke weit aufs Wasser, Pfähle aus Stämmen bis zum Grund.','Am Ende ein kleines Dach aus Stufen auf vier Zaunpfosten, darunter Truhe, Fass und Laterne.','Für Schätze braucht der Schwimmer offenes Wasser: rund um den Schwimmer 5 × 5 Wasser, 4 tief, ohne andere Blöcke.','Angel mit Glück des Meeres und Köder verzaubern, das bringt mehr und schneller Fang.'],
+    steps:['Steg aus Fichtenholzbrettern 9 Blöcke weit in die Bucht, Pfähle aus Stämmen bis zum Grund.','Am Ende ein kleines Dach aus Stufen auf vier Zaunpfosten, darunter Truhe, Fass und Laterne.','Für Schätze braucht der Schwimmer offenes Wasser: rund um den Schwimmer 5 × 5 Wasser, 4 tief, ohne andere Blöcke.','Angel mit Glück des Meeres und Köder verzaubern, das bringt mehr und schneller Fang.'],
     extras:[{n:'Angel',c:1,note:'mit Köder und Glück des Meeres'}]});
 }
 
@@ -1580,7 +1680,7 @@ function farmFisher(){
 function farmKelp(){
   const host=hostByName('Hafen: Stege & Boote');if(!host)return;
   const F=new Model();let n=0;
-  for(let z=140;z<=146;z++){const c=coastX(z);for(let x=c+2;x<=c+13;x++){if(!SEA[z*WX+x])continue;if(hash3(x,4,z)<.35)continue;for(let y=hAt(x,z);y<=-2;y++){F.set(x,y,z,'kelp');n++}}}
+  for(let z=71;z<=73;z++){const c=shoreX(z);for(let x=c-13;x<=c-2;x++){if(!SEA[z*WX+x])continue;if(hash3(x,4,z)<.35)continue;for(let y=hAt(x,z);y<=-2;y++){F.set(x,y,z,'kelp');n++}}}
   addFarm(host,{name:'Hafen: Seetangfeld',short:'Seetang & Fische',voxels:placeModel(F,0,0,0,0),auto:'von Hand',
     desc:'Zwischen den Stegen wächst ein Feld aus Seetang. Er wächst nach oben nach, man erntet die oberen Stücke und lässt den untersten stehen.',
     steps:['Seetang am Meeresgrund pflanzen (aus dem Ozean mitbringen).','Ernten: mit dem Boot über das Feld fahren und die oberen Stücke abbauen, den untersten Block stehen lassen.','Seetang im Ofen trocknen, 9 getrocknete ergeben einen Block: guter Brennstoff.'],
@@ -1604,7 +1704,7 @@ function churchNave(m,x0,x1,z0,z1,g,H){
 }
 
 function buildMill(){
-  const r=findFreeRect(34,48,15,15,[6],34,3);if(!r)return null;
+  const r=findFreeRect(52,130,15,15,[6],40,5)||findFreeRect(282,150,15,15,[6],40,5);if(!r)return null;
   const{x0,z0,g}=r;flatten(x0,z0,x0+14,z0+14,g);markRect(x0-1,z0-1,x0+15,z0+15);
   const m=new Model(),bx0=x0+3,bz0=z0+3,bx1=x0+11,bz1=z0+11,cx=x0+7;
   for(let x=bx0;x<=bx1;x++)for(let z=bz0;z<=bz1;z++){
@@ -1633,9 +1733,9 @@ function buildMill(){
   for(let k=2;k<=6;k++){m.set(cx+1,g+11+k,zs,'white_wool');m.set(cx-1,g+11-k,zs,'white_wool');m.set(cx+k,g+10,zs,'white_wool');m.set(cx-k,g+12,zs,'white_wool')}
   m.set(cx,g,bz1+1,'stone_brick_stairs',{f:0,h:0});
   const b=addBuilding({name:'Windmühle',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(m,0,0,0,0),label:true,farm:'Weizen',
-    desc:'Windmühle vor der Stadt bei den Weizenfeldern: Steinsockel 9 × 9, darüber ein Holzturm mit Fichtenhelm und Fahne, vier Flügel aus Zäunen mit weißen Wollsegeln.',
+    desc:'Windmühle auf der Wiese westlich vom Burghügel, am Ende des Feldwegs bei den Weizenfeldern: Steinsockel 9 × 9, darüber ein Holzturm mit Fichtenhelm und Fahne, vier Flügel aus Zäunen mit weißen Wollsegeln.',
     steps:['Steinsockel 9 × 9, 7 hoch, aus Bruchstein mit Steinziegeln, Tür nach Süden.','Holzstockwerk 7 × 7 darauf, 6 hoch, Ecken und obere Kante aus entrindeten Schwarzeichenstämmen, Wände aus Fichtenholzbrettern.','Helm aus Fichtenholz: Treppenring mit Überstand, dann pro Ring einen Block nach innen und zwei höher. Oben eine Fahne.','Flügel: Achse aus zwei liegenden Stämmen an der Südseite. Vier Arme aus je 6 Zäunen, an jedem Arm 5 weiße Wolle als Segel, alle in die gleiche Drehrichtung versetzt.']});
-  return{b,bx0,bz0,bx1,bz1,g};
+  return{b,bx0,bz0,bx1,bz1,g,door:[cx,bz1+2]};
 }
 function farmMill(mill){
   if(!mill)return;const F=new Model(),C=new Set();
@@ -1648,9 +1748,9 @@ function farmMill(mill){
 
 function buildTannery(){
   const m=genHouse({w:9,d:7,floors:2,over:true,roof:'spruce',stoneGround:true,chimneys:1,seed:41});
-  const p=placeNear(m,60,176,24);if(!p)return null;
+  const p=placeNear(m,188,172,24);if(!p)return null;
   return addBuilding({name:'Gerberei',group:'Gebäude mit Farm',kind:'house',voxels:p.vox,model:m,rot:p.r,label:true,farm:'Leder & Kaninchen',
-    desc:'Gerberei an der Gerbergasse: steinernes Erdgeschoss, Fachwerk darüber. Im Hof stehen Gerbkessel und die Kuh- und Kaninchenställe.',steps:houseSteps(m,p.r)});
+    desc:'Gerberei an der Schmiedgasse im Süden der Stadt: steinernes Erdgeschoss, Fachwerk darüber. Im Hof stehen Gerbkessel und die Kuh- und Kaninchenställe.',steps:houseSteps(m,p.r)});
 }
 function farmTannery(host){
   if(!host)return;
@@ -1676,7 +1776,7 @@ function farmTannery(host){
 }
 
 function buildMonastery(){
-  const r=findFreeRect(160,122,23,21,[0],36,3);if(!r)return null;
+  const r=findFreeRect(278,112,23,21,[6],34,4);if(!r)return null;
   const{x0,z0,g}=r;flatten(x0,z0,x0+22,z0+20,g);markRect(x0,z0,x0+22,z0+20);
   const m=new Model();
   churchNave(m,x0,x0+8,z0+4,z0+20,g,8);
@@ -1696,9 +1796,9 @@ function buildMonastery(){
   for(let x=cx0;x<=cx1-1;x+=4)m.set(x,g+3,cz0+1,'lantern',{h:1});
   m.set(cx1,g,cz0+8,null);m.set(cx1,g+1,cz0+8,null);
   const b=addBuilding({name:'Kloster',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(m,0,0,0,0),label:true,farm:'Zuckerrohr',
-    desc:'Kloster mit Kirche, Glockenturm und Kreuzgang: Die Kirche hat hohe Fenster, ein Rautenfenster über der Doppeltür und Bänke. Im Innenhof des Kreuzgangs liegt hinter Säulen die Zuckerrohrfarm.',
+    desc:'Kloster am anderen Flussufer auf einer Lichtung im Wald, mit Kirche, Glockenturm und Kreuzgang: Die Kirche hat hohe Fenster, ein Rautenfenster über der Doppeltür und Bänke. Im Innenhof des Kreuzgangs liegt hinter Säulen die Zuckerrohrfarm.',
     steps:['Kirche 9 × 17 aus Steinziegeln, 8 hoch, Boden aus poliertem Andesit, Doppeltür nach Süden.','Hohe Fenster: Glasscheiben übereinander mit Spitzbogen aus umgedrehter Treppe. Bänke aus Fichtenholztreppen, Altar mit Laternen.','Satteldach aus Schwarzeichenholztreppen, Giebel mit Steinziegeln, im Südgiebel ein Rautenfenster.','Glockenturm 5 × 5 an der Nordseite, 22 hoch, oben Schallöffnungen, Fichtenhelm.','Kreuzgang östlich der Kirche: Außenmauer 5 hoch, innen ein überdachter Gang aus Steinziegelstufen, zum Hof hin Säulen aus Steinziegelmauern im Wechsel mit Bögen.']});
-  return{b,gx0:cx0+3,gx1:cx1-4,gz0:cz0+4,gz1:cz1-4,g};
+  return{b,gx0:cx0+3,gx1:cx1-4,gz0:cz0+4,gz1:cz1-4,g,door:[x0+4,z0+22]};
 }
 function farmMonastery(mon){
   if(!mon)return;
@@ -1728,7 +1828,7 @@ function farmMonastery(mon){
 }
 
 function buildOrchard(){
-  const r=findFreeRect(176,40,24,18,[6],34,3);if(!r)return null;
+  const r=findFreeRect(258,68,24,18,[6],34,3);if(!r)return null;
   const{x0,z0,g}=r;flatten(x0,z0,x0+23,z0+17,g);markRect(x0-1,z0-1,x0+24,z0+18);
   const m=new Model();
   const h=genHouse({w:9,d:7,floors:2,over:false,roof:'spruce',stoneGround:true,chimneys:1,seed:51});
@@ -1739,9 +1839,9 @@ function buildOrchard(){
   for(let a=0;a<=23;a++)for(let b=0;b<=17;b++){const edge=a===0||a===23||b===0||b===17;if(edge&&!(b===17&&(a===11||a===12)))m.set(x0+a,g,z0+b,'spruce_fence')}
   m.set(x0,g+1,z0+17,'lantern',{h:0});m.set(x0+23,g+1,z0+17,'lantern',{h:0});
   const b=addBuilding({name:'Obsthof',group:'Gebäude mit Farm',kind:'house',voxels:placeModel(m,0,0,0,0),label:true,farm:'Melonen & Kürbisse',
-    desc:'Obsthof vor der Stadt: Bauernhaus mit steinernem Erdgeschoss, Obstbäume (Eichen für Äpfel, Kirschen) und ein umzäuntes Melonen- und Kürbisfeld.',
+    desc:'Obsthof am anderen Flussufer, hinter der Steinbrücke auf einer Lichtung im Wald: Bauernhaus mit steinernem Erdgeschoss, Obstbäume (Eichen für Äpfel, Kirschen) und ein umzäuntes Melonen- und Kürbisfeld.',
     steps:['Grundstück 24 × 18 mit Fichtenholzzaun umzäunen, Tor im Süden.','Bauernhaus 9 × 7 in die Nordwestecke (Bauanleitung wie die Wohnhäuser).','Obstbäume in Reihen alle 4 Blöcke pflanzen: Eichen (lassen Äpfel fallen) und Kirschbäume.']});
-  return{b,fx0:x0+2,fz0:z0+10,g};
+  return{b,fx0:x0+2,fz0:z0+10,g,door:[x0+11,z0+19]};
 }
 function farmOrchard(o){
   if(!o)return;
@@ -1771,7 +1871,7 @@ function farmOrchard(o){
 
 function buildWarehouse(){
   const m=genHouse({w:15,d:11,floors:2,over:true,roof:'dark_oak',stoneGround:true,chimneys:1,seed:21});
-  const p=placeNear(m,118,160,24);if(!p)return null;
+  const p=placeNear(m,194,152,24);if(!p)return null;
   return addBuilding({name:'Lagerhaus',group:'Gebäude mit Farm',kind:'house',voxels:p.vox,model:m,rot:p.r,label:true,farm:'Sortieranlage',
     desc:'Großes Lagerhaus nahe dem Markt mit steinernem Erdgeschoss. Im Keller kommen die Lorenbahnen aller Farmen an, jede Farm liefert in ihre eigene Truhe.',steps:houseSteps(m,p.r)});
 }
@@ -1832,16 +1932,17 @@ function buildRailNetwork(lag){
 
 function buildCity(){
   buildCityWall();
+  buildBridge();
   buildCastle();
-  buildFountain(92,140);
+  buildFountain(MARKET_C[0],MARKET_C[1]);
   buildHarbor();
   placeStalls();
   // Benannte Gebäude, ihre Farmen kommen weiter unten dazu
   const named=[
-    {name:'Taverne',farm:'Bienen & Honig',at:[114,124],o:{w:13,d:11,floors:3,over:true,roof:'dark_oak',chimneys:2,seed:11},desc:'Große Taverne am Marktplatz: drei Stockwerke mit Überhängen, zwei Schornsteine.'},
-    {name:'Bäckerei',farm:'Karotten & Kartoffeln',at:[72,124],o:{w:11,d:9,floors:2,over:true,roof:'spruce',chimneys:2,seed:12},desc:'Bäckerei am Markt mit Backofen-Schornstein auf beiden Giebelseiten.'},
-    {name:'Schmiede',farm:'Eisengolem-Farm',at:[110,212],o:{w:11,d:9,floors:2,over:false,roof:'dark_oak',stoneGround:true,seed:13},desc:'Schmiede nahe dem Stadttor: steinernes Erdgeschoss gegen Funkenflug, Fachwerk darüber.'},
-    {name:'Fischerhaus',farm:'Fischfarm',at:[203,128],o:{w:9,d:5,floors:2,over:false,roof:'spruce',stoneGround:true,seed:14},desc:'Fischerhaus am Kai mit steinernem Erdgeschoss, Fachwerk darüber und Blick auf die Stege.'},
+    {name:'Taverne',farm:'Bienen & Honig',at:[214,140],o:{w:11,d:9,floors:3,over:true,roof:'dark_oak',chimneys:2,seed:11},desc:'Große Taverne am Marktplatz: drei Stockwerke mit Überhängen, zwei Schornsteine.'},
+    {name:'Bäckerei',farm:'Karotten & Kartoffeln',at:[180,118],o:{w:11,d:9,floors:2,over:true,roof:'spruce',chimneys:2,seed:12},desc:'Bäckerei am Markt mit Backofen-Schornstein auf beiden Giebelseiten.'},
+    {name:'Schmiede',farm:'Eisengolem-Farm',at:[204,82],o:{w:9,d:7,floors:2,over:false,roof:'dark_oak',stoneGround:true,seed:13},desc:'Schmiede nahe dem Haupttor: steinernes Erdgeschoss gegen Funkenflug, Fachwerk darüber.'},
+    {name:'Fischerhaus',farm:'Fischfarm',at:[175,72],o:{w:9,d:5,floors:2,over:false,roof:'spruce',stoneGround:true,seed:14},desc:'Fischerhaus am Kai mit steinernem Erdgeschoss, Fachwerk darüber und Blick auf die Stege.'},
   ];
   for(const n of named){
     const m=genHouse(n.o);const p=placeNear(m,n.at[0],n.at[1],18);
@@ -1849,6 +1950,8 @@ function buildCity(){
     addBuilding({name:n.name,group:'Gebäude mit Farm',kind:'house',voxels:p.vox,model:m,rot:p.r,farm:n.farm,desc:n.desc,steps:houseSteps(m,p.r),label:true});
   }
   const warehouse=buildWarehouse(),tannery=buildTannery();farmTannery(tannery);const monastery=buildMonastery();
+  const BR=[BRIDGE.xb+2,88];
+  if(monastery)roadTo('Klosterweg',BR,monastery.door);
   // Wohnhäuser entlang der Gassen
   const R=mulberry32(4242);let count=0;
   const order=STREETS.filter(s=>s.kind!=='court');
@@ -1881,6 +1984,8 @@ function buildCity(){
     }
   }
   const mill=buildMill(),orchard=buildOrchard();
+  if(orchard)roadTo('Obsthofweg',BR,orchard.door);
+  if(mill&&mill.door[0]>WX/2)roadTo('Mühlenweg',BR,mill.door);
   buildFields();
   farmBakery();farmKeep();farmIron();farmStable();farmBees();farmFisher();farmKelp();
   farmMill(mill);farmMonastery(monastery);farmOrchard(orchard);
@@ -1896,8 +2001,8 @@ function buildCity(){
     else if(h<.004&&BLOCKS[b].shape==='cube')sv.push({x,y,z,b:'spruce_trapdoor',f:0,h:0,o:0});
   }
   addBuilding({name:'Straßen & Plätze',group:'Plätze',kind:'street',voxels:sv,pickable:false,
-    desc:'Hauptstraße vom Tor über den Markt zur Burg (Bruchstein und Kies), Gassen aus Trampelpfad und Kies, Marktplatz aus Steinziegeln, Bruchstein und Andesit.',
-    steps:['Verlauf der Hauptstraße abstecken: vom Südtor in leichten Bögen zum Markt, dann bergauf zur Zugbrücke. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, poliertem Andesit und Bruchstein, dazwischen Flecken aus festgetretenem Schlamm.','Kai am Hafen aus Steinziegeln und Bruchstein.','Hauptstraße: am Rand je eine Reihe Steinziegelstufen als erhöhter Gehweg.','Wo die Straße einen Block ansteigt, eine Stufe davor legen, dann gibt es nur halbe Absätze.','Moosteppich in Flecken auf das Pflaster legen, hier und da eine geschlossene Falltür als Kellerluke.']});
+    desc:'Hauptstraße vom Haupttor über den Markt zur Burg (Bruchstein und Kies), Feldweg um den Burghügel zur Mühle, Gassen aus Trampelpfad und Kies, Marktplatz aus Steinziegeln, Bruchstein und Andesit.',
+    steps:['Verlauf der Hauptstraße abstecken: vom Haupttor im Osten in leichten Bögen zum Markt, dann bergauf zur Zugbrücke der Burg. 5 Blöcke breit.','Grasblöcke der Straße abtragen und durch den Belag ersetzen. Bunt gemischt sieht es natürlicher aus.','Gassen 2–3 Blöcke breit: Gras mit der Schaufel zu Trampelpfad machen, dazwischen Kies.','Marktplatz: unregelmäßige Fläche aus Steinziegeln, poliertem Andesit und Bruchstein, dazwischen Flecken aus festgetretenem Schlamm.','Kai am Hafen aus Steinziegeln und Bruchstein.','Hauptstraße: am Rand je eine Reihe Steinziegelstufen als erhöhter Gehweg.','Wo die Straße einen Block ansteigt, eine Stufe davor legen, dann gibt es nur halbe Absätze.','Moosteppich in Flecken auf das Pflaster legen, hier und da eine geschlossene Falltür als Kellerluke.']});
   buildLamps();
   buildArches();
   buildNature();
@@ -2093,7 +2198,7 @@ function initThree(){
   matLayer=matO.clone();matLayer.color=new THREE.Color(1.55,1.22,.62);
   matG=matO.clone();
   applyTheme();
-  camera.position.set(100-WX/2-20,150,140-WZ/2+175);controls.target.set(100-WX/2,4,140-WZ/2+10);controls.update();
+  camera.position.set(200-WX/2,150,140-WZ/2+175);controls.target.set(168-WX/2,4,128-WZ/2);controls.update();
   resize();window.addEventListener('resize',resize);
 }
 function applyTheme(){
@@ -2220,10 +2325,10 @@ function initLabels(){
   for(const b of buildings){if(!(b.label||b.group==='Burg'||b.kind==='wall'))continue;if(b.kind==='water'||b.kind==='deco'||b.name==='Burgbrunnen')continue;
     const el=document.createElement('div');el.className='lbl'+(b.farm?' farm':'');el.textContent=b.name.replace('Burg: ','');host.appendChild(el);
     let ax=(b.bb.x0+b.bb.x1)/2,az=(b.bb.z0+b.bb.z1)/2;
-    if(b.kind==='wall'){ax=100;az=238}
-    if(b.name.startsWith('Burg: Haupt')){ax=124;az=16}
-    if(b.name.startsWith('Burg: Vor')){ax=70;az=58}
-    if(b.name.startsWith('Burg: Tor')){ax=100;az=82}
+    if(b.name.startsWith('Stadtmauer')){ax=GATE_MAIN[0];az=GATE_MAIN[1]}
+    if(b.name.startsWith('Burg: Haupt'))[ax,az]=c2w(124,16);
+    if(b.name.startsWith('Burg: Vor'))[ax,az]=c2w(70,58);
+    if(b.name.startsWith('Burg: Tor'))[ax,az]=c2w(100,82);
     labelEls.push({el,b,p:new THREE.Vector3(ax+.5-WX/2,b.bb.y1+2,az+.5-WZ/2)})}
 }
 const tmpV=new THREE.Vector3();
