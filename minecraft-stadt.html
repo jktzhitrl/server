@@ -2013,7 +2013,62 @@ function buildCity(){
     b.voxels=b.voxels.filter(v=>{const k=K(v.x,v.y,v.z);if(seen.has(k))return false;seen.add(k);return true});
     if(b.voxels.length!==before)b.counts=countBlocks(b.voxels);
   }
+  buildTerrainSections(seen);
 }
+
+// ---------- Aufschütten in Abschnitten ----------
+// Jeder Abschnitt ist ein eigener Bauplan aus Erde (an Felshängen Stein), Schicht für Schicht ab der flachen Insel.
+// Wo Gebäude, Straßen oder Keller hinkommen, bleibt der Platz frei.
+const TERRAIN_SECTIONS=[];
+function buildTerrainSections(used){
+  const[ccx,ccz]=c2w(100,42);
+  const defs=[
+    {id:'plateau',t:'Burgplateau',area:'die Fläche innerhalb des Burggrabens, auf der die Burg steht'},
+    {id:'hn',t:'Burghügel Nordhang',area:'der Hang vom Graben hinunter zur Bucht'},
+    {id:'ho',t:'Burghügel Osthang',area:'der Hang vom Burgtor hinunter zur Stadt'},
+    {id:'hs',t:'Burghügel Südhang',area:'der Hang vom Graben hinunter zur Südküste'},
+    {id:'hw',t:'Burghügel Westhang',area:'der Hang vom Graben hinunter zur Wiese im Westen'},
+    {id:'nord',t:'Stadt Nord und Hafen',area:'die Nordstadt zwischen Hafen und Markt'},
+    {id:'mitte',t:'Stadt Mitte und Markt',area:'der Marktplatz und die Straßen drumherum'},
+    {id:'sued',t:'Stadt Süd',area:'die Südstadt bis zur Mauer'},
+    {id:'so',t:'Südosten vor der Mauer',area:'die Halbinsel mit Kloster, Obsthof und Windmühle'},
+    {id:'west',t:'Westen und Sandzunge',area:'die Wiese und Sandzunge westlich vom Burghügel'}
+  ];
+  const vox={};defs.forEach(d=>vox[d.id]=[]);
+  for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){
+    const i=z*WX+x;if(!MAIN[i]||SEA[i])continue;
+    const from=MASK[i]===0?WFLOOR[i]:BASE,top=Hm[i];if(top<=from)continue;
+    let id;
+    if(HILL[i]){
+      const[cx,cz]=w2c(x,z);
+      if(!moat[i]&&(inPoly(cx+.5,cz+.5,OUTER)||polyDist(cx+.5,cz+.5,OUTER_C)<=3.5))id='plateau';
+      else{const dx=x-ccx,dz=z-ccz;id=Math.abs(dx)>Math.abs(dz)?(dx>0?'ho':'hw'):(dz>0?'hs':'hn')}
+    }else if(x<150)id='west';
+    else if(!inPoly(x+.5,z+.5,CITY_POLY)&&z>=140)id='so';
+    else if(z<110)id='nord';else if(z<150)id='mitte';else id='sued';
+    for(let y=from;y<top;y++){const k=K(x,y,z);if(used.has(k)||carved.has(k))continue;vox[id].push({x,y,z,b:ROCK[i]&&y>=top-2?'stone':'dirt'})}
+  }
+  let n=0;
+  for(const d of defs){const v=vox[d.id];if(!v.length)continue;n++;
+    const b=addBuilding({name:`Aufschütten ${n}: ${d.t}`,group:'Geländearbeiten',kind:'terrain',voxels:v,pickable:false,desc:'',steps:[]});
+    let ymax=-1e9;for(const q of v)ymax=Math.max(ymax,q.y);
+    const hasMoat=d.id[0]==='h'&&v.some(q=>moat[q.z*WX+q.x]);
+    b.desc=`Abschnitt ${n} der Geländearbeiten: ${d.area}. Ausgangslage ist die flache Insel, oberster Bodenblock auf Y ${mcY(BASE-1)}. Hier kommen ${b.voxels.length.toLocaleString('de-DE')} Blöcke drauf, bis Y ${mcY(ymax)}.`;
+    b.steps=[
+      `Abschnitt abstecken: X ${mcX(b.bb.x0)} bis ${mcX(b.bb.x1)}, Z ${mcZ(b.bb.z0)} bis ${mcZ(b.bb.z1)}. Die genaue Form zeigt der Schichtplan, Schicht 1 ist die unterste.`,
+      `Schicht für Schicht von unten nach oben aufschütten. Schicht 1 liegt auf Y ${mcY(b.bb.y0)}${b.bb.y0<BASE?' (unter Wasser: hier wird die Bucht zugeschüttet)':', direkt auf der flachen Insel'}, jede weitere einen Block höher.`,
+      'Tipp: Zuerst den Rand jeder Schicht legen, dann die Fläche füllen. Mit F3 siehst du dein Y.',
+      'Erde reicht, Gras wächst mit der Zeit von selbst darüber. Wo im Plan Stein steht, Stein nehmen: das gibt die Felskanten am steilen Hang.',
+      'Freie Stellen im Plan sind Absicht: Dort kommen später Keller, Mauern, Gebäude oder Straßenbelag hin.'
+    ].concat(hasMoat?[`Den Burggraben frei lassen: Sein Boden liegt auf Y ${mcY(PLAT-4)}, die Ränder auf Y ${mcY(PLAT-1)}. Das Wasser kommt erst, wenn die Burgmauern stehen.`]:[])
+     .concat(d.id==='plateau'?[`Oben eben auf Y ${mcY(PLAT-1)} abschließen: Auf dieser Fläche steht die ganze Burg.`]:[]);
+    b.auto=`${b.voxels.length.toLocaleString('de-DE')} Blöcke`;
+    TERRAIN_SECTIONS.push(b);
+  }
+}
+// Gelände-Abschnitte werden nur gezeigt, wenn man sie auswählt; ihre Flächen werden gegen sich selbst geschnitten
+function ownSolid(b,maxY){const own=new Map();for(const v of b.voxels)if(maxY==null||v.y<=maxY)own.set(K(v.x,v.y,v.z),v);return{own,sAt:(x,y,z)=>{const v=own.get(K(x,y,z));return!!v&&FULL.has(v.b)}}}
+function ensureMeshes(b){if(b.kind!=='terrain'||b.meshes)return;const{own,sAt}=ownSolid(b);makeBuildingMeshes(b,b.voxels,sAt,(x,y,z)=>own.get(K(x,y,z)));b.meshes.forEach(m=>m.visible=false)}
 
 // ---------- Meshing ----------
 // Flächenhelligkeit wie in Minecraft, mit warmem Sonnenlicht von Südosten und kühlem Schatten
@@ -2241,7 +2296,7 @@ function stepSmoke(now){
     const a=(1-ph)*(ph<.1?ph*10:1)*(evening?.3:.22);col[j]=col[j+1]=col[j+2]=a;
   }
   smoke.geo.attributes.position.needsUpdate=true;smoke.geo.attributes.color.needsUpdate=true;
-  smoke.pts.visible=!layerMode&&!(selected&&selected.underground);
+  smoke.pts.visible=!layerMode&&!tfOn&&stageIdx==null&&!(selected&&(selected.underground||selected.kind==='terrain'));
 }
 function makeGlowPoints(){
   const pos=[];for(const b of buildings)for(const v of b.voxels)if(LIGHTS.has(v.b))pos.push(v.x+.5,v.y+.45,v.z+.5);
@@ -2254,11 +2309,11 @@ function makeGlowPoints(){
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 
 function buildMeshes(){
-  for(const b of buildings)for(const v of b.voxels){const k=K(v.x,v.y,v.z);allVox.set(k,v);if(FULL.has(v.b))solid.add(k)}
+  for(const b of buildings){if(b.kind==='terrain')continue;for(const v of b.voxels){const k=K(v.x,v.y,v.z);allVox.set(k,v);if(FULL.has(v.b))solid.add(k)}}
   const getAt=(x,y,z)=>allVox.get(K(x,y,z));
   const tr=meshTerrain();terrainMesh=new THREE.Mesh(toGeometry(tr.G),matO);world.add(terrainMesh);seaMesh=new THREE.Mesh(toGeometry(tr.W),matW);world.add(seaMesh);
   makeGlowPoints();makeSmoke();
-  for(const b of buildings)makeBuildingMeshes(b,b.voxels,solidAt,getAt);
+  for(const b of buildings)if(b.kind!=='terrain')makeBuildingMeshes(b,b.voxels,solidAt,getAt);
 }
 function makeBuildingMeshes(b,vox,sAt,gAt,layerY){
   if(b.meshes)b.meshes.forEach(m=>{world.remove(m);m.geometry.dispose()});
@@ -2272,9 +2327,10 @@ function makeBuildingMeshes(b,vox,sAt,gAt,layerY){
   }
 }
 function setXray(b){
-  const on=!!(b&&b.underground);
+  if(b)ensureMeshes(b);
+  const on=!!(b&&(b.underground||b.kind==='terrain'))||(stageIdx!=null&&!!STAGES[stageIdx].sec);
   if(terrainMesh)terrainMesh.visible=!on;if(seaMesh)seaMesh.visible=!on;
-  for(const o of buildings){if(!o.meshes)continue;o.meshes.forEach(m=>m.visible=on?o===b:stageVis(o))}
+  for(const o of buildings){if(!o.meshes)continue;o.meshes.forEach(m=>m.visible=b&&on?o===b:stageVis(o))}
   if(glowPoints)glowPoints.visible=evening&&!on;if(smoke)smoke.pts.visible=!on;
 }
 function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.glow||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
@@ -2313,7 +2369,7 @@ function tfMaterial(mode){
   return c;
 }
 function buildTF(mode){
-  if(!footDone){footDone=true;for(const b of buildings){if(['deco','street','water','wall','farm','harbor'].includes(b.kind))continue;
+  if(!footDone){footDone=true;for(const b of buildings){if(['deco','street','water','wall','farm','harbor','terrain'].includes(b.kind))continue;
     for(const v of b.voxels)if(v.x>=0&&v.z>=0&&v.x<WX&&v.z<WZ&&v.y<=hAt(v.x,v.z)+1&&v.y>=hAt(v.x,v.z)-1)FOOT[v.z*WX+v.x]=1}}
   if(tfMesh&&tfMode===mode)return;
   if(tfMesh){world.remove(tfMesh);tfMesh.geometry.dispose()}
@@ -2330,7 +2386,7 @@ function setTF(on){
   tfOn=on;if(on)buildTF('all');if(tfMesh)tfMesh.visible=on;
   if(on&&selected)closePanel();
   if(terrainMesh)terrainMesh.visible=true;if(seaMesh)seaMesh.visible=true;
-  for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=!on||b.kind==='street');
+  for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=on?b.kind==='street':stageVis(b));
   if(glowPoints)glowPoints.visible=evening&&!on;if(smoke)smoke.pts.visible=!on;
   document.getElementById('tfLegend').hidden=!on;document.getElementById('labels').hidden=on;
   document.getElementById('btnTF').setAttribute('aria-pressed',on);
@@ -2347,8 +2403,6 @@ function groundAt(){
 // Die Stadt Schritt für Schritt: was schon steht, bleibt sichtbar, die aktuelle Etappe leuchtet, spätere sind ausgeblendet.
 const STAGES=[
   {t:'Insel einebnen',m:()=>false,tf:'base',d:()=>`Die ganze Insel flach machen: oberster Bodenblock auf Y ${mcY(BASE-1)}, die Sandzunge im Südwesten und die Halbinsel im Südosten gehören dazu. Wo der Plan Land im Wasser braucht (blau), vom Grund aus bis Y ${mcY(BASE-1)} aufschütten. Das Land jenseits des Flusses bleibt, wie es ist.`},
-  {t:'Burghügel aufschütten',m:()=>false,tf:'hill',d:()=>`Den Hügel für die Burg aufschütten. Oben ist das Plateau mit Boden-Y ${mcY(PLAT-1)}, die Hänge laufen nach außen flach aus. Den Burggraben (rot) frei lassen: Sein Boden liegt auf Y ${mcY(PLAT-4)}, das Wasser kommt erst später. Je dunkler die Farbe, desto höher. Die Maus zeigt an jeder Stelle die genaue Höhe.`},
-  {t:'Stadtgelände modellieren',m:()=>false,tf:'town',d:()=>`Die sanften Höhen in der Stadt und vor der Mauer aufschütten, so steht die Stadt auf mehreren Ebenen. Der Marktplatz liegt auf Boden-Y ${mcY(PLAZA_Y-1)}, das Haupttor auf Boden-Y ${mcY(GATE_Y-1)}. Die Maus zeigt an jeder Stelle die genaue Höhe.`},
   {t:'Burgmauern und Graben',m:b=>/^Burg: |^Burggraben$/.test(b.name),d:()=>'Erst die runden Türme, dann die Mauern dazwischen, dann Torhaus mit Zugbrücke und das innere Tor. Den Graben erst fluten, wenn die Mauern stehen.'},
   {t:'Bergfried, Palas und Kapelle',m:b=>/^(Bergfried|Palas|Burgkapelle|Burgbrunnen)/.test(b.name),d:()=>'Der Bergfried steht in der Südwestecke der Hauptburg. Kerker und Mob-Farm darunter gleich mit ausheben, solange der Turm noch offen ist. Danach Palas, Kapelle und Brunnen.'},
   {t:'Vorburg',m:b=>/^(Stall|Wirtschaftshaus|Burggarten)/.test(b.name),d:()=>'Stall mit Eierfarm und das Wirtschaftshaus vor dem inneren Tor, danach den Burggarten anlegen.'},
@@ -2362,13 +2416,15 @@ const STAGES=[
   {t:'Gärten, Bögen und Bäume',m:()=>true,d:()=>'Torbögen mit Pflanzkästen über den Gassen, Gemüsegärten in den Höfen und zum Schluss Bäume, Büsche und Blumen.'}
 ];
 let stageIdx=null;
-function assignStages(){for(const b of buildings){b._st=STAGES.findIndex((S,i)=>i>0&&S.m(b));if(b._st<0)b._st=STAGES.length-1}}
-const stageVis=o=>stageIdx==null||o.kind==='street'||o._st<=stageIdx;
+function assignStages(){
+  if(!STAGES.some(S=>S.sec))STAGES.splice(1,0,...TERRAIN_SECTIONS.map(b=>({t:b.name.replace(/^Aufschütten \d+: /,'Aufschütten: '),sec:b,m:o=>o===b,d:()=>b.desc})));for(const b of buildings){b._st=STAGES.findIndex((S,i)=>i>0&&S.m(b));if(b._st<0)b._st=STAGES.length-1}}
+const stageVis=o=>{if(o.kind==='terrain')return stageIdx!=null&&STAGES[stageIdx].sec===o;if(stageIdx!=null&&STAGES[stageIdx].sec)return false;return stageIdx==null||o.kind==='street'||o._st<=stageIdx};
 function showStage(i){
   if(tfOn)setTF(false);
   if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
   stageIdx=Math.max(0,Math.min(STAGES.length-1,i));const S=STAGES[stageIdx],N=STAGES.length;
   const list=buildings.filter(b=>b._st===stageIdx);
+  if(S.sec)ensureMeshes(S.sec);
   if(S.tf)buildTF(S.tf);if(tfMesh)tfMesh.visible=!!S.tf;
   document.getElementById('tfLegend').hidden=true;
   setXray(null);
@@ -2381,12 +2437,16 @@ function showStage(i){
     body.innerHTML=`<div class="stnav"><button id="stPrev" ${stageIdx===0?'disabled':''}>◀ Zurück</button><button class="primary" id="stNext" ${stageIdx===N-1?'disabled':''}>Weiter ▶</button></div>
       <div class="stdots" aria-label="Etappen">${STAGES.map((x,k)=>`<button data-st="${k}" aria-current="${k===stageIdx}" title="${esc(x.t)}">${k+1}</button>`).join('')}</div>
       <p class="desc">${esc(S.d(list.length))}</p>
-      ${S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen noch keine Gebäude, nur die Straßen sind zur Orientierung zu sehen. Erde reicht zum Aufschütten, Gras wächst von selbst darüber.</p><h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
+      ${S.sec?`<p class="note">In der 3D-Ansicht ist nur dieser Abschnitt zu sehen: die Erde, die auf die flache Insel kommt. Alles andere ist ausgeblendet.</p>
+      <h3>So gehst du vor</h3><ol class="steps">${S.sec.steps.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>
+      <div class="row"><button class="primary" id="stPlan">Schichtplan öffnen</button></div>
+      <h3>Material für diesen Abschnitt</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen noch keine Gebäude, nur die Straßen sind zur Orientierung zu sehen. Erde reicht zum Aufschütten, Gras wächst von selbst darüber.</p><h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
       <h3>Bauwerke dieser Etappe</h3>${listHTML(groups)}
       <h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[...exm.values()])}`}`;
     document.getElementById('stPrev').onclick=()=>showStage(stageIdx-1);
     document.getElementById('stNext').onclick=()=>showStage(stageIdx+1);
     body.querySelectorAll('[data-st]').forEach(bt=>bt.onclick=()=>showStage(+bt.dataset.st));
+    const sp=document.getElementById('stPlan');if(sp)sp.onclick=()=>{currentTab='guide';select(S.sec)};
     const cp=document.getElementById('stCpy');if(cp)cp.onclick=e=>copyText(matText(tot,`Etappe ${stageIdx+1}: ${S.t}`),e.target);
     bindList();
   });
@@ -2542,8 +2602,7 @@ function renderBuilding(b,w,d,h){
 function exitLayerMode(){
   if(!layerMode)return;layerMode=false;
   const getAt=(x,y,z)=>allVox.get(K(x,y,z));
-  if(selected){makeBuildingMeshes(selected,selected.voxels,solidAt,getAt);setBuildingMat(selected,matSel)}
-  for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=true);
+  if(selected){if(selected.kind==='terrain'){const{own,sAt}=ownSolid(selected);makeBuildingMeshes(selected,selected.voxels,sAt,(x,y,z)=>own.get(K(x,y,z)))}else makeBuildingMeshes(selected,selected.voxels,solidAt,getAt);setBuildingMat(selected,matSel)}
   if(glowPoints)glowPoints.visible=evening;
   setXray(selected);
 }
@@ -2554,11 +2613,11 @@ function renderLayer(b){
   if(iso&&iso.checked){
     layerMode=true;
     const own=new Map();for(const v of b.voxels)if(v.y<=y)own.set(K(v.x,v.y,v.z),v);
-    const sAt=(x,yy,z)=>{const k=K(x,yy,z);if(!carved.has(k)&&yy<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;const v=own.get(k);return!!v&&FULL.has(v.b)};
+    const sAt=b.kind==='terrain'?ownSolid(b,y).sAt:(x,yy,z)=>{const k=K(x,yy,z);if(!carved.has(k)&&yy<hAt(x,z)-(streetCell.has(z*WX+x)?1:0))return true;const v=own.get(k);return!!v&&FULL.has(v.b)};
     makeBuildingMeshes(b,b.voxels.filter(v=>v.y<=y),sAt,(x,yy,z)=>own.get(K(x,yy,z)),y);
     for(const o of buildings)if(o!==b&&o.meshes&&o.kind!=='street')o.meshes.forEach(m=>m.visible=false);
     if(glowPoints)glowPoints.visible=false;
-    if(b.underground){terrainMesh.visible=false;seaMesh.visible=false}
+    if(b.underground||b.kind==='terrain'){terrainMesh.visible=false;seaMesh.visible=false}
   }
   drawPlan(b,y);
   const cnt=countBlocks(b.voxels.filter(v=>v.y===y));
@@ -2651,7 +2710,7 @@ function showTotal(){
   });
 }
 function listHTML(groups){
-  const order=['Burg','Stadtbefestigung','Gebäude mit Farm','Farmen','Markt','Hafen','Felder','Plätze','Wohnhäuser','Bäume & Deko'];
+  const order=['Geländearbeiten','Burg','Stadtbefestigung','Gebäude mit Farm','Farmen','Markt','Hafen','Felder','Plätze','Wohnhäuser','Bäume & Deko'];
   return order.filter(g=>groups[g]).map(g=>`<div class="group-h">${esc(g)} (${groups[g].length})</div><div class="blist">${groups[g].map(b=>{const n=Object.entries(b.counts).reduce((s,[k,v])=>s+(k==='water'?0:v),0);return`<button data-bid="${b.id}"><span>${esc(b.name)}${b.farm?` <span class="farmtag">Farm</span>`:''}</span><span>${n.toLocaleString('de-DE')}</span></button>`}).join('')}</div>`).join('');
 }
 function bindList(){document.querySelectorAll('[data-bid]').forEach(bt=>bt.onclick=()=>{currentTab='mat';select(buildings[+bt.dataset.bid])})}
