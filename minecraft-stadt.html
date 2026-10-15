@@ -157,7 +157,8 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
     <div class="bb-head"><b id="bbName"></b><button id="bbClose" aria-label="Beenden">✕</button></div>
     <div class="bb-row"><button id="bbPrev" aria-label="Schicht zurück">◀</button><span id="bbInfo"></span><button id="bbNext" class="primary" aria-label="Schicht weiter">▶</button></div>
     <div class="bb-mat" id="bbMat"></div>
-    <div class="bb-row"><button id="bbAll">Alles fertig zeigen</button><button id="bbStart">Von vorne</button></div>
+    <div class="bb-row"><button id="bbAll">Alles fertig zeigen</button><button id="bbStart">Von vorne</button><button id="bbLtm" title="Datei für die Litematica-Mod: zeigt die Blöcke als Geisterblöcke in deiner Welt">Für Litematica</button></div>
+    <div class="bb-mat" id="bbLtmNote" hidden></div>
   </div>
   <div id="tfLegend" class="tflegend" hidden>
     <b>Geländearbeiten</b>
@@ -2490,14 +2491,16 @@ function showStage(i){
       ${S.area?`<p class="note">In der 3D-Ansicht siehst du an dieser Stelle die flache Insel. Was aufgeschüttet wird, ist durchsichtig. Mit ▶ in der Leiste unten wird Schicht für Schicht fest. Ein Klick auf ein Stück (in der Liste oder in 3D) zeigt nur dieses Stück.</p>
       <div class="row"><button class="primary" id="stArea">Ganzen Bereich zeigen</button></div>
       <h3>Die Stücke dieses Bereichs</h3><div class="blist">${S.area.secs.map(b=>`<button data-bid="${b.id}"><span>${esc(b.name)} <span style="color:var(--muted);font-size:12px">X ${mcX(b.bb.x0)}…${mcX(b.bb.x1)}, Z ${mcZ(b.bb.z0)}…${mcZ(b.bb.z1)}</span></span><b>${b.voxels.length.toLocaleString('de-DE')}</b></button>`).join('')}</div>
+      <h3>Für Litematica</h3><div class="row">${ltButton('Ganzen Bereich speichern','stLtm')}</div><p class="note" id="stLtmNote" hidden></p>
       <h3>Material für den ganzen Bereich</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen noch keine Gebäude, nur die Straßen sind zur Orientierung zu sehen. Erde reicht zum Aufschütten, Gras wächst von selbst darüber.</p><h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
       <h3>Bauwerke dieser Etappe</h3>${listHTML(groups)}
-      <h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[...exm.values()])}`}`;
+      <h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button>${ltButton('Etappe für Litematica speichern','stLtm')}</div><p class="note" id="stLtmNote" hidden></p>${matTable(tot,[...exm.values()])}`}`;
     document.getElementById('stPrev').onclick=()=>showStage(stageIdx-1);
     document.getElementById('stNext').onclick=()=>showStage(stageIdx+1);
     body.querySelectorAll('[data-st]').forEach(bt=>bt.onclick=()=>showStage(+bt.dataset.st));
     const sa=document.getElementById('stArea');if(sa)sa.onclick=()=>enterBuild(S.area.secs,'Bereich: '+S.area.t);
     const cp=document.getElementById('stCpy');if(cp)cp.onclick=e=>copyText(matText(tot,`Etappe ${stageIdx+1}: ${S.t}`),e.target);
+    ltBind('stLtm','stLtmNote',`Etappe ${stageIdx+1} ${S.t}`,()=>[].concat(...list.map(b=>b.voxels)));
     bindList();
   });
   if(list.length){let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;for(const b of list){if(b.kind==='farm'&&b.underground)continue;x0=Math.min(x0,b.bb.x0);x1=Math.max(x1,b.bb.x1);y0=Math.min(y0,b.bb.y0);y1=Math.max(y1,b.bb.y1);z0=Math.min(z0,b.bb.z0);z1=Math.max(z1,b.bb.z1)}
@@ -2541,7 +2544,7 @@ function enterBuild(secs,name){
   const levels=[...new Set(vox.map(v=>v.y))].sort((a,b)=>a-b);
   BM={secs,vox,ylo,yhi,levels,layer:ylo,name,tMesh,hidden,redrawn,meshes:[],bb:{x0,x1,y0:ylo,y1:yhi,z0,z1}};
   setXray(null);renderBuild();
-  document.getElementById('buildBar').hidden=false;placeBar();
+  document.getElementById('bbLtmNote').hidden=true;document.getElementById('buildBar').hidden=false;placeBar();
   focusOn({bb:BM.bb});
 }
 function renderBuild(){
@@ -2699,8 +2702,9 @@ function renderBuilding(b,w,d,h){
   const total=Object.entries(b.counts).reduce((s,[k,n])=>s+(k==='water'?0:n),0);
   const facts=`<div class="facts"><div><small>Grundfläche</small><b>${w} × ${d}</b></div><div><small>Höhe</small><b>${h}</b></div><div><small>Blöcke</small><b>${total.toLocaleString('de-DE')}</b></div></div><p class="desc" style="margin-top:6px"><b>Lage in deiner Welt:</b> X ${mcX(b.bb.x0)} bis ${mcX(b.bb.x1)}, Z ${mcZ(b.bb.z0)} bis ${mcZ(b.bb.z1)}, Y ${mcY(b.bb.y0)} bis ${mcY(b.bb.y1)} (Nordwestecke unten: X ${mcX(b.bb.x0)}, Y ${mcY(b.bb.y0)}, Z ${mcZ(b.bb.z0)})</p>`;
   if(currentTab==='mat'){
-    body.innerHTML=`${facts}<p class="desc">${esc(b.desc||'')}</p>${b.auto?`<p class="note">Betrieb: <b>${esc(b.auto)}</b>${b.hostId!=null?` · gehört zu <button class="linkbtn" id="toHost">${esc(buildings[b.hostId].name)}</button>`:''}</p>`:''}<div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(b.counts,b.extras)}`;
+    body.innerHTML=`${facts}<p class="desc">${esc(b.desc||'')}</p>${b.auto?`<p class="note">Betrieb: <b>${esc(b.auto)}</b>${b.hostId!=null?` · gehört zu <button class="linkbtn" id="toHost">${esc(buildings[b.hostId].name)}</button>`:''}</p>`:''}<div class="row"><button id="cpy">Liste kopieren</button>${ltButton('Für Litematica speichern','ltm')}</div><p class="note" id="ltmNote" hidden></p>${matTable(b.counts,b.extras)}`;
     document.getElementById('cpy').onclick=e=>copyText(matText(b.counts,b.name),e.target);
+    ltBind('ltm','ltmNote',b.name,()=>b.voxels);
     const th=document.getElementById('toHost');if(th)th.onclick=()=>select(buildings[b.hostId]);
   }else if(currentTab==='guide'){
     const nL=b.bb.y1-b.bb.y0+1;if(!layerMode)layer=0;
@@ -2821,6 +2825,160 @@ async function copyText(t,btn){
     const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');btn.textContent='Kopiert'}catch(_){btn.textContent='Kopieren nicht möglich'}ta.remove()}
   setTimeout(()=>btn.textContent='Liste kopieren',1800);
 }
+// ---------- Export für Litematica (.litematic) ----------
+// Geisterblöcke im eigenen Spiel: Datei in den schematics-Ordner, in Litematica laden, Ursprung eintragen.
+const DIRN=['north','east','south','west'];
+const ltGet=(x,y,z)=>allVox.get(K(x,y,z));
+const ltTerrain=(x,y,z)=>x>=0&&z>=0&&x<WX&&z<WZ&&y<Hm[z*WX+x];
+const NO_LINK=new Set(['melon','pumpkin']);
+function ltSolid(x,y,z){const n=ltGet(x,y,z);if(n)return(FULL.has(n.b)&&!NO_LINK.has(n.b))||BLOCKS[n.b].shape==='glasscube';return ltTerrain(x,y,z)}
+const isStair=n=>n&&BLOCKS[n.b].shape==='stairs';
+// wie im Spiel: Ecktreppen je nach Nachbarn
+function stairShape(v){
+  const f=v.f||0,h=!!v.h,at=d=>ltGet(v.x+DIRS[d][0],v.y,v.z+DIRS[d][1]);
+  const same=n=>isStair(n)&&!!n.h===h,can=d=>{const n=at(d);return!isStair(n)||(n.f||0)!==f||!!n.h!==h};
+  const a=at(f);if(same(a)){const d=a.f||0;if((d&1)!==(f&1)&&can((d+2)&3))return d===((f+3)&3)?'outer_left':'outer_right'}
+  const b=at((f+2)&3);if(same(b)){const d=b.f||0;if((d&1)!==(f&1)&&can(d))return d===((f+3)&3)?'inner_left':'inner_right'}
+  return'straight';
+}
+function linksTo(v,d){
+  const x=v.x+DIRS[d][0],z=v.z+DIRS[d][1],n=ltGet(x,v.y,z),sh=BLOCKS[v.b].shape;
+  if(!n)return ltTerrain(x,v.y,z);
+  const s=BLOCKS[n.b].shape;
+  if(sh==='fence')return s==='fence'||ltSolid(x,v.y,z);
+  return s==='pane'||s==='wall'||ltSolid(x,v.y,z);
+}
+function wireSides(v){
+  const P={},on=[];
+  for(let d=0;d<4;d++){
+    const x=v.x+DIRS[d][0],z=v.z+DIRS[d][1],a=ltGet(x,v.y,z),up=ltGet(x,v.y+1,z),dn=ltGet(x,v.y-1,z);
+    if(up&&up.b==='redstone_wire'&&!ltSolid(v.x,v.y+1,v.z)){P[DIRN[d]]='up';on.push(d)}
+    else if((a&&['redstone_wire','redstone_block','stone_button'].includes(a.b))||(dn&&dn.b==='redstone_wire'&&!ltSolid(x,v.y,z))){P[DIRN[d]]='side';on.push(d)}
+    else P[DIRN[d]]='none';
+  }
+  if(on.length===1)P[DIRN[(on[0]+2)&3]]='side';
+  if(!on.length)for(const k of DIRN)P[k]='side';
+  return P;
+}
+function railShape(v){
+  const rail=(x,y,z)=>{const n=ltGet(x,y,z);return!!n&&(n.b==='rail'||n.b==='powered_rail')},c=[];
+  for(let d=0;d<4;d++){const x=v.x+DIRS[d][0],z=v.z+DIRS[d][1];if(rail(x,v.y+1,z))return'ascending_'+DIRN[d];if(rail(x,v.y,z)||rail(x,v.y-1,z))c.push(d)}
+  const ns=c.includes(0)||c.includes(2),ew=c.includes(1)||c.includes(3);
+  if(v.b==='rail'&&ns&&ew)return(c.includes(2)?'south':'north')+'_'+(c.includes(1)?'east':'west');
+  return ew&&!ns?'east_west':'north_south';
+}
+function ltState(v){
+  const b=v.b,sh=BLOCKS[b].shape,f=v.f||0,P={};let name=blockId(b);
+  switch(sh){
+    case'stairs':P.facing=DIRN[f];P.half=v.h?'top':'bottom';P.shape=stairShape(v);break;
+    case'slab':P.type=v.h?'top':'bottom';break;
+    case'log':P.axis=v.a||'y';break;
+    case'pane':case'fence':for(let d=0;d<4;d++)P[DIRN[d]]=String(linksTo(v,d));break;
+    case'wall':{
+      const c=[0,1,2,3].map(d=>linksTo(v,d)),above=ltGet(v.x,v.y+1,v.z),tall=ltSolid(v.x,v.y+1,v.z);
+      for(let d=0;d<4;d++)P[DIRN[d]]=c[d]?(tall?'tall':'low'):'none';
+      const line=(c[0]&&c[2]&&!c[1]&&!c[3])||(c[1]&&c[3]&&!c[0]&&!c[2]);
+      P.up=String(!line||(!!above&&['lantern','campfire'].includes(above.b)));break}
+    case'trapdoor':P.facing=DIRN[(f+2)&3];P.half=v.h?'top':'bottom';P.open=String(!!v.o);break;
+    case'door':P.facing=DIRN[f];P.half=v.h?'upper':'lower';break;
+    case'ladder':P.facing=DIRN[(f+2)&3];break;
+    case'lantern':P.hanging=String(!!v.h);break;
+    case'vine':P[DIRN[f]]='true';break;
+    case'button':if(v.f===4){P.face='floor';P.facing='north'}else{P.face='wall';P.facing=DIRN[(f+2)&3]}break;
+    case'bed':P.facing=DIRN[f];P.part=v.h?'head':'foot';break;
+    case'chest':P.facing=DIRN[f];break;
+    case'hopper':P.facing=v.f==null||v.f===4?'down':DIRN[f];break;
+    case'leaves':P.persistent='true';break;
+    case'farm':P.moisture='7';break;
+    case'crop':P.age=b==='beetroots'?'3':'7';break;
+  }
+  if(['dispenser','piston','beehive'].includes(b))P.facing=DIRN[f];
+  if(b==='redstone_wire')Object.assign(P,wireSides(v));
+  if(b==='rail'||b==='powered_rail'){P.shape=railShape(v);if(b==='powered_rail')P.powered=String((ltGet(v.x,v.y-1,v.z)||{}).b==='redstone_block')}
+  if(b==='melon_stem'||b==='pumpkin_stem')P.age='7';
+  if(b==='sweet_berry_bush')P.age='3';
+  if(b==='kelp'&&(ltGet(v.x,v.y+1,v.z)||{}).b==='kelp')name='minecraft:kelp_plant';
+  if(b==='cave_vines'){P.berries='true';if((ltGet(v.x,v.y-1,v.z)||{}).b==='cave_vines')name='minecraft:cave_vines_plant'}
+  return{name,P};
+}
+// NBT schreiben (Big Endian), Werte als [Typ, Wert]
+const NBT_ID={int:3,long:4,str:8,list:9,comp:10,larr:12};
+function nbtWriter(){
+  let buf=new Uint8Array(1<<16),dv=new DataView(buf.buffer),n=0;const te=new TextEncoder();
+  const need=k=>{if(n+k<=buf.length)return;let s=buf.length*2;while(s<n+k)s*=2;const nb=new Uint8Array(s);nb.set(buf);buf=nb;dv=new DataView(nb.buffer)};
+  const w={
+    u8(v){need(1);buf[n++]=v},
+    i32(v){need(4);dv.setInt32(n,v);n+=4},
+    u32x2(hi,lo){need(8);dv.setUint32(n,hi>>>0);dv.setUint32(n+4,lo>>>0);n+=8},
+    str(s){const b=te.encode(s);need(2+b.length);dv.setUint16(n,b.length);n+=2;buf.set(b,n);n+=b.length},
+    tag(t,v){switch(t){
+      case'int':w.i32(v);break;
+      case'long':{const hi=Math.floor(v/4294967296);w.u32x2(hi,v-hi*4294967296);break}
+      case'str':w.str(v);break;
+      case'comp':for(const[k,[tt,vv]]of Object.entries(v)){w.u8(NBT_ID[tt]);w.str(k);w.tag(tt,vv)}w.u8(0);break;
+      case'list':{const[et,items]=v;w.u8(NBT_ID[et]);w.i32(items.length);for(const it of items)w.tag(et,it);break}
+      case'larr':{const L=v.length/2;w.i32(L);for(let k=0;k<L;k++)w.u32x2(v[2*k+1],v[2*k]);break}
+    }},
+    bytes(){return buf.slice(0,n)}
+  };
+  return w;
+}
+const nI=v=>['int',v],nS=v=>['str',v],nC=v=>['comp',v],nXYZ=(x,y,z)=>nC({x:nI(x),y:nI(y),z:nI(z)});
+// Blöcke in Regionen teilen: kleines Bauwerk = eine Region, sonst ein Stück je Chunk (16 × 16), damit kaum Luft dabei ist
+function ltRegions(vox){
+  const m=new Map();for(const v of vox)m.set(K(v.x,v.y,v.z),v);
+  const all=[...m.values()];let x0=1e9,x1=-1e9,y0=1e9,z0=1e9,z1=-1e9;
+  for(const v of all){x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);y0=Math.min(y0,v.y);z0=Math.min(z0,v.z);z1=Math.max(z1,v.z)}
+  const groups=new Map();
+  if(x1-x0<64&&z1-z0<64)groups.set('',all);
+  else for(const v of all){const k=Math.floor(mcX(v.x)/16)+','+Math.floor(mcZ(v.z)/16);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(v)}
+  return{origin:{x:x0,y:y0,z:z0},groups};
+}
+function ltBuild(title,vox,desc){
+  const{origin,groups}=ltRegions(vox);
+  const regions={};let vol=0,blocks=0,ex=[1e9,-1e9,1e9,-1e9,1e9,-1e9],ri=0;
+  for(const[k,g]of groups){
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
+    for(const v of g){x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);y0=Math.min(y0,v.y);y1=Math.max(y1,v.y);z0=Math.min(z0,v.z);z1=Math.max(z1,v.z)}
+    const sx=x1-x0+1,sy=y1-y0+1,sz=z1-z0+1,V=sx*sy*sz;
+    const pal=[{name:'minecraft:air',P:{}}],idx=new Map([['minecraft:air',0]]),cell=new Uint16Array(V);
+    for(const v of g){const s=ltState(v),key=s.name+JSON.stringify(s.P);let p=idx.get(key);if(p==null){p=pal.length;pal.push(s);idx.set(key,p)}cell[((v.y-y0)*sz+(v.z-z0))*sx+(v.x-x0)]=p}
+    const bits=Math.max(2,32-Math.clz32(pal.length-1)),L=Math.ceil(V*bits/64),W=new Uint32Array(2*L);
+    for(let i=0;i<V;i++){const c=cell[i];if(!c)continue;const p=i*bits,wi=Math.floor(p/32),o=p%32;W[wi]|=c<<o;if(o+bits>32)W[wi+1]|=c>>>(32-o)}
+    vol+=V;blocks+=g.length;
+    const px=x0-origin.x,py=y0-origin.y,pz=z0-origin.z;
+    ex=[Math.min(ex[0],px),Math.max(ex[1],px+sx),Math.min(ex[2],py),Math.max(ex[3],py+sy),Math.min(ex[4],pz),Math.max(ex[5],pz+sz)];
+    const rname=k===''?title:`Chunk ${k.replace(',',' / ')}`;ri++;
+    regions[regions[rname]?rname+' '+ri:rname]=nC({
+      Position:nXYZ(px,py,pz),Size:nXYZ(sx,sy,sz),
+      BlockStatePalette:['list',['comp',pal.map(s=>{const o={Name:nS(s.name)};const pe=Object.entries(s.P);if(pe.length)o.Properties=nC(Object.fromEntries(pe.map(([a,b])=>[a,nS(b)])));return o})]],
+      BlockStates:['larr',W],
+      TileEntities:['list',['comp',[]]],Entities:['list',['comp',[]]],PendingBlockTicks:['list',['comp',[]]],PendingFluidTicks:['list',['comp',[]]]
+    });
+  }
+  const now=Date.now(),w=nbtWriter();
+  w.u8(10);w.str('');
+  w.tag('comp',{
+    MinecraftDataVersion:nI(5023),Version:nI(7),SubVersion:nI(1),
+    Metadata:nC({Name:nS(title),Author:nS('Burgstadt-Bauplan'),Description:nS(desc),RegionCount:nI(groups.size),TotalVolume:nI(vol),TotalBlocks:nI(blocks),
+      TimeCreated:['long',now],TimeModified:['long',now],EnclosingSize:nXYZ(ex[1]-ex[0],ex[3]-ex[2],ex[5]-ex[4])}),
+    Regions:nC(regions)
+  });
+  return{bytes:w.bytes(),origin:{x:mcX(origin.x),y:mcY(origin.y),z:mcZ(origin.z)},blocks,regions:groups.size};
+}
+const ltFile=s=>s.replace(/[äÄöÖüÜß]/g,c=>({ä:'ae',Ä:'Ae',ö:'oe',Ö:'Oe',ü:'ue',Ü:'Ue',ß:'ss'}[c])).replace(/&/g,'und').replace(/[^\w\- ]+/g,' ').trim().replace(/\s+/g,'_');
+async function ltDownload(title,vox,note){
+  const o0=vox.reduce((o,v)=>({x:Math.min(o.x,v.x),y:Math.min(o.y,v.y),z:Math.min(o.z,v.z)}),{x:1e9,y:1e9,z:1e9});
+  const desc=`Ursprung X ${mcX(o0.x)} Y ${mcY(o0.y)} Z ${mcZ(o0.z)}`;
+  const r=ltBuild(title,vox,desc);
+  const gz=new Uint8Array(await new Response(new Blob([r.bytes]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([gz],{type:'application/octet-stream'}));a.download=ltFile('Burgstadt_'+title)+'.litematic';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},3000);
+  if(note){note.hidden=false;note.innerHTML=`<b>Gespeichert:</b> ${esc(a.download)} (${r.blocks.toLocaleString('de-DE')} Blöcke)<br>In Litematica laden und unter <i>Platzierung → Konfigurieren</i> den Ursprung eintragen: <b>X ${r.origin.x} · Y ${r.origin.y} · Z ${r.origin.z}</b>`}
+  return r;
+}
+function ltButton(label,id){return`<button id="${id}" title="Datei für die Litematica-Mod: zeigt die Blöcke als Geisterblöcke in deiner Welt">${label}</button>`}
+function ltBind(id,noteId,title,getVox){const bt=document.getElementById(id);if(!bt)return;bt.onclick=async()=>{bt.disabled=true;const t=bt.textContent;bt.textContent='Wird erstellt …';try{await ltDownload(title,getVox(),document.getElementById(noteId))}catch(e){alert('Export fehlgeschlagen: '+e.message)}bt.disabled=false;bt.textContent=t}}
 function showTotal(){
   exitStages();
   if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
@@ -2831,8 +2989,9 @@ function showTotal(){
   openPanel('Gesamt-Materialliste',`Alle ${buildings.length} Bauwerke der Stadt, automatisch aus den Blockmodellen gezählt`,[['tot','Material'],['by','Nach Gebäude']],()=>{
     const body=document.getElementById('pBody');
     if(currentTab==='tot'){
-      body.innerHTML=`<p class="note">Alles zusammen: Stadtmauer, Burg, Straßen, Markt, Häuser, Bäume und alle Farmen mit Lorenbahn.</p><div class="row"><button id="cpy">Liste kopieren</button></div>${matTable(tot,ext)}`;
+      body.innerHTML=`<p class="note">Alles zusammen: Stadtmauer, Burg, Straßen, Markt, Häuser, Bäume und alle Farmen mit Lorenbahn.</p><div class="row"><button id="cpy">Liste kopieren</button>${ltButton('Ganze Stadt für Litematica','ltAll')}</div><p class="note" id="ltAllNote" hidden></p>${matTable(tot,ext)}`;
       document.getElementById('cpy').onclick=e=>copyText(matText(tot,'Gesamt-Materialliste Burgstadt'),e.target);
+      ltBind('ltAll','ltAllNote','Ganze Stadt',()=>[].concat(...buildings.map(b=>b.voxels)));
     }else body.innerHTML=listHTML(groups);
     bindList();
   });
@@ -2930,7 +3089,8 @@ function start(){
   const be=document.getElementById('btnEve');be.onclick=()=>{setEvening(!evening);be.setAttribute('aria-pressed',evening)};
   document.getElementById('btnTF').onclick=()=>setTF(!tfOn);
   document.getElementById('bbPrev').onclick=()=>stepBuild(-1);document.getElementById('bbNext').onclick=()=>stepBuild(1);
-  document.getElementById('bbAll').onclick=()=>{if(BM){BM.layer=BM.yhi+1;renderBuild()}};document.getElementById('bbStart').onclick=()=>{if(BM){BM.layer=BM.ylo;renderBuild()}};
+  document.getElementById('bbAll').onclick=()=>{if(BM){BM.layer=BM.yhi+1;renderBuild()}};
+  document.getElementById('bbLtm').onclick=async e=>{if(!BM)return;const bt=e.currentTarget;bt.disabled=true;try{await ltDownload(BM.name,BM.vox,document.getElementById('bbLtmNote'))}catch(er){alert('Export fehlgeschlagen: '+er.message)}bt.disabled=false;placeBar()};document.getElementById('bbStart').onclick=()=>{if(BM){BM.layer=BM.ylo;renderBuild()}};
   document.getElementById('bbClose').onclick=()=>exitBuild();
   document.getElementById('btnStages').onclick=()=>showStage(stageIdx==null?0:stageIdx);
   const bn=document.getElementById('btnNames');bn.onclick=()=>{showNames=!showNames;bn.setAttribute('aria-pressed',showNames)};
