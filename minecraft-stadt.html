@@ -2021,6 +2021,15 @@ function buildCity(){
 // Jeder Abschnitt ist ein eigener Bauplan aus Erde (an Felshängen Stein), Schicht für Schicht ab der flachen Insel.
 // Wo Gebäude, Straßen oder Keller hinkommen, bleibt der Platz frei.
 const TERRAIN_SECTIONS=[],TERRAIN_AREAS=[];const SECTION_AT=new Int16Array(WX*WZ).fill(-1);
+// Der Burghügel ist hohl: aufgeschüttet wird nur eine Außenhaut (oben und an den Hängen SHELL Blöcke dick).
+// Unter Wasser wird bis zur Inselhöhe voll aufgeschüttet, damit der Hohlraum trocken bleibt.
+const SHELL=2,HOLLOW_IDS=new Set(['plateau','hn','ho','hs','hw']);
+function shellAt(x,y,z,top){
+  if(y<BASE||y>=top-SHELL)return true;
+  for(const[dx,dz]of[[1,0],[-1,0],[0,1],[0,-1]])for(let d=1;d<=SHELL;d++){const nx=x+dx*d,nz=z+dz*d;
+    if(nx<0||nz<0||nx>=WX||nz>=WZ)return true;const j=nz*WX+nx;if(SEA[j]||y>=Hm[j])return true}
+  return false;
+}
 function buildTerrainSections(used){
   const[ccx,ccz]=c2w(100,42);
   const defs=[
@@ -2047,7 +2056,10 @@ function buildTerrainSections(used){
     }else if(x<150)id='west';
     else if(!inPoly(x+.5,z+.5,CITY_POLY)&&z>=140)id='so';
     else if(z<110)id='nord';else if(z<150)id='mitte';else id='sued';
-    for(let y=from;y<top;y++){const k=K(x,y,z);if(used.has(k)||carved.has(k))continue;vox[id].push({x,y,z,b:ROCK[i]&&y>=top-2?'stone':'dirt'})}
+    const hollow=HOLLOW_IDS.has(id);
+    for(let y=from;y<top;y++){const k=K(x,y,z);if(used.has(k)||carved.has(k))continue;if(hollow&&!shellAt(x,y,z,top))continue;vox[id].push({x,y,z,b:ROCK[i]&&y>=top-2?'stone':'dirt'})}
+    // Laternen auf dem Boden des Hohlraums, sonst spawnen darin Monster
+    if(hollow&&top-BASE>SHELL+1&&((mcX(x)%12)+12)%12===6&&((mcZ(z)%12)+12)%12===6&&!shellAt(x,BASE,z,top)){const k=K(x,BASE,z);if(!used.has(k)&&!carved.has(k))vox[id].push({x,y:BASE,z,b:'lantern',h:0})}
   }
   // Jeder Bereich wird in Chunks (16 × 16, wie in Minecraft mit F3 + G zu sehen) geteilt; ganz kleine Reste kommen zum Nachbar-Chunk
   const chunkOf=(x,z)=>[Math.floor(mcX(x)/16),Math.floor(mcZ(z)/16)];
@@ -2070,8 +2082,13 @@ function buildTerrainSections(used){
       b.desc=`${d.t}, Stück ${k+1} von ${list.length}: ${d.area}. Das ist ungefähr ein Chunk (bei X ${g.cx*16} bis ${g.cx*16+15}, Z ${g.cz*16} bis ${g.cz*16+15}). Ausgangslage ist die flache Insel, oberster Bodenblock auf Y ${mcY(BASE-1)}. Hier kommen ${v.length.toLocaleString('de-DE')} Blöcke drauf, bis Y ${mcY(ymax)}.`;
       b.steps=[
         `Abschnitt abstecken: X ${mcX(b.bb.x0)} bis ${mcX(b.bb.x1)}, Z ${mcZ(b.bb.z0)} bis ${mcZ(b.bb.z1)}. Mit F3 + G zeigt Minecraft die Chunk-Grenzen an, daran kannst du dich orientieren. Die genaue Form zeigt der Schichtplan.`,
+        ...(HOLLOW_IDS.has(d.id)?[
+        `Der Hügel ist innen hohl: Aufgeschüttet wird nur die Außenhaut, ${SHELL} Blöcke dick. Oben die Decke, an den Hängen und am Burggraben die Seitenwände. Schicht 1 liegt auf Y ${mcY(b.bb.y0)}${b.bb.y0<BASE?' (unter Wasser: dort bis Y '+mcY(BASE-1)+' ganz voll aufschütten, sonst läuft der Hohlraum voll)':', direkt auf der flachen Insel'}.`,
+        'Zuerst die Seitenwände Schicht für Schicht hochziehen. Die Decke dann von den Wänden aus nach innen schließen: Blöcke lassen sich seitlich an andere setzen, auch über dem Hohlraum. Ein Gerüst hilft.',
+        'Im Hohlraum auf den Boden die Laternen aus dem Plan stellen (Schicht 1), bevor die Decke zu ist. Sonst spawnen im Dunkeln Monster, und das bremst später die Farmen.'
+        ]:[
         `Schicht für Schicht von unten nach oben aufschütten. Schicht 1 liegt auf Y ${mcY(b.bb.y0)}${b.bb.y0<BASE?' (unter Wasser: hier wird die Bucht zugeschüttet)':', direkt auf der flachen Insel'}, jede weitere einen Block höher.`,
-        'Zuerst den Rand jeder Schicht legen, dann die Fläche füllen. Mit F3 siehst du dein Y.',
+        'Zuerst den Rand jeder Schicht legen, dann die Fläche füllen. Mit F3 siehst du dein Y.']),
         'Erde reicht, Gras wächst mit der Zeit von selbst darüber. Wo im Plan Stein steht, Stein nehmen: das gibt die Felskanten am steilen Hang.',
         'Freie Stellen im Plan sind Absicht: Dort kommen später Keller, Mauern, Gebäude oder Straßenbelag hin.'
       ].concat(hasMoat?[`Den Burggraben frei lassen: Sein Boden liegt auf Y ${mcY(PLAT-4)}, die Ränder auf Y ${mcY(PLAT-1)}. Das Wasser kommt erst, wenn die Burgmauern stehen.`]:[])
@@ -2363,11 +2380,11 @@ function tfInfo(i){
   if(MASK[i]===0)return{k:1,n:Hm[i]-WFLOOR[i]};
   const n=Hm[i]-BASE;
   if(moat[i])return{k:2,n};
-  if(n>0)return{k:3,n};
+  if(n>0)return{k:3,n,hill:!!HILL[i]};
   if(FOOT[i])return{k:4,n:0};
   return null;
 }
-function tfText(t){return t.k===1?`Wasser zuschütten: ${t.n} Blöcke vom Grund`:t.k===2?`Burggraben frei lassen (Grabenboden)`:t.k===3?`aufschütten: ${t.n} Blöcke über Y ${mcY(BASE-1)}`:'Bauplatz eines Gebäudes'}
+function tfText(t){return t.k===1?`Wasser zuschütten: ${t.n} Blöcke vom Grund`:t.k===2?`Burggraben frei lassen (Grabenboden)`:t.k===3?(t.hill?`Hügel bis ${t.n} Blöcke über Y ${mcY(BASE-1)}, innen hohl`:`aufschütten: ${t.n} Blöcke über Y ${mcY(BASE-1)}`):'Bauplatz eines Gebäudes'}
 function tfShown(i,t,mode){
   if(!t||mode==='all')return!!t;
   if(mode==='base')return t.k===1||t.k===4;
@@ -2437,7 +2454,7 @@ const STAGES=[
 ];
 let stageIdx=null;
 function assignStages(){
-  if(!STAGES.some(S=>S.area))STAGES.splice(1,0,...TERRAIN_AREAS.map(A=>({t:'Aufschütten: '+A.t,area:A,m:o=>o._area===A.id,d:()=>`${A.t}: ${A.area}. Der Bereich ist in ${A.secs.length} kleine Abschnitte geteilt, jeder etwa ein Chunk (16 × 16 Blöcke). Nimm sie dir einzeln vor, in der Reihenfolge der Liste: von Norden nach Süden, von Westen nach Osten. Zusammen sind es ${A.secs.reduce((n,b)=>n+b.voxels.length,0).toLocaleString('de-DE')} Blöcke.`})));for(const b of buildings){b._st=STAGES.findIndex((S,i)=>i>0&&S.m(b));if(b._st<0)b._st=STAGES.length-1}}
+  if(!STAGES.some(S=>S.area))STAGES.splice(1,0,...TERRAIN_AREAS.map(A=>({t:'Aufschütten: '+A.t,area:A,m:o=>o._area===A.id,d:()=>`${A.t}: ${A.area}. Der Bereich ist in ${A.secs.length} kleine Abschnitte geteilt, jeder etwa ein Chunk (16 × 16 Blöcke). Nimm sie dir einzeln vor, in der Reihenfolge der Liste: von Norden nach Süden, von Westen nach Osten. Zusammen sind es ${A.secs.reduce((n,b)=>n+b.voxels.length,0).toLocaleString('de-DE')} Blöcke.${HOLLOW_IDS.has(A.id)?` Der Burghügel ist innen hohl: Aufgeschüttet wird nur die Außenhaut, ${SHELL} Blöcke dick.`:''}`})));for(const b of buildings){b._st=STAGES.findIndex((S,i)=>i>0&&S.m(b));if(b._st<0)b._st=STAGES.length-1}}
 const stageVis=o=>{if(o.kind==='terrain')return stageIdx!=null&&!!STAGES[stageIdx].area&&o._area===STAGES[stageIdx].area.id;if(stageIdx!=null&&STAGES[stageIdx].area)return false;return stageIdx==null||o.kind==='street'||o._st<=stageIdx};
 function showStage(i){
   if(tfOn)setTF(false);
