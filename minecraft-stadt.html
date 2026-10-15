@@ -2520,6 +2520,10 @@ function enterBuild(secs,name){
   const vox=[].concat(...secs.map(b=>b.voxels));if(!vox.length)return;
   const cols=new Set();let ylo=1e9,yhi=-1e9,x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;
   for(const v of vox){cols.add(v.z*WX+v.x);ylo=Math.min(ylo,v.y);yhi=Math.max(yhi,v.y);x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);z0=Math.min(z0,v.z);z1=Math.max(z1,v.z)}
+  // auch Stellen ohne eigene Blöcke (z. B. über Kellern) mit flach zeigen
+  {const q=[...cols];while(q.length){const i=q.pop(),x=i%WX,z=(i-x)/WX;
+    for(const[a,c]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+a,nz=z+c;if(nx<x0||nx>x1||nz<z0||nz>z1)continue;const j=nz*WX+nx;
+      if(cols.has(j)||SECTION_AT[j]>=0||!MAIN[j]||SEA[j]||Hm[j]<=BASE)continue;cols.add(j);q.push(j)}}}
   if(!matGhost){matGhost=matO.clone();matGhost.transparent=true;matGhost.opacity=.28;matGhost.depthWrite=false}
   // Gelände wie vor dem Aufschütten zeichnen
   const saveH=new Map(),saveS=new Map();
@@ -2534,7 +2538,8 @@ function enterBuild(secs,name){
     const big=(b.bb.x1-b.bb.x0+1)*(b.bb.z1-b.bb.z0+1)>4*(x1-x0+1)*(z1-z0+1);
     if(big){makeBuildingMeshes(b,b.voxels.filter(v=>!cols.has(v.z*WX+v.x)),solidAt,getAt);redrawn.push(b)}else hidden.push(b);
   }
-  BM={secs,vox,ylo,yhi,layer:ylo,name,tMesh,hidden,redrawn,meshes:[],bb:{x0,x1,y0:ylo,y1:yhi,z0,z1}};
+  const levels=[...new Set(vox.map(v=>v.y))].sort((a,b)=>a-b);
+  BM={secs,vox,ylo,yhi,levels,layer:ylo,name,tMesh,hidden,redrawn,meshes:[],bb:{x0,x1,y0:ylo,y1:yhi,z0,z1}};
   setXray(null);renderBuild();
   document.getElementById('buildBar').hidden=false;placeBar();
   focusOn({bb:BM.bb});
@@ -2548,7 +2553,7 @@ function renderBuild(){
     const{O,W,L:Lg}=meshVoxels(vv,(x,y,z)=>{const v=own.get(K(x,y,z));return!!v&&FULL.has(v.b)},(x,y,z)=>own.get(K(x,y,z)));
     for(const[G,mm]of[[O,mat],[Lg,glow]])if(G.i.length){const m=new THREE.Mesh(toGeometry(G),mm);if(mm===matGhost)m.renderOrder=2;BM.meshes.push(m);world.add(m)}
   }
-  const n=BM.yhi-BM.ylo+1,k=Math.min(n,L-BM.ylo+1),cur=BM.vox.filter(v=>v.y===L),cnt=countBlocks(cur);
+  const n=BM.levels.length,k=BM.levels.indexOf(L)+1,cur=BM.vox.filter(v=>v.y===L),cnt=countBlocks(cur);
   document.getElementById('bbName').textContent=BM.name;
   document.getElementById('bbInfo').textContent=L>BM.yhi?`fertig · ${n} Schichten`:`Schicht ${k} von ${n} · Y ${mcY(L)}`;
   document.getElementById('bbMat').innerHTML=L>BM.yhi?`Alles aufgeschüttet: ${BM.vox.length.toLocaleString('de-DE')} Blöcke.`:
@@ -2575,7 +2580,7 @@ function placeBar(){
   document.querySelector('.hint').style.visibility=BM?'hidden':'';
 }
 addEventListener('resize',placeBar);
-function stepBuild(d){if(!BM)return;BM.layer=Math.max(BM.ylo,Math.min(BM.yhi+1,BM.layer+d));renderBuild()}
+function stepBuild(d){if(!BM)return;const lv=BM.levels.concat([BM.yhi+1]);let k=lv.indexOf(BM.layer);if(k<0)k=0;BM.layer=lv[Math.max(0,Math.min(lv.length-1,k+d))];renderBuild()}
 
 // ---------- Interaktion ----------
 const ray=new THREE.Raycaster();const mouse=new THREE.Vector2();
