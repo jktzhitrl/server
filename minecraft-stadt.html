@@ -2828,6 +2828,8 @@ async function copyText(t,btn){
 // ---------- Export für Litematica (.litematic) ----------
 // Geisterblöcke im eigenen Spiel: Datei in den schematics-Ordner, in Litematica laden, Ursprung eintragen.
 const DIRN=['north','east','south','west'];
+// Gemeinsamer Ankerpunkt für alle Dateien: ein freies Wegstück am Markt, bleibt auch fertig gebaut frei
+const LT_ANCHOR={x:-2610,y:64,z:-1950};
 const ltGet=(x,y,z)=>allVox.get(K(x,y,z));
 const ltTerrain=(x,y,z)=>x>=0&&z>=0&&x<WX&&z<WZ&&y<Hm[z*WX+x];
 const NO_LINK=new Set(['melon','pumpkin']);
@@ -2927,12 +2929,12 @@ const nI=v=>['int',v],nS=v=>['str',v],nC=v=>['comp',v],nXYZ=(x,y,z)=>nC({x:nI(x)
 // Blöcke in Regionen teilen: kleines Bauwerk = eine Region, sonst ein Stück je Chunk (16 × 16), damit kaum Luft dabei ist
 function ltRegions(vox){
   const m=new Map();for(const v of vox)m.set(K(v.x,v.y,v.z),v);
-  const all=[...m.values()];let x0=1e9,x1=-1e9,y0=1e9,z0=1e9,z1=-1e9;
-  for(const v of all){x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);y0=Math.min(y0,v.y);z0=Math.min(z0,v.z);z1=Math.max(z1,v.z)}
+  const all=[...m.values()];let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;
+  for(const v of all){x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);z0=Math.min(z0,v.z);z1=Math.max(z1,v.z)}
   const groups=new Map();
   if(x1-x0<64&&z1-z0<64)groups.set('',all);
   else for(const v of all){const k=Math.floor(mcX(v.x)/16)+','+Math.floor(mcZ(v.z)/16);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(v)}
-  return{origin:{x:x0,y:y0,z:z0},groups};
+  return{origin:{x:LT_ANCHOR.x-X0,y:LT_ANCHOR.y-Y0,z:LT_ANCHOR.z-Z0},groups};
 }
 function ltBuild(title,vox,desc){
   const{origin,groups}=ltRegions(vox);
@@ -2968,8 +2970,7 @@ function ltBuild(title,vox,desc){
 }
 const ltFile=s=>s.replace(/[äÄöÖüÜß]/g,c=>({ä:'ae',Ä:'Ae',ö:'oe',Ö:'Oe',ü:'ue',Ü:'Ue',ß:'ss'}[c])).replace(/&/g,'und').replace(/[^\w\- ]+/g,' ').trim().replace(/\s+/g,'_');
 async function ltDownload(title,vox,note){
-  const o0=vox.reduce((o,v)=>({x:Math.min(o.x,v.x),y:Math.min(o.y,v.y),z:Math.min(o.z,v.z)}),{x:1e9,y:1e9,z:1e9});
-  const desc=`Ursprung X ${mcX(o0.x)} Y ${mcY(o0.y)} Z ${mcZ(o0.z)}`;
+  const desc=`Ankerpunkt (Ursprung) X ${LT_ANCHOR.x} Y ${LT_ANCHOR.y} Z ${LT_ANCHOR.z}`;
   const r=ltBuild(title,vox,desc);
   const gz=new Uint8Array(await new Response(new Blob([r.bytes]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
   const fname=ltFile('Burgstadt_'+title)+'.litematic';let saved=fname;
@@ -2983,7 +2984,7 @@ async function ltDownload(title,vox,note){
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([gz],{type:'application/octet-stream'}));a.download=fname;
     document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},3000);
   }
-  if(note){note.hidden=false;note.innerHTML=`<b>Gespeichert:</b> ${esc(saved)} (${r.blocks.toLocaleString('de-DE')} Blöcke)${saved!==fname?' – entpacken, darin liegt die .litematic-Datei':''}<br>In Litematica laden und unter <i>Platzierung → Konfigurieren</i> den Ursprung eintragen: <b>X ${r.origin.x} · Y ${r.origin.y} · Z ${r.origin.z}</b>`}
+  if(note){note.hidden=false;note.innerHTML=`<b>Gespeichert:</b> ${esc(saved)} (${r.blocks.toLocaleString('de-DE')} Blöcke)${saved!==fname?' – entpacken, darin liegt die .litematic-Datei':''}<br>Alle Dateien haben denselben Ankerpunkt: <b>X ${r.origin.x} · Y ${r.origin.y} · Z ${r.origin.z}</b>. Dort hinstellen (z. B. <code>/tp @s ${r.origin.x} ${r.origin.y} ${r.origin.z}</code>) und dann laden, oder den Ursprung unter <i>Schematic Placements → Configure</i> eintragen.`}
   return r;
 }
 // Minimales ZIP (ohne Kompression, die Datei ist schon gzip)
