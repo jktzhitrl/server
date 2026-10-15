@@ -2972,10 +2972,30 @@ async function ltDownload(title,vox,note){
   const desc=`Ursprung X ${mcX(o0.x)} Y ${mcY(o0.y)} Z ${mcZ(o0.z)}`;
   const r=ltBuild(title,vox,desc);
   const gz=new Uint8Array(await new Response(new Blob([r.bytes]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([gz],{type:'application/octet-stream'}));a.download=ltFile('Burgstadt_'+title)+'.litematic';
-  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},3000);
-  if(note){note.hidden=false;note.innerHTML=`<b>Gespeichert:</b> ${esc(a.download)} (${r.blocks.toLocaleString('de-DE')} Blöcke)<br>In Litematica laden und unter <i>Platzierung → Konfigurieren</i> den Ursprung eintragen: <b>X ${r.origin.x} · Y ${r.origin.y} · Z ${r.origin.z}</b>`}
+  const fname=ltFile('Burgstadt_'+title)+'.litematic';let saved=fname;
+  // Auf claude.ai darf die Seite nur über "downloads" speichern, und nur bestimmte Endungen: dort als ZIP
+  const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
+  if(dl){
+    saved=fname.replace(/\.litematic$/,'.zip');
+    try{await dl.save({filename:saved,data:new Blob([zipOne(fname,gz)])})}
+    catch(e){if(note){note.hidden=false;note.textContent=e&&e.code==='declined'?'Nicht gespeichert.':'Speichern geht in dieser Ansicht nicht. Öffne die Datei minecraft-stadt.html direkt im Browser.'}return r}
+  }else{
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([gz],{type:'application/octet-stream'}));a.download=fname;
+    document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},3000);
+  }
+  if(note){note.hidden=false;note.innerHTML=`<b>Gespeichert:</b> ${esc(saved)} (${r.blocks.toLocaleString('de-DE')} Blöcke)${saved!==fname?' – entpacken, darin liegt die .litematic-Datei':''}<br>In Litematica laden und unter <i>Platzierung → Konfigurieren</i> den Ursprung eintragen: <b>X ${r.origin.x} · Y ${r.origin.y} · Z ${r.origin.z}</b>`}
   return r;
+}
+// Minimales ZIP (ohne Kompression, die Datei ist schon gzip)
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function zipOne(name,data){
+  let c=0xFFFFFFFF;for(let i=0;i<data.length;i++)c=CRC_T[(c^data[i])&255]^(c>>>8);c=(c^0xFFFFFFFF)>>>0;
+  const nm=new TextEncoder().encode(name),L=30+nm.length,C=46+nm.length,out=new Uint8Array(L+data.length+C+22),dv=new DataView(out.buffer);
+  const hdr=(o,sig,central)=>{dv.setUint32(o,sig,true);let q=o+4;if(central){dv.setUint16(q,20,true);q+=2}dv.setUint16(q,20,true);dv.setUint16(q+2,0x0800,true);dv.setUint16(q+4,0,true);dv.setUint32(q+6,0x21000000,true);dv.setUint32(q+10,c,true);dv.setUint32(q+14,data.length,true);dv.setUint32(q+18,data.length,true);dv.setUint16(q+22,nm.length,true);return q+24};
+  let q=hdr(0,0x04034b50,false);dv.setUint16(q,0,true);out.set(nm,30);out.set(data,L);
+  const co=L+data.length;q=hdr(co,0x02014b50,true);dv.setUint16(q,0,true);dv.setUint16(q+2,0,true);dv.setUint16(q+4,0,true);dv.setUint16(q+6,0,true);dv.setUint32(q+8,0,true);dv.setUint32(q+12,0,true);out.set(nm,co+46);
+  const e=co+C;dv.setUint32(e,0x06054b50,true);dv.setUint16(e+8,1,true);dv.setUint16(e+10,1,true);dv.setUint32(e+12,C,true);dv.setUint32(e+16,co,true);
+  return out;
 }
 function ltButton(label,id){return`<button id="${id}" title="Datei für die Litematica-Mod: zeigt die Blöcke als Geisterblöcke in deiner Welt">${label}</button>`}
 function ltBind(id,noteId,title,getVox){const bt=document.getElementById(id);if(!bt)return;bt.onclick=async()=>{bt.disabled=true;const t=bt.textContent;bt.textContent='Wird erstellt …';try{await ltDownload(title,getVox(),document.getElementById(noteId))}catch(e){alert('Export fehlgeschlagen: '+e.message)}bt.disabled=false;bt.textContent=t}}
