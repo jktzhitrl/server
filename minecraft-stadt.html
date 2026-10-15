@@ -52,6 +52,13 @@ button.primary{background:var(--accent);color:var(--accent-ink);border-color:var
 
 .hint{position:absolute;left:0;bottom:0;z-index:4;padding-block:0 calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));font:12px/1.4 var(--f-body);color:var(--ink);pointer-events:none}
 .lbl.terrain{background:#7a4a1c;color:#fff;border-color:#7a4a1c}
+.buildbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:6;width:min(460px,calc(100% - 32px));background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:10px 12px;display:flex;flex-direction:column;gap:8px;font:14px/1.35 var(--f-body);color:var(--ink)}
+.buildbar .bb-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.buildbar .bb-head b{font-family:var(--f-display);font-size:16px}
+.buildbar .bb-row{display:flex;gap:8px;align-items:center}
+.buildbar .bb-row span{flex:1;text-align:center;font:600 13px/1.3 var(--f-mono)}
+.buildbar .bb-row button{flex:none}
+.buildbar .bb-mat{font-size:13px;color:var(--muted)}
 .tflegend{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:4;max-width:min(340px,calc(100% - 32px));display:flex;flex-direction:column;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:13px/1.35 var(--f-body);color:var(--ink)}
 .tflegend span{display:flex;align-items:center;gap:8px}.tflegend i{width:14px;height:14px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.25)}.tflegend small{color:var(--muted);margin-top:2px}
 .hint span{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 10px;opacity:.92}
@@ -146,6 +153,12 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
   </div>
   <div class="hint"><span>Ziehen: drehen · Rechte Maustaste: verschieben · Mausrad: zoomen · Klick auf ein Gebäude: Bauplan</span></div>
   <div id="tip" hidden></div>
+  <div id="buildBar" class="buildbar" hidden role="region" aria-label="Aufschütten Schicht für Schicht">
+    <div class="bb-head"><b id="bbName"></b><button id="bbClose" aria-label="Beenden">✕</button></div>
+    <div class="bb-row"><button id="bbPrev" aria-label="Schicht zurück">◀</button><span id="bbInfo"></span><button id="bbNext" class="primary" aria-label="Schicht weiter">▶</button></div>
+    <div class="bb-mat" id="bbMat"></div>
+    <div class="bb-row"><button id="bbAll">Alles fertig zeigen</button><button id="bbStart">Von vorne</button></div>
+  </div>
   <div id="tfLegend" class="tflegend" hidden>
     <b>Geländearbeiten</b>
     <span>Ausgangslage: Insel flach auf Boden-Y 63</span>
@@ -2365,9 +2378,9 @@ function makeBuildingMeshes(b,vox,sAt,gAt,layerY){
 }
 function setXray(b){
   if(b)ensureMeshes(b);
-  const on=!!(b&&(b.underground||b.kind==='terrain'))||(stageIdx!=null&&!!STAGES[stageIdx].area);
-  if(terrainMesh)terrainMesh.visible=!on;if(seaMesh)seaMesh.visible=!on;
-  for(const o of buildings){if(!o.meshes)continue;o.meshes.forEach(m=>m.visible=b&&on?o===b:stageVis(o))}
+  const on=!!(b&&(b.underground||b.kind==='terrain'));
+  if(terrainMesh)terrainMesh.visible=!on&&!BM;if(seaMesh)seaMesh.visible=!on;
+  for(const o of buildings){if(!o.meshes)continue;const hid=BM&&BM.hidden.includes(o);o.meshes.forEach(m=>m.visible=!hid&&(b&&on?o===b:stageVis(o)))}
   if(glowPoints)glowPoints.visible=evening&&!on;if(smoke)smoke.pts.visible=!on;
 }
 function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){if(m.userData.water||m.userData.glow||m.userData.base===matLayer)continue;m.material=mat||m.userData.base}}
@@ -2419,7 +2432,7 @@ function buildTF(mode){
   tfMesh.renderOrder=2;world.add(tfMesh);
 }
 function setTF(on){
-  if(on)exitStages();
+  if(on){exitBuild();exitStages()}
   tfOn=on;if(on)buildTF('all');if(tfMesh)tfMesh.visible=on;
   if(on&&selected)closePanel();
   if(terrainMesh)terrainMesh.visible=true;if(seaMesh)seaMesh.visible=true;
@@ -2455,13 +2468,13 @@ const STAGES=[
 let stageIdx=null;
 function assignStages(){
   if(!STAGES.some(S=>S.area))STAGES.splice(1,0,...TERRAIN_AREAS.map(A=>({t:'Aufschütten: '+A.t,area:A,m:o=>o._area===A.id,d:()=>`${A.t}: ${A.area}. Der Bereich ist in ${A.secs.length} kleine Abschnitte geteilt, jeder etwa ein Chunk (16 × 16 Blöcke). Nimm sie dir einzeln vor, in der Reihenfolge der Liste: von Norden nach Süden, von Westen nach Osten. Zusammen sind es ${A.secs.reduce((n,b)=>n+b.voxels.length,0).toLocaleString('de-DE')} Blöcke.${HOLLOW_IDS.has(A.id)?` Der Burghügel ist innen hohl: Aufgeschüttet wird nur die Außenhaut, ${SHELL} Blöcke dick.`:''}`})));for(const b of buildings){b._st=STAGES.findIndex((S,i)=>i>0&&S.m(b));if(b._st<0)b._st=STAGES.length-1}}
-const stageVis=o=>{if(o.kind==='terrain')return stageIdx!=null&&!!STAGES[stageIdx].area&&o._area===STAGES[stageIdx].area.id;if(stageIdx!=null&&STAGES[stageIdx].area)return false;return stageIdx==null||o.kind==='street'||o._st<=stageIdx};
+const stageVis=o=>{if(o.kind==='terrain')return false;if(stageIdx!=null&&STAGES[stageIdx].area)return o.kind==='street';return stageIdx==null||o.kind==='street'||o._st<=stageIdx};
 function showStage(i){
   if(tfOn)setTF(false);
   if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
   stageIdx=Math.max(0,Math.min(STAGES.length-1,i));const S=STAGES[stageIdx],N=STAGES.length;
   const list=buildings.filter(b=>b._st===stageIdx);
-  if(S.area)S.area.secs.forEach(ensureMeshes);
+  if(!S.area)exitBuild();
   if(S.tf)buildTF(S.tf);if(tfMesh)tfMesh.visible=!!S.tf;
   document.getElementById('tfLegend').hidden=true;
   setXray(null);
@@ -2474,7 +2487,8 @@ function showStage(i){
     body.innerHTML=`<div class="stnav"><button id="stPrev" ${stageIdx===0?'disabled':''}>◀ Zurück</button><button class="primary" id="stNext" ${stageIdx===N-1?'disabled':''}>Weiter ▶</button></div>
       <div class="stdots" aria-label="Etappen">${STAGES.map((x,k)=>`<button data-st="${k}" aria-current="${k===stageIdx}" title="${esc(x.t)}">${k+1}</button>`).join('')}</div>
       <p class="desc">${esc(S.d(list.length))}</p>
-      ${S.area?`<p class="note">In der 3D-Ansicht ist nur dieser Bereich zu sehen: die Erde, die auf die flache Insel kommt. Die Chunks sind abwechselnd hell und dunkel, so siehst du die Grenzen. Ein Klick auf ein Stück (in der Liste oder in 3D) öffnet seinen Bauplan mit Anleitung und Schichtplan.</p>
+      ${S.area?`<p class="note">In der 3D-Ansicht siehst du an dieser Stelle die flache Insel. Was aufgeschüttet wird, ist durchsichtig. Mit ▶ in der Leiste unten wird Schicht für Schicht fest. Ein Klick auf ein Stück (in der Liste oder in 3D) zeigt nur dieses Stück.</p>
+      <div class="row"><button class="primary" id="stArea">Ganzen Bereich zeigen</button></div>
       <h3>Die Stücke dieses Bereichs</h3><div class="blist">${S.area.secs.map(b=>`<button data-bid="${b.id}"><span>${esc(b.name)} <span style="color:var(--muted);font-size:12px">X ${mcX(b.bb.x0)}…${mcX(b.bb.x1)}, Z ${mcZ(b.bb.z0)}…${mcZ(b.bb.z1)}</span></span><b>${b.voxels.length.toLocaleString('de-DE')}</b></button>`).join('')}</div>
       <h3>Material für den ganzen Bereich</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen noch keine Gebäude, nur die Straßen sind zur Orientierung zu sehen. Erde reicht zum Aufschütten, Gras wächst von selbst darüber.</p><h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
       <h3>Bauwerke dieser Etappe</h3>${listHTML(groups)}
@@ -2482,12 +2496,14 @@ function showStage(i){
     document.getElementById('stPrev').onclick=()=>showStage(stageIdx-1);
     document.getElementById('stNext').onclick=()=>showStage(stageIdx+1);
     body.querySelectorAll('[data-st]').forEach(bt=>bt.onclick=()=>showStage(+bt.dataset.st));
+    const sa=document.getElementById('stArea');if(sa)sa.onclick=()=>enterBuild(S.area.secs,'Bereich: '+S.area.t);
     const cp=document.getElementById('stCpy');if(cp)cp.onclick=e=>copyText(matText(tot,`Etappe ${stageIdx+1}: ${S.t}`),e.target);
     bindList();
   });
   if(list.length){let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;for(const b of list){if(b.kind==='farm'&&b.underground)continue;x0=Math.min(x0,b.bb.x0);x1=Math.max(x1,b.bb.x1);y0=Math.min(y0,b.bb.y0);y1=Math.max(y1,b.bb.y1);z0=Math.min(z0,b.bb.z0);z1=Math.max(z1,b.bb.z1)}
     if(x0<1e9)focusOn({bb:{x0,x1,y0,y1,z0,z1}})}
   else if(S.tf){const[x,z]=c2w(100,42);focusOn(S.tf==='hill'?{bb:{x0:x-55,x1:x+55,y0:0,y1:PLAT,z0:z-60,z1:z+60}}:{bb:{x0:x-40,x1:x+110,y0:0,y1:PLAT,z0:z-70,z1:z+70}})}
+  if(S.area)enterBuild(S.area.secs,'Bereich: '+S.area.t);
 }
 function exitStages(){
   if(stageIdx==null)return;stageIdx=null;
@@ -2495,6 +2511,71 @@ function exitStages(){
   if(tfMesh)tfMesh.visible=tfOn;document.getElementById('tfLegend').hidden=!tfOn;
   setXray(null);
 }
+
+// ---------- Aufschütten in der 3D-Ansicht ----------
+// Der gewählte Bereich zeigt das Gelände wie vor dem Aufschütten. Geplante Blöcke sind durchsichtig und werden Schicht für Schicht fest.
+let BM=null,matGhost=null;
+function enterBuild(secs,name){
+  exitBuild();
+  const vox=[].concat(...secs.map(b=>b.voxels));if(!vox.length)return;
+  const cols=new Set();let ylo=1e9,yhi=-1e9,x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;
+  for(const v of vox){cols.add(v.z*WX+v.x);ylo=Math.min(ylo,v.y);yhi=Math.max(yhi,v.y);x0=Math.min(x0,v.x);x1=Math.max(x1,v.x);z0=Math.min(z0,v.z);z1=Math.max(z1,v.z)}
+  if(!matGhost){matGhost=matO.clone();matGhost.transparent=true;matGhost.opacity=.28;matGhost.depthWrite=false}
+  // Gelände wie vor dem Aufschütten zeichnen
+  const saveH=new Map(),saveS=new Map();
+  for(const i of cols){saveH.set(i,Hm[i]);Hm[i]=Math.min(Hm[i],BASE);if(streetCell.has(i)){saveS.set(i,streetCell.get(i));streetCell.delete(i)}}
+  const tr=meshTerrain();for(const[i,h]of saveH)Hm[i]=h;for(const[i,v]of saveS)streetCell.set(i,v);
+  const tMesh=new THREE.Mesh(toGeometry(tr.G),matO);world.add(tMesh);
+  // Was auf diesem Gelände steht, ausblenden; große Bauwerke (Straßen, Bäume) ohne diesen Bereich neu zeichnen
+  const hidden=[],redrawn=[],getAt=(x,y,z)=>allVox.get(K(x,y,z));
+  for(const b of buildings){
+    if(!b.meshes||b.kind==='terrain')continue;if(b.bb.x1<x0||b.bb.x0>x1||b.bb.z1<z0||b.bb.z0>z1)continue;
+    if(!b.voxels.some(v=>cols.has(v.z*WX+v.x)))continue;
+    const big=(b.bb.x1-b.bb.x0+1)*(b.bb.z1-b.bb.z0+1)>4*(x1-x0+1)*(z1-z0+1);
+    if(big){makeBuildingMeshes(b,b.voxels.filter(v=>!cols.has(v.z*WX+v.x)),solidAt,getAt);redrawn.push(b)}else hidden.push(b);
+  }
+  BM={secs,vox,ylo,yhi,layer:ylo,name,tMesh,hidden,redrawn,meshes:[],bb:{x0,x1,y0:ylo,y1:yhi,z0,z1}};
+  setXray(null);renderBuild();
+  document.getElementById('buildBar').hidden=false;placeBar();
+  focusOn({bb:BM.bb});
+}
+function renderBuild(){
+  if(!BM)return;
+  for(const m of BM.meshes){world.remove(m);m.geometry.dispose()}BM.meshes=[];
+  const L=BM.layer,groups=[[BM.vox.filter(v=>v.y<L),matO,matG],[BM.vox.filter(v=>v.y===L),matLayer,matG],[BM.vox.filter(v=>v.y>L),matGhost,matGhost]];
+  for(const[vv,mat,glow]of groups){if(!vv.length)continue;
+    const own=new Map(vv.map(v=>[K(v.x,v.y,v.z),v]));
+    const{O,W,L:Lg}=meshVoxels(vv,(x,y,z)=>{const v=own.get(K(x,y,z));return!!v&&FULL.has(v.b)},(x,y,z)=>own.get(K(x,y,z)));
+    for(const[G,mm]of[[O,mat],[Lg,glow]])if(G.i.length){const m=new THREE.Mesh(toGeometry(G),mm);if(mm===matGhost)m.renderOrder=2;BM.meshes.push(m);world.add(m)}
+  }
+  const n=BM.yhi-BM.ylo+1,k=Math.min(n,L-BM.ylo+1),cur=BM.vox.filter(v=>v.y===L),cnt=countBlocks(cur);
+  document.getElementById('bbName').textContent=BM.name;
+  document.getElementById('bbInfo').textContent=L>BM.yhi?`fertig · ${n} Schichten`:`Schicht ${k} von ${n} · Y ${mcY(L)}`;
+  document.getElementById('bbMat').innerHTML=L>BM.yhi?`Alles aufgeschüttet: ${BM.vox.length.toLocaleString('de-DE')} Blöcke.`:
+    `Diese Schicht (orange): ${Object.entries(cnt).map(([b,c])=>`${c} × ${esc(blockName(b))}`).join(', ')||'nichts'}. Durchsichtig ist, was noch kommt.`;
+  document.getElementById('bbPrev').disabled=L<=BM.ylo;document.getElementById('bbNext').disabled=L>BM.yhi;
+}
+function exitBuild(){
+  if(!BM)return;const old=BM;BM=null;
+  for(const m of old.meshes){world.remove(m);m.geometry.dispose()}
+  world.remove(old.tMesh);old.tMesh.geometry.dispose();
+  const getAt=(x,y,z)=>allVox.get(K(x,y,z));
+  for(const b of old.redrawn)makeBuildingMeshes(b,b.voxels,solidAt,getAt);
+  document.getElementById('buildBar').hidden=true;document.querySelector('.hint').style.visibility='';
+  setXray(selected||null);
+  if(stageIdx!=null)for(const b of buildings)setBuildingMat(b,b._st===stageIdx&&b.kind!=='street'&&b.kind!=='terrain'?matSel:null);
+}
+// Leiste so setzen, dass das Panel sie nicht verdeckt (rechts am PC, unten am Handy)
+function placeBar(){
+  const bar=document.getElementById('buildBar');if(bar.hidden)return;
+  bar.style.left='50%';bar.style.bottom='';
+  if(!panel.hidden){const r=panel.getBoundingClientRect();
+    if(r.left>innerWidth*.35)bar.style.left=(r.left/2)+'px';
+    else bar.style.bottom=(innerHeight-r.top+10)+'px'}
+  document.querySelector('.hint').style.visibility=BM?'hidden':'';
+}
+addEventListener('resize',placeBar);
+function stepBuild(d){if(!BM)return;BM.layer=Math.max(BM.ylo,Math.min(BM.yhi+1,BM.layer+d));renderBuild()}
 
 // ---------- Interaktion ----------
 const ray=new THREE.Raycaster();const mouse=new THREE.Vector2();
@@ -2529,7 +2610,7 @@ function initInput(){
   const cv=renderer.domElement;
   cv.addEventListener('pointermove',onMove);
   cv.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY]});
-  cv.addEventListener('pointerup',e=>{if(!downAt)return;const d=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(d>6)return;const b=pick(e);if(b){if(b.kind==='terrain')currentTab='guide';select(b)}});
+  cv.addEventListener('pointerup',e=>{if(!downAt)return;const d=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]);downAt=null;if(d>6)return;const b=pick(e);if(b){if(b.kind==='terrain'){if(stageIdx==null&&!panel.hidden)closePanel();enterBuild([b],b.name)}else select(b)}});
   cv.addEventListener('pointerleave',()=>{document.getElementById('tip').hidden=true});
 }
 let tween=null;
@@ -2590,12 +2671,13 @@ function matText(counts,title){
 function openPanel(title,sub,tabs,render){
   panel.hidden=false;document.getElementById('pTitle').textContent=title;document.getElementById('pSub').innerHTML=sub;
   const tb=document.getElementById('pTabs');tb.innerHTML=tabs.map(t=>`<button role="tab" data-tab="${t[0]}" aria-selected="${t[0]===currentTab}">${t[1]}</button>`).join('');
-  tb.hidden=tabs.length<2;
+  tb.hidden=tabs.length<2;requestAnimationFrame(placeBar);
   tb.querySelectorAll('button').forEach(bt=>bt.onclick=()=>{currentTab=bt.dataset.tab;tb.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===bt));render()});
   render();
 }
 function select(b){
   if(tfOn)setTF(false);
+  if(BM&&stageIdx==null)exitBuild();
   if(selected&&selected!==b){setBuildingMat(selected,null);exitLayerMode()}
   selected=b;setBuildingMat(b,matSel);setXray(b);
   if(!['mat','guide','farm'].includes(currentTab))currentTab='mat';
@@ -2754,7 +2836,7 @@ function listHTML(groups){
   const order=['Geländearbeiten','Burg','Stadtbefestigung','Gebäude mit Farm','Farmen','Markt','Hafen','Felder','Plätze','Wohnhäuser','Bäume & Deko'];
   return order.filter(g=>groups[g]).map(g=>`<div class="group-h">${esc(g)} (${groups[g].length})</div><div class="blist">${groups[g].map(b=>{const n=Object.entries(b.counts).reduce((s,[k,v])=>s+(k==='water'?0:v),0);return`<button data-bid="${b.id}"><span>${esc(b.name)}${b.farm?` <span class="farmtag">Farm</span>`:''}</span><span>${n.toLocaleString('de-DE')}</span></button>`}).join('')}</div>`).join('');
 }
-function bindList(){document.querySelectorAll('[data-bid]').forEach(bt=>bt.onclick=()=>{const b=buildings[+bt.dataset.bid];currentTab=b.kind==='terrain'?'guide':'mat';select(b)})}
+function bindList(){document.querySelectorAll('[data-bid]').forEach(bt=>bt.onclick=()=>{const b=buildings[+bt.dataset.bid];if(b.kind==='terrain'){if(stageIdx==null)closePanel();enterBuild([b],b.name);return}currentTab='mat';select(b)})}
 function showList(){
   exitStages();
   if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
@@ -2762,7 +2844,7 @@ function showList(){
   const groups={};for(const b of buildings)(groups[b.group]=groups[b.group]||[]).push(b);
   openPanel('Gebäude',`${buildings.length} Bauwerke · Zahl = Blöcke`,[['list','Liste']],()=>{document.getElementById('pBody').innerHTML=listHTML(groups);bindList()});
 }
-function closePanel(){panel.hidden=true;if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}exitStages();setXray(null)}
+function closePanel(){exitBuild();panel.hidden=true;placeBar();if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}exitStages();setXray(null)}
 
 // ---------- Texturen aus der Minecraft-.jar ----------
 // Die .jar ist ein ZIP-Archiv. Es wird nur im Browser gelesen, nichts wird hochgeladen.
@@ -2842,6 +2924,9 @@ function start(){
   document.getElementById('pClose').onclick=closePanel;
   const be=document.getElementById('btnEve');be.onclick=()=>{setEvening(!evening);be.setAttribute('aria-pressed',evening)};
   document.getElementById('btnTF').onclick=()=>setTF(!tfOn);
+  document.getElementById('bbPrev').onclick=()=>stepBuild(-1);document.getElementById('bbNext').onclick=()=>stepBuild(1);
+  document.getElementById('bbAll').onclick=()=>{if(BM){BM.layer=BM.yhi+1;renderBuild()}};document.getElementById('bbStart').onclick=()=>{if(BM){BM.layer=BM.ylo;renderBuild()}};
+  document.getElementById('bbClose').onclick=()=>exitBuild();
   document.getElementById('btnStages').onclick=()=>showStage(stageIdx==null?0:stageIdx);
   const bn=document.getElementById('btnNames');bn.onclick=()=>{showNames=!showNames;bn.setAttribute('aria-pressed',showNames)};
   const sp=document.getElementById('selPlaster');sp.value=plasterChoice;
