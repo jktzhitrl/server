@@ -114,7 +114,7 @@ h3{font:700 15px/1.2 var(--f-display);margin:18px 0 8px;letter-spacing:.02em}
 .group-h{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 6px}
 .farmtag{display:inline-block;font:600 11px/1 var(--f-body);background:var(--accent);color:var(--accent-ink);padding:4px 6px;border-radius:3px;margin-left:6px;vertical-align:middle}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
-.stnav{display:flex;gap:8px;align-items:center;margin:0 0 12px}.stnav button{flex:1}.stdots{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 12px}.stdots button{min-width:30px;padding:4px 0;box-shadow:none}.stdots button[aria-current=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stnav{display:flex;gap:8px;align-items:center;margin:0 0 12px}.stnav button{flex:1}.stdots{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 12px}.stdots button{min-width:30px;padding:4px 0;box-shadow:none}.stsec{flex-basis:100%;font-size:12px;color:var(--muted);margin:4px 0 0}.stdots button[aria-current=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #loading{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:var(--paper);font:700 18px var(--f-display)}
 
 @media (max-width:720px){
@@ -2035,6 +2035,7 @@ function buildCity(){
     b.voxels=b.voxels.filter(v=>{const k=K(v.x,v.y,v.z);if(seen.has(k))return false;seen.add(k);return true});
     if(b.voxels.length!==before)b.counts=countBlocks(b.voxels);
   }
+  splitByRegion();
   buildTerrainSections(seen);
 }
 
@@ -2395,7 +2396,7 @@ function setBuildingMat(b,mat){if(!b||!b.meshes)return;for(const m of b.meshes){
 
 // ---------- Geländearbeiten ----------
 // Ausgangslage: die Insel ist flach auf Boden-Y 63. Alles darüber wird aufgeschüttet.
-let tfMesh=null,tfOn=false,tfMode=null,footDone=false;const FOOT=new Uint8Array(WX*WZ);
+let tfMesh=null,tfOn=false,tfMode=null,tfReg=null,footDone=false;const FOOT=new Uint8Array(WX*WZ);
 function tfInfo(i){
   if(!MAIN[i]||SEA[i])return null;
   if(MASK[i]===0)return{k:1,n:Hm[i]-WFLOOR[i]};
@@ -2408,7 +2409,7 @@ function tfInfo(i){
 function tfText(t){return t.k===1?`Wasser zuschütten: ${t.n} Blöcke vom Grund`:t.k===2?`Burggraben frei lassen (Grabenboden)`:t.k===3?(t.hill?`Hügel bis ${t.n} Blöcke über Y ${mcY(BASE-1)}, innen hohl`:`aufschütten: ${t.n} Blöcke über Y ${mcY(BASE-1)}`):'Bauplatz eines Gebäudes'}
 function tfShown(i,t,mode){
   if(!t||mode==='all')return!!t;
-  if(mode==='base')return t.k===1||t.k===4;
+  if(mode==='base')return(t.k===1||t.k===4)&&(!tfReg||regionAt(i%WX,(i-i%WX)/WX)===tfReg);
   if(mode==='hill')return(t.k===2||t.k===3)&&HILL[i];
   if(mode==='town')return t.k===3&&!HILL[i];
   return false;
@@ -2421,7 +2422,7 @@ function tfColor(t){
 function tfMaterial(mode){
   const c={};const add=(k,n)=>{if(n>0)c[k]=(c[k]||0)+n};
   for(let i=0;i<WX*WZ;i++){const t=tfInfo(i);if(!t||t.k===4)continue;
-    if(mode==='base'){if(t.k===1)add('dirt',BASE-WFLOOR[i]);continue}
+    if(mode==='base'){if(t.k===1&&(!tfReg||regionAt(i%WX,(i-i%WX)/WX)===tfReg))add('dirt',BASE-WFLOOR[i]);continue}
     if(!tfShown(i,t,mode))continue;
     add(ROCK[i]?'stone':'dirt',Hm[i]-BASE);}
   return c;
@@ -2429,9 +2430,9 @@ function tfMaterial(mode){
 function buildTF(mode){
   if(!footDone){footDone=true;for(const b of buildings){if(['deco','street','water','wall','farm','harbor','terrain'].includes(b.kind))continue;
     for(const v of b.voxels)if(v.x>=0&&v.z>=0&&v.x<WX&&v.z<WZ&&v.y<=hAt(v.x,v.z)+1&&v.y>=hAt(v.x,v.z)-1)FOOT[v.z*WX+v.x]=1}}
-  if(tfMesh&&tfMode===mode)return;
+  if(tfMesh&&tfMode===mode+(tfReg||''))return;
   if(tfMesh){world.remove(tfMesh);tfMesh.geometry.dispose()}
-  tfMode=mode;const pos=[],col=[];
+  tfMode=mode+(tfReg||'');const pos=[],col=[];
   for(let z=0;z<WZ;z++)for(let x=0;x<WX;x++){const i=z*WX+x,t=tfInfo(i);if(!tfShown(i,t,mode))continue;
     const y=Hm[i]+.04,c0=tfColor(t),c=(Math.floor(mcX(x)/16)+Math.floor(mcZ(z)/16))&1?c0.map(q=>q*.8):c0;
     pos.push(x,y,z, x,y,z+1, x+1,y,z, x+1,y,z, x,y,z+1, x+1,y,z+1);for(let n=0;n<6;n++)col.push(c[0],c[1],c[2])}
@@ -2441,7 +2442,7 @@ function buildTF(mode){
 }
 function setTF(on){
   if(on){exitBuild();exitStages()}
-  tfOn=on;if(on)buildTF('all');if(tfMesh)tfMesh.visible=on;
+  tfOn=on;if(on){tfReg=null;buildTF('all')}if(tfMesh)tfMesh.visible=on;
   if(on&&selected)closePanel();
   if(terrainMesh)terrainMesh.visible=true;if(seaMesh)seaMesh.visible=true;
   for(const b of buildings)if(b.meshes)b.meshes.forEach(m=>m.visible=on?b.kind==='street':stageVis(b));
@@ -2459,47 +2460,125 @@ function groundAt(){
 
 // ---------- Bauetappen ----------
 // Die Stadt Schritt für Schritt: was schon steht, bleibt sichtbar, die aktuelle Etappe leuchtet, spätere sind ausgeblendet.
-const STAGES=[
-  {t:'Insel einebnen',m:()=>false,tf:'base',d:()=>`Die Insel flach machen: oberster Bodenblock auf Y ${mcY(BASE-1)}, die Sandzunge im Südwesten gehört dazu. Wo der Plan Land im Wasser braucht (blau), vom Grund aus bis Y ${mcY(BASE-1)} aufschütten. Der Wald auf der Halbinsel im Südosten und das Land jenseits des Flusses bleiben, wie sie sind.`},
-  {t:'Burgmauern und Graben',m:b=>/^Burg: |^Burggraben$/.test(b.name),d:()=>'Erst die runden Türme, dann die Mauern dazwischen, dann Torhaus mit Zugbrücke und das innere Tor. Den Graben erst fluten, wenn die Mauern stehen.'},
-  {t:'Bergfried, Palas und Kapelle',m:b=>/^(Bergfried|Palas|Burgkapelle|Burgbrunnen)/.test(b.name),d:()=>'Der Bergfried steht in der Südwestecke der Hauptburg. Kerker und Mob-Farm darunter gleich mit ausheben, solange der Turm noch offen ist. Danach Palas, Kapelle und Brunnen.'},
-  {t:'Vorburg',m:b=>/^(Stall|Wirtschaftshaus|Burggarten)/.test(b.name),d:()=>'Stall mit Eierfarm und das Wirtschaftshaus vor dem inneren Tor, danach den Burggarten anlegen.'},
-  {t:'Stadtmauer, Tore und Brücke',m:b=>/^(Stadtmauer|Steinbrücke)/.test(b.name),d:()=>'Die Stadtmauer läuft vom Burggraben über der Bucht bis zum Burggraben im Süden, mit Haupttor im Osten, Hafentor im Westen und der Pforte im Süden. Danach die Steinbrücke vor dem Haupttor.'},
-  {t:'Straßen und Marktplatz',m:b=>/^(Straßen & Plätze|Marktbrunnen|Straßenlaternen|Marktstand)/.test(b.name),d:()=>'Hauptstraße vom Haupttor bis zur Zugbrücke, dann die Gassen, der Kai und die Wege vor der Mauer. Marktplatz pflastern, Brunnen und Marktstände bauen, zuletzt die Laternen.'},
-  {t:'Werkstätten mit Farmen',m:b=>/^(Taverne|Bäckerei|Schmiede|Gerberei)/.test(b.name),d:()=>'Taverne, Bäckerei, Schmiede und Gerberei mit ihren Farmen. Keller und die tiefe Eisenfarm unter der Schmiede vor dem Haus ausheben.'},
-  {t:'Hafen',m:b=>/^(Hafen|Fischerhaus|Leuchtturm)/.test(b.name),d:()=>'Stege und Boote an der Bucht, das Fischerhaus mit Angelsteg, das Seetangfeld und der Leuchtturm vorne auf der Landzunge.'},
-  {t:'Wohnhäuser',m:b=>b.group==='Wohnhäuser',d:n=>`${n} Fachwerkhäuser entlang der Gassen. Jedes hat seinen eigenen Bauplan mit Schichtplan.`},
-  {t:'Kloster, Obsthof und Windmühle',m:b=>/^(Kloster|Obsthof|Windmühle)/.test(b.name),d:()=>'Im Westen zwischen Burghügel und Sandzunge: Der Feldweg führt von der Pforte um den Burghügel herum, an seinem Ende zweigen die Wege zu den drei Höfen ab. Jedes Gebäude hat seine Farm: Zuckerrohr, Melonen und Kürbisse, Weizen.'},
-  {t:'Lagerhaus und Lorenbahn',m:b=>/^(Lagerhaus|Lorenbahn)/.test(b.name),d:()=>'Zum Schluss der Farmen das Lagerhaus mit der Sortieranlage. Die Lorenbahnen verbinden alle Farmen unterirdisch mit ihm.'},
-  {t:'Gärten, Bögen und Bäume',m:()=>true,d:()=>'Torbögen mit Pflanzkästen über den Gassen, Gemüsegärten in den Höfen und zum Schluss Bäume, Büsche und Blumen.'}
+// ---------- Bauabschnitte ----------
+// Gebaut wird Gebiet für Gebiet: In jedem Abschnitt kommt alles dran (Gelände, Mauer, Wege, Gebäude, Farmen, Bäume),
+// erst wenn er fertig ist, geht es mit dem nächsten weiter.
+const REGIONS=[
+  {id:'burg',t:'Die Burg',short:'Burg',areas:['plateau','hn','ho','hs','hw'],
+    d:'Der Burghügel mit Burggraben, Hauptburg und Vorburg. Hier liegt die meiste Erde der ganzen Insel, danach steht die Burg als Wohnsitz fertig da.'},
+  {id:'mitte',t:'Stadt Mitte und Markt',short:'Stadt Mitte',areas:['mitte'],
+    d:'Die Hauptstraße von der Burg herunter, der Marktplatz mit Brunnen und Ständen, Taverne und Bäckerei.'},
+  {id:'sued',t:'Stadt Süd',short:'Stadt Süd',areas:['sued'],
+    d:'Die Südstadt bis zur Mauer mit der Pforte, der Gerberei und dem Lagerhaus. Im Lagerhaus kommen alle Lorenbahnen an, darum ist es früh dran.'},
+  {id:'nord',t:'Stadt Nord und Hafen',short:'Stadt Nord',areas:['nord'],
+    d:'Die Nordstadt mit Haupttor, Steinbrücke, Schmiede, Hafen und Leuchtturm.'},
+  {id:'west',t:'Westen mit Kloster, Obsthof und Windmühle',short:'Westen',areas:['so','west'],bstep:'Kloster, Obsthof und Windmühle',sstep:'Feldweg und Wege',
+    d:'Der Feldweg vor der Südmauer um den Burghügel herum und die drei Höfe auf Wiese und Sandzunge im Westen.'}
 ];
+let REG=null;
+function regionAt(x,z){
+  if(!REG){REG=new Uint8Array(WX*WZ);
+    for(let zz=0;zz<WZ;zz++)for(let xx=0;xx<WX;xx++){const i=zz*WX+xx;let r;
+      const nearWall=polyDist(xx+.5,zz+.5,WALL)<8;
+      if(HILL[i]||moat[i])r=0;else if(xx<150&&!nearWall)r=4;
+      else if(!nearWall&&MAIN[i]&&!inPoly(xx+.5,zz+.5,CITY_POLY)&&zz>=140)r=4;
+      else r=zz<110?3:zz<150?1:2;
+      REG[i]=r}}
+  x=Math.max(0,Math.min(WX-1,x));z=Math.max(0,Math.min(WZ-1,z));return REGIONS[REG[z*WX+x]].id;
+}
+const regionOf=id=>REGIONS.find(R=>R.id===id);
+function setBB(b){let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
+  for(const v of b.voxels){if(v.x<x0)x0=v.x;if(v.x>x1)x1=v.x;if(v.y<y0)y0=v.y;if(v.y>y1)y1=v.y;if(v.z<z0)z0=v.z;if(v.z>z1)z1=v.z}
+  b.bb={x0,x1,y0,y1,z0,z1};b.counts=countBlocks(b.voxels)}
+// Große Bauwerke, die über mehrere Abschnitte reichen, werden pro Abschnitt geteilt. Alle anderen gehören zum Abschnitt, in dem der größte Teil steht.
+// Bäume außerhalb der Hauptinsel (Wald im Südosten, jenseits des Flusses) stehen schon und gehören zu keinem Abschnitt.
+const SPLIT=new Set(['Straßen & Plätze','Straßenlaternen','Stadtmauer & Tore','Lorenbahn','Bäume & Blumen','Gemüsegärten','Torbögen & Pflanzkästen']);
+function splitByRegion(){
+  const n0=buildings.length;
+  for(let k=0;k<n0;k++){const b=buildings[k];
+    if(b.kind==='terrain')continue;
+    if(!SPLIT.has(b.name)){const c={};for(const v of b.voxels){const r=regionAt(v.x,v.z);c[r]=(c[r]||0)+1}
+      b._reg=Object.keys(c).sort((p,q)=>c[q]-c[p])[0]||'burg';continue}
+    const nature=b.name==='Bäume & Blumen',parts=new Map();
+    for(const v of b.voxels){const inb=v.x>=0&&v.z>=0&&v.x<WX&&v.z<WZ;
+      const r=nature&&(!inb||!MAIN[v.z*WX+v.x])?'wild':regionAt(v.x,v.z);
+      if(!parts.has(r))parts.set(r,[]);parts.get(r).push(v)}
+    // ganz kleine Reste zum größten Teil
+    const order=[...parts.keys()].filter(r=>r!=='wild').sort((p,q)=>parts.get(q).length-parts.get(p).length);
+    for(const r of order.slice(1))if(parts.get(r).length<40){parts.get(order[0]).push(...parts.get(r));parts.delete(r)}
+    const base=b.name,keys=[...parts.keys()].sort((p,q)=>parts.get(q).length-parts.get(p).length);
+    keys.forEach((r,n)=>{
+      const R=regionOf(r),name=`${base}: ${r==='wild'?'Wälder, die stehen bleiben':R.short}`;
+      const pre=r==='wild'?'Diese Bäume stehen in deiner Welt schon, hier ist nichts zu bauen. ':`Teil im Abschnitt ${R.t}. `;
+      if(n===0){b.voxels=parts.get(r);setBB(b);b.name=name;b._reg=r;b._wild=r==='wild';b.desc=pre+b.desc;return}
+      const o=addBuilding({name,group:b.group,kind:b.kind,voxels:parts.get(r),pickable:b.pickable,label:false,desc:pre+b.desc,steps:b.steps,extras:[],auto:b.auto});
+      o._reg=r;o._wild=r==='wild';
+      if(b.kind==='farm'){o.out=b.out;o.link=false;o.hostId=null;o.underground=b.underground;farms.push(o)}
+    });
+  }
+}
+const STEP_DEFS={
+  burg:[
+    {step:'Burgmauern und Graben',m:b=>/^(Burg: |Burggraben$|Stadtmauer)/.test(b.name),d:()=>'Erst die runden Türme, dann die Mauern dazwischen, dann Torhaus mit Zugbrücke und das innere Tor. Den Graben erst fluten, wenn die Mauern stehen.'},
+    {step:'Bergfried, Palas und Kapelle',m:b=>/^(Bergfried|Palas|Burgkapelle|Burgbrunnen)/.test(b.name),d:()=>'Der Bergfried steht in der Südwestecke der Hauptburg. Kerker und Mob-Farm darunter gleich mit ausheben, solange der Turm noch offen ist. Danach Palas, Kapelle und Brunnen.'},
+    {step:'Vorburg',m:b=>/^(Stall|Wirtschaftshaus|Burggarten)/.test(b.name),d:()=>'Stall mit Eierfarm und das Wirtschaftshaus vor dem inneren Tor, danach den Burggarten anlegen.'},
+  ],
+  stadt:[
+    {step:'Mauer und Tore',m:b=>/^(Stadtmauer|Steinbrücke)/.test(b.name),d:()=>'Das Stück Stadtmauer in diesem Abschnitt: erst die runden Ecktürme, dann die Mauer dazwischen (3 Blöcke dick, 7 hoch), dann die Tore. Steht die Steinbrücke in diesem Abschnitt, kommt sie danach.'},
+    {step:'Straßen und Plätze',m:b=>/^(Straßen & Plätze|Marktbrunnen|Straßenlaternen|Marktstand)/.test(b.name),d:()=>'Erst die breite Hauptstraße, dann die Gassen und Wege. Grasblöcke abtragen und durch den Belag ersetzen. Gibt es hier einen Platz, den pflastern und Brunnen und Stände bauen. Zuletzt die Laternen.'},
+    {step:'Gebäude mit Farmen',m:b=>b.group!=='Wohnhäuser'&&!['deco','street'].includes(b.kind)&&!/^Lorenbahn/.test(b.name),d:(n,l)=>'Die besonderen Gebäude dieses Abschnitts mit ihren Farmen. Keller und tiefe Farmen zuerst ausheben, dann das Haus darüber bauen.'+(l.some(b=>b.name==='Lagerhaus')?' Das Lagerhaus mit der Sortieranlage ist das Ziel aller Lorenbahnen: Ab jetzt kannst du die Bahnen aus den fertigen Abschnitten bis hierher verlängern.':'')},
+    {step:'Wohnhäuser',m:b=>b.group==='Wohnhäuser',d:n=>`${n} Fachwerkhäuser entlang der Gassen. Jedes hat seinen eigenen Bauplan mit Schichtplan.`},
+  ]
+};
+let STAGES=[];
 let stageIdx=null;
 function assignStages(){
-  if(!STAGES.some(S=>S.area))STAGES.splice(1,0,...TERRAIN_AREAS.map(A=>({t:'Aufschütten: '+A.t,area:A,m:o=>o._area===A.id,d:()=>`${A.t}: ${A.area}. Der Bereich ist in ${A.secs.length} kleine Abschnitte geteilt, jeder etwa ein Chunk (16 × 16 Blöcke). Nimm sie dir einzeln vor, in der Reihenfolge der Liste: von Norden nach Süden, von Westen nach Osten. Zusammen sind es ${A.secs.reduce((n,b)=>n+b.voxels.length,0).toLocaleString('de-DE')} Blöcke.${HOLLOW_IDS.has(A.id)?` Der Burghügel ist innen hohl: Aufgeschüttet wird nur die Außenhaut, ${SHELL} Blöcke dick.`:''}`})));for(const b of buildings){b._st=STAGES.findIndex((S,i)=>i>0&&S.m(b));if(b._st<0)b._st=STAGES.length-1}}
-const stageVis=o=>{if(o.kind==='terrain')return false;if(stageIdx!=null&&STAGES[stageIdx].area)return o.kind==='street';return stageIdx==null||o.kind==='street'||o._st<=stageIdx};
+  STAGES=[];
+  REGIONS.forEach((R,ri)=>{
+    const steps=[{step:'Fläche einebnen',tf:'base',d:()=>`Bauabschnitt ${ri+1} von ${REGIONS.length}: ${R.t}. ${R.d} In jedem Abschnitt baust du alles fertig, Schritt für Schritt: Gelände, Mauer, Wege, Gebäude, Farmen und Bäume. Erst dann geht es mit dem nächsten Abschnitt weiter.\n\nZuerst die Fläche dieses Abschnitts flach machen: oberster Bodenblock auf Y ${mcY(BASE-1)}. Wo der Plan Land im Wasser braucht (blau), vom Grund aus bis Y ${mcY(BASE-1)} aufschütten.${ri===0?' Der Wald auf der Halbinsel im Südosten und das Land jenseits des Flusses bleiben, wie sie sind.':''}`}];
+    for(const A of TERRAIN_AREAS.filter(A=>R.areas.includes(A.id)))steps.push({step:'Aufschütten: '+A.t,area:A,d:()=>`${A.t}: ${A.area}. Der Bereich ist in ${A.secs.length} kleine Stücke geteilt, jedes etwa ein Chunk (16 × 16 Blöcke). Nimm sie dir einzeln vor, in der Reihenfolge der Liste: von Norden nach Süden, von Westen nach Osten. Zusammen sind es ${A.secs.reduce((n,b)=>n+b.voxels.length,0).toLocaleString('de-DE')} Blöcke.${HOLLOW_IDS.has(A.id)?` Der Burghügel ist innen hohl: Aufgeschüttet wird nur die Außenhaut, ${SHELL} Blöcke dick.`:''}`});
+    for(const t of STEP_DEFS[R.id==='burg'?'burg':'stadt'])steps.push({...t,step:t.step==='Gebäude mit Farmen'&&R.bstep?R.bstep:t.step==='Straßen und Plätze'&&R.sstep?R.sstep:t.step});
+    steps.push({step:ri===0?'Wege, Lorenbahn und Bäume':'Lorenbahn, Gärten und Bäume',m:()=>true,d:()=>(ri===0?'Die Wege auf dem Burghügel, das Stück Lorenbahn unter der Burg und zum Schluss Bäume, Büsche und Blumen an den Hängen.':'Das Stück Lorenbahn in diesem Abschnitt, Gemüsegärten in den Höfen, Torbögen mit Pflanzkästen über den Gassen und zum Schluss Bäume, Büsche und Blumen.')+` Wo eine Lorenbahn an der Grenze zu einem Abschnitt endet, der noch nicht gebaut ist, dort vorerst eine Truhe hinstellen. Danach ist der Abschnitt ${R.t} fertig.`});
+    steps.forEach(S=>{S.sec=ri;S.reg=R.id;S.t=`${R.short}: ${S.step}`;STAGES.push(S)});
+  });
+  for(const b of buildings){b._st=null;
+    if(b.kind==='terrain'){b._st=STAGES.findIndex(S=>S.area&&S.area.id===b._area);continue}
+    if(b._wild){b._st=-1;continue}
+    if(b.kind==='farm'&&b.hostId!=null)continue;
+    const reg=b._reg||'burg',idx=STAGES.findIndex(S=>S.reg===reg&&S.m&&S.m(b));
+    b._st=idx>=0?idx:STAGES.map(S=>S.reg).lastIndexOf(reg)}
+  for(const b of buildings)if(b._st===null){const h=buildings[b.hostId];b._st=h._st;b._reg=h._reg}
+  // leere Schritte weglassen
+  const used=new Set(buildings.map(b=>b._st)),map=[];let n=0;
+  STAGES.forEach((S,i)=>{map[i]=S.tf||S.area||used.has(i)?n++:-1});
+  for(const b of buildings)if(b._st>=0)b._st=map[b._st];
+  STAGES=STAGES.filter((S,i)=>map[i]>=0);
+  STAGES.forEach(S=>{const same=STAGES.filter(x=>x.sec===S.sec);S.k=same.indexOf(S)+1;S.n=same.length});
+}
+const stageVis=o=>{if(o.kind==='terrain')return false;if(stageIdx!=null&&STAGES[stageIdx].area)return o.kind==='street'||o._st<stageIdx;return stageIdx==null||o.kind==='street'||o._st<=stageIdx};
 function showStage(i){
   if(tfOn)setTF(false);
   if(selected){setBuildingMat(selected,null);exitLayerMode();selected=null}
   stageIdx=Math.max(0,Math.min(STAGES.length-1,i));const S=STAGES[stageIdx],N=STAGES.length;
   const list=buildings.filter(b=>b._st===stageIdx);
   if(!S.area)exitBuild();
-  if(S.tf)buildTF(S.tf);if(tfMesh)tfMesh.visible=!!S.tf;
+  if(S.tf){tfReg=S.reg;buildTF(S.tf)}if(tfMesh)tfMesh.visible=!!S.tf;
   document.getElementById('tfLegend').hidden=true;
   setXray(null);
   for(const b of buildings)setBuildingMat(b,b._st===stageIdx&&b.kind!=='street'&&(b.kind!=='terrain'||b._par)?matSel:null);
   const tot=S.tf?tfMaterial(S.tf):{},exm=new Map();for(const b of list){for(const[k,n]of Object.entries(b.counts))tot[k]=(tot[k]||0)+n;for(const e of(b.extras||[])){const o=exm.get(e.n)||{n:e.n,c:0};o.c+=e.c;exm.set(e.n,o)}}
   const groups={};for(const b of list)(groups[b.group]=groups[b.group]||[]).push(b);
   currentTab='stage';
-  openPanel(`Etappe ${stageIdx+1}: ${S.t}`,`Bauetappe ${stageIdx+1} von ${N}`,[['stage','Etappe']],()=>{
+  openPanel(`${REGIONS[S.sec].t}: ${S.step}`,`Bauabschnitt ${S.sec+1} von ${REGIONS.length} · Schritt ${S.k} von ${S.n} · Etappe ${stageIdx+1} von ${N}`,[['stage','Etappe']],()=>{
     const body=document.getElementById('pBody');
     body.innerHTML=`<div class="stnav"><button id="stPrev" ${stageIdx===0?'disabled':''}>◀ Zurück</button><button class="primary" id="stNext" ${stageIdx===N-1?'disabled':''}>Weiter ▶</button></div>
-      <div class="stdots" aria-label="Etappen">${STAGES.map((x,k)=>`<button data-st="${k}" aria-current="${k===stageIdx}" title="${esc(x.t)}">${k+1}</button>`).join('')}</div>
-      <p class="desc">${esc(S.d(list.length))}</p>
+      <div class="stdots" aria-label="Etappen">${STAGES.map((x,k)=>`${x.k===1?`<span class="stsec">${x.sec+1}. ${esc(REGIONS[x.sec].t)}</span>`:''}<button data-st="${k}" aria-current="${k===stageIdx}" title="${esc(x.t)}">${k+1}</button>`).join('')}</div>
+      <p class="desc">${esc(S.d(list.length,list))}</p>
       ${S.area?`<p class="note">In der 3D-Ansicht siehst du an dieser Stelle die flache Insel. Was aufgeschüttet wird, ist durchsichtig. Mit ▶ in der Leiste unten wird Schicht für Schicht fest. Ein Klick auf ein Stück (in der Liste oder in 3D) zeigt nur dieses Stück.</p>
       <div class="row"><button class="primary" id="stArea">Ganzen Bereich zeigen</button></div>
       <h3>Die Stücke dieses Bereichs</h3><div class="blist">${S.area.secs.map(b=>`<button data-bid="${b.id}"><span>${esc(b.name)} <span style="color:var(--muted);font-size:12px">X ${mcX(b.bb.x0)}…${mcX(b.bb.x1)}, Z ${mcZ(b.bb.z0)}…${mcZ(b.bb.z1)}</span></span><b>${b.voxels.length.toLocaleString('de-DE')}</b></button>`).join('')}</div>
       <h3>Für Litematica</h3><div class="row">${ltButton('Ganzen Bereich speichern','stLtm')}</div><p class="note" id="stLtmNote" hidden></p>
-      <h3>Material für den ganzen Bereich</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen noch keine Gebäude, nur die Straßen sind zur Orientierung zu sehen. Erde reicht zum Aufschütten, Gras wächst von selbst darüber.</p><h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
+      <h3>Material für den ganzen Bereich</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:S.tf?`<div class="tflegend" style="position:static;max-width:none;margin:0 0 12px">${document.getElementById('tfLegend').innerHTML}</div><p class="note">In der 3D-Ansicht stehen nur die Bauwerke aus den Abschnitten davor, die Straßen sind zur Orientierung zu sehen. Gefärbt ist nur die Fläche dieses Abschnitts. Erde reicht zum Aufschütten, Gras wächst von selbst darüber.</p><h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button></div>${matTable(tot,[])}`:`<p class="note">In der 3D-Ansicht leuchtet, was in dieser Etappe gebaut wird. Alles aus früheren Etappen steht schon, spätere sind ausgeblendet. Ein Klick auf ein Bauwerk öffnet seinen Bauplan.</p>
       <h3>Bauwerke dieser Etappe</h3>${listHTML(groups)}
       <h3>Material für diese Etappe</h3><div class="row"><button id="stCpy">Liste kopieren</button>${ltButton('Etappe für Litematica speichern','stLtm')}</div><p class="note" id="stLtmNote" hidden></p>${matTable(tot,[...exm.values()])}`}`;
     document.getElementById('stPrev').onclick=()=>showStage(stageIdx-1);
@@ -2512,7 +2591,8 @@ function showStage(i){
   });
   if(list.length){let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;for(const b of list){if(b.kind==='farm'&&b.underground)continue;x0=Math.min(x0,b.bb.x0);x1=Math.max(x1,b.bb.x1);y0=Math.min(y0,b.bb.y0);y1=Math.max(y1,b.bb.y1);z0=Math.min(z0,b.bb.z0);z1=Math.max(z1,b.bb.z1)}
     if(x0<1e9)focusOn({bb:{x0,x1,y0,y1,z0,z1}})}
-  else if(S.tf){const[x,z]=c2w(100,42);focusOn(S.tf==='hill'?{bb:{x0:x-55,x1:x+55,y0:0,y1:PLAT,z0:z-60,z1:z+60}}:{bb:{x0:x-40,x1:x+110,y0:0,y1:PLAT,z0:z-70,z1:z+70}})}
+  else if(S.tf){let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(let i=0;i<WX*WZ;i++){if(!MAIN[i]||SEA[i])continue;const x=i%WX,z=(i-x)/WX;if(regionAt(x,z)!==S.reg)continue;x0=Math.min(x0,x);x1=Math.max(x1,x);z0=Math.min(z0,z);z1=Math.max(z1,z)}
+    if(x0<1e9)focusOn({bb:{x0,x1,y0:0,y1:S.reg==='burg'?PLAT:8,z0,z1}})}
   if(S.area)enterBuild(S.area.secs,'Bereich: '+S.area.t);
 }
 function exitStages(){
