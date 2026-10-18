@@ -1,1 +1,1 @@
-{"values":["spieler:load",{"id":"spieler:load_kupfer","required":false}]}
+{"values":["spieler:load",{"id":"spieler:load_kupfer","required":false},{"id":"spieler:regel/neu","required":false},{"id":"spieler:regel/alt","required":false}]}

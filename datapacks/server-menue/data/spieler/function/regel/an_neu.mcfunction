@@ -1,0 +1,1 @@
+gamerule send_command_feedback true

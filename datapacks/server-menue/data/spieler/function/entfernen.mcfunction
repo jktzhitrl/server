@@ -3,6 +3,7 @@ schedule clear spieler:sekunde
 scoreboard objectives setdisplay sidebar
 scoreboard objectives setdisplay list
 team remove afk
+function #spieler:regel_an
 scoreboard objectives remove bl_std
 scoreboard objectives remove bl_abbau
 scoreboard objectives remove bl_const
