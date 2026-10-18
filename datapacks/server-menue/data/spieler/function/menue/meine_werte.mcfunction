@@ -1,16 +1,20 @@
 # Eigene Zahlen und Platz in jeder Kategorie
 execute as @a at @s run function spieler:db/eintragen
-data modify storage spieler:ui dlg set value {type:"minecraft:multi_action",title:{text:"Meine Werte"},body:[{type:"minecraft:plain_message",width:400,contents:{text:"Deine Zahlen auf dem Server",color:"gray"}}],columns:2,actions:[{label:"◀ Zurück",width:150,action:{type:"minecraft:run_command",command:"/trigger menue set 1"}}],exit_action:{label:"Schließen"}}
+function spieler:db/eintragen
+data modify storage spieler:ui dlg set value {type:"minecraft:multi_action",title:{text:"✎ Meine Werte ✎",color:"aqua",bold:true},body:[],columns:1,actions:[{label:{text:"◀ Zurück",color:"white"},width:200,action:{type:"minecraft:run_command",command:"/trigger menue set 1"}}],exit_action:{label:{text:"Schließen",color:"gray"},width:200}}
+data modify storage spieler:tmp kopf set value {type:"minecraft:item",item:{id:"minecraft:player_head",components:{"minecraft:profile":{id:[I;0,0,0,0]}}},show_decorations:false,show_tooltip:false,description:{width:250,contents:{text:"Die Werte von ",color:"gray",extra:[{text:"",color:"yellow",extra:[{text:"dir"}]}]}}}
+function spieler:menue/kopf
+data modify storage spieler:ui dlg.body append from storage spieler:tmp kopf
 execute store result storage spieler:tmp arg.v int 1 run scoreboard players get @s bl_std
-data modify storage spieler:tmp arg merge value {c:0,unit:" h",titel:"Spielzeit"}
+data modify storage spieler:tmp arg merge value {c:0,unit:" Std.",titel:"Spielzeit",icon:"minecraft:clock",farbe:"gold"}
 function spieler:rang/mein with storage spieler:tmp arg
 execute store result storage spieler:tmp arg.v int 1 run scoreboard players get @s bl_tode
-data modify storage spieler:tmp arg merge value {c:1,unit:"",titel:"Tode"}
+data modify storage spieler:tmp arg merge value {c:1,unit:"",titel:"Tode",icon:"minecraft:skeleton_skull",farbe:"red"}
 function spieler:rang/mein with storage spieler:tmp arg
 execute store result storage spieler:tmp arg.v int 1 run scoreboard players get @s bl_abbau
-data modify storage spieler:tmp arg merge value {c:2,unit:"",titel:"Abgebaute Blöcke"}
+data modify storage spieler:tmp arg merge value {c:2,unit:"",titel:"Abgebaute Blöcke",icon:"minecraft:iron_pickaxe",farbe:"aqua"}
 function spieler:rang/mein with storage spieler:tmp arg
 execute store result storage spieler:tmp arg.v int 1 run scoreboard players get @s bl_mobs
-data modify storage spieler:tmp arg merge value {c:3,unit:"",titel:"Besiegte Mobs"}
+data modify storage spieler:tmp arg merge value {c:3,unit:"",titel:"Besiegte Mobs",icon:"minecraft:iron_sword",farbe:"green"}
 function spieler:rang/mein with storage spieler:tmp arg
 function spieler:menue/zeigen with storage spieler:ui

@@ -6,4 +6,5 @@ scoreboard players set #platz sp_tmp 1
 scoreboard players set #i sp_tmp 0
 execute if score #len sp_tmp matches 1.. run function spieler:rang/zaehlen_rufen
 execute store result storage spieler:tmp arg.p int 1 run scoreboard players get #platz sp_tmp
+execute store result storage spieler:tmp arg.n int 1 run scoreboard players get #len sp_tmp
 function spieler:rang/mein_zeile with storage spieler:tmp arg

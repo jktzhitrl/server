@@ -1,12 +1,12 @@
 {
   "type": "minecraft:multi_action",
-  "title": {"text": "Server-Menü"},
-  "body": [{"type": "minecraft:plain_message", "contents": {"text": "Was möchtest du tun?"}}],
-  "columns": 2,
+  "title": {"text": "⚑ Server-Menü ⚑", "color": "gold", "bold": true},
+  "body": [{"type": "minecraft:plain_message", "contents": {"text": "Was möchtest du tun?", "color": "gray"}}],
+  "columns": 1,
   "actions": [
-    {"label": "★ Bestenliste", "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger menue set 2"}},
-    {"label": "✎ Meine Werte", "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger menue set 3"}},
-    {"label": "☾ AFK melden", "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger afk"}}
+    {"label": {"text": "★ Bestenliste", "color": "gold"}, "tooltip": {"text": "Die besten 3 Spieler in jeder Kategorie"}, "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger menue set 2"}},
+    {"label": {"text": "✎ Meine Werte", "color": "aqua"}, "tooltip": {"text": "Deine eigenen Zahlen und dein Platz"}, "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger menue set 3"}},
+    {"label": {"text": "☾ AFK melden", "color": "gray"}, "tooltip": {"text": "Graues [AFK] vor deinem Namen, bis du dich wieder bewegst"}, "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger afk"}}
   ],
-  "exit_action": {"label": "Schließen"}
+  "exit_action": {"label": {"text": "Schließen", "color": "gray"}, "width": 200}
 }

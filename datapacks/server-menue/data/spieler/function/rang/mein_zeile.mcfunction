@@ -1,1 +1,1 @@
-$data modify storage spieler:ui dlg.body append value {type:"minecraft:plain_message",width:400,contents:[{text:"$(titel): ",color:"gold"},{text:"$(v)$(unit)",color:"yellow"},{text:"   Platz $(p)",color:"gray"}]}
+$data modify storage spieler:ui dlg.body append value {type:"minecraft:item",item:{id:"$(icon)"},show_decorations:false,show_tooltip:false,description:{width:250,contents:[{text:"$(titel)",color:"$(farbe)",bold:true},{text:"\n$(v)$(unit)",color:"yellow"},{text:"   Platz $(p) von $(n)",color:"gray"}]}}
