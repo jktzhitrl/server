@@ -2022,6 +2022,8 @@ function buildCity(){
   buildLamps();
   buildArches();
   buildNature();
+  // Pflanzen, die durch spätere Geländeänderungen im Boden stecken, fallen weg (dort gehört Erde hin)
+  for(const b of buildings)if(b.name==='Bäume & Blumen'){const n=b.voxels.length;b.voxels=b.voxels.filter(v=>v.y>=Hm[v.z*WX+v.x]);if(b.voxels.length!==n)b.counts=countBlocks(b.voxels)}
   // Doppelte Blöcke entfernen: das zuerst gebaute Bauwerk behält den Block
   const seen=new Set();
   for(const b of buildings){
