@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:multi_action",
+  "title": {"text": "Server-Menü"},
+  "body": [{"type": "minecraft:plain_message", "contents": {"text": "Was möchtest du tun?"}}],
+  "columns": 2,
+  "actions": [
+    {"label": "★ Bestenliste", "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger menue set 2"}},
+    {"label": "✎ Meine Werte", "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger menue set 3"}},
+    {"label": "☾ AFK melden", "width": 200, "action": {"type": "minecraft:run_command", "command": "/trigger afk"}}
+  ],
+  "exit_action": {"label": "Schließen"}
+}

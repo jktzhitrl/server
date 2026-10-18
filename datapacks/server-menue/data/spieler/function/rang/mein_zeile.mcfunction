@@ -1,0 +1,1 @@
+$data modify storage spieler:ui dlg.body append value {type:"minecraft:plain_message",width:400,contents:[{text:"$(titel): ",color:"gold"},{text:"$(v)$(unit)",color:"yellow"},{text:"   Platz $(p)",color:"gray"}]}

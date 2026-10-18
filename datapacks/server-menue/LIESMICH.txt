@@ -1,0 +1,35 @@
+SERVER-MENÜ (Datenpaket für Minecraft Java 26.x)
+================================================
+
+Ersetzt das Paket "Bestenliste-AFK". Falls das schon drauf ist: dessen ZIP aus world/datapacks löschen.
+Läuft nur auf dem Server, Mitspieler müssen nichts installieren.
+
+INSTALLIEREN
+1. Mit FileZilla in den Ordner  world/datapacks  (gibt es den nicht, anlegen).
+2. Server-Menue.zip dort hineinladen (NICHT entpacken).
+3. /reload eingeben oder Server neu starten.
+4. Prüfen mit  /datapack list  (dort muss "file/Server-Menue.zip" stehen).
+
+BENUTZEN
+  /trigger menue      öffnet das Menü (Fenster mit Knöpfen)
+    ★ Bestenliste     die besten 3 Spieler in Spielzeit, Tode, Abgebaute Blöcke, Besiegte Mobs
+    ✎ Meine Werte     deine eigenen Zahlen und dein Platz
+    ☾ AFK melden      graues [AFK] vor deinen Namen, bis du dich wieder bewegst
+  /trigger afk        dasselbe ohne Menü
+
+  Wer sich 10 Minuten nicht bewegt, wird automatisch AFK.
+  In der Bestenliste stehen alle Spieler, die seit der Installation mindestens einmal online waren.
+  Die Zahlen zählen ab der Installation des Pakets.
+
+TASTE G (optional, eigenes kleines Paket: Menue-Taste-G.zip)
+  Damit öffnet sich das Menü mit der Taste G ("Schnellaktionen").
+  WICHTIG: Dieses Zusatzpaket erst in einer Einzelspieler-Welt testen
+  (Welt erstellen -> Datenpakete -> beide ZIPs hineinziehen). Lädt die Welt und geht G,
+  dann auf den Server hochladen. Hat es einen Fehler, startet der Server sonst nicht.
+  Danach Server NEU STARTEN (/reload reicht für Menüs nicht).
+
+FÜR ADMINS
+  /function spieler:entfernen   vor dem Löschen der ZIP aufrufen, räumt alles weg
+
+FALLS ETWAS NICHT GEHT
+  In der Server-Konsole bzw. im Log nach Fehlermeldungen mit "spieler" suchen und an Claude schicken.

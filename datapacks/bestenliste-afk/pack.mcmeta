@@ -1,7 +1,0 @@
-{
-  "pack": {
-    "description": "Bestenliste in der Seitenleiste und AFK-Anzeige",
-    "min_format": 101,
-    "max_format": 200
-  }
-}

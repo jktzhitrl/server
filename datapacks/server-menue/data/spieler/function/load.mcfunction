@@ -47,8 +47,12 @@ scoreboard objectives add afk_np dummy
 team add afk {"text":"AFK"}
 team modify afk prefix {"text":"[AFK] ","color":"gray"}
 team modify afk color gray
-# ---------- Anzeige und Takt ----------
-scoreboard objectives setdisplay list bl_std
-execute unless score #an bl_const matches 0.. run scoreboard players set #an bl_const 1
-execute if score #an bl_const matches 1 run function spieler:rotieren
+# ---------- Menü ----------
+scoreboard objectives add menue trigger
+scoreboard objectives add sp_tmp dummy
+# alte Anzeigen der ersten Version wegräumen
+schedule clear spieler:rotieren
+scoreboard objectives setdisplay sidebar
+scoreboard objectives setdisplay list
+execute unless data storage spieler:db p run data modify storage spieler:db p set value []
 schedule function spieler:sekunde 1s replace
