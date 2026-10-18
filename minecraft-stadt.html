@@ -728,15 +728,6 @@ function paintStreet(s){
   }
 }
 STREETS.forEach(paintStreet);
-// Straßen begehbar machen: zwischen zwei Straßenfeldern höchstens 1 Block Unterschied, zu hohe Stellen werden abgetragen
-function relaxStreets(){
-  for(let it=0;it<12;it++){let ch=0;
-    for(const i of streetCell.keys()){const x=i%WX;let m=1e9;
-      for(const j of[x>0?i-1:-1,x<WX-1?i+1:-1,i-WX,i+WX])if(j>=0&&j<WX*WZ&&streetCell.has(j)&&!SEA[j])m=Math.min(m,Hm[j]);
-      if(m<1e9&&Hm[i]>m+1&&!HILL[i]){Hm[i]=Math.max(BASE,m+1);ch++}}
-    if(!ch)break}
-}
-relaxStreets();
 // Weg über Land suchen (um Wasser, Mauern und Häuser herum) und als Gasse anlegen
 function roadTo(name,from,to){
   const N=WX*WZ,dist=new Float64Array(N).fill(1e9),prev=new Int32Array(N).fill(-1),heap=[];
@@ -754,7 +745,7 @@ function roadTo(name,from,to){
   if(prev[t0]<0)return null;
   const cells=[];for(let i=t0;i>=0;i=prev[i])cells.push([i%WX,Math.floor(i/WX)]);cells.reverse();
   const pts=cells.filter((c,k)=>k%4===0||k===cells.length-1);
-  const st={name,w:3,kind:'lane',pts,keep8:true};STREETS.push(st);paintStreet(st);relaxStreets();return st;
+  const st={name,w:3,kind:'lane',pts,keep8:true};STREETS.push(st);paintStreet(st);return st;
 }
 // Hafenviertel zwischen Bucht und Mauer
 const inHarbor=(x,z)=>x>=160&&x<=182&&z>=50&&z<=95;
@@ -797,10 +788,12 @@ function placeOnTerrain(m,r,ox,oz){
 }
 function claim(m,r,ox,oz){
   const bb=m.bboxRot(r);
-  // Bauplatz eben machen: auf die mittlere Höhe, Höheres wird abgetragen, Tieferes aufgefüllt
-  const hs=[];for(let x=ox+bb.minX;x<=ox+bb.maxX;x++)for(let z=oz+bb.minZ;z<=oz+bb.maxZ;z++)hs.push(hAt(x,z));
-  hs.sort((a,b)=>a-b);const lvl=Math.max(BASE,hs[hs.length>>1]);
-  for(let x=ox+bb.minX;x<=ox+bb.maxX;x++)for(let z=oz+bb.minZ;z<=oz+bb.maxZ;z++){oSet(x,z,4);if(x>=0&&z>=0&&x<WX&&z<WZ){Hm[z*WX+x]=lvl;LEVEL[z*WX+x]=1}}
+  // Am Hang wie früher: Das Gelände ums Haus bleibt, wie es ist. Der Boden liegt auf der mittleren Höhe;
+  // bergauf wird nur unter dem Haus Platz gegraben, bergab steht das Haus auf einem Steinsockel (placeOnTerrain).
+  const cells=new Set();for(const v of placeModel(m,r,ox,0,oz))if(v.y===0&&v.x>=0&&v.z>=0&&v.x<WX&&v.z<WZ)cells.add(v.z*WX+v.x);
+  const hs=[...cells].map(i=>Hm[i]).sort((a,b)=>a-b);const lvl=Math.max(BASE,hs[hs.length>>1]);
+  for(const i of cells)if(Hm[i]>lvl)Hm[i]=lvl;
+  for(let x=ox+bb.minX;x<=ox+bb.maxX;x++)for(let z=oz+bb.minZ;z<=oz+bb.maxZ;z++)oSet(x,z,4);
   // Vorplatz vor der Tür freihalten
   const mt=m.meta;if(mt&&mt.doorSide){const[dx,dz]=rotP(mt.doorX,mt.doorZ,r);const od=DIRS[(mt.doorSide.dir+r)&3];for(let k=1;k<=3;k++){const x=ox+dx+od[0]*k,z=oz+dz+od[1]*k;if(oAt(x,z)===0)oSet(x,z,7)}}
 }
