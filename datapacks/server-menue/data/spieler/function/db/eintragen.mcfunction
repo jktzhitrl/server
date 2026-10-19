@@ -5,6 +5,6 @@ execute store result storage spieler:tmp e.s0 int 1 run scoreboard players get @
 execute store result storage spieler:tmp e.s1 int 1 run scoreboard players get @s bl_tode
 execute store result storage spieler:tmp e.s2 int 1 run scoreboard players get @s bl_abbau
 execute store result storage spieler:tmp e.s3 int 1 run scoreboard players get @s bl_mobs
-# Name holen (ohne [AFK] davor: wer AFK ist, behält den gespeicherten Namen)
-execute unless entity @s[team=afk] run function spieler:db/name
+# Name holen (über den Spielerkopf, daher ohne [AFK] davor)
+function spieler:db/name
 function spieler:db/ersetzen with storage spieler:tmp e

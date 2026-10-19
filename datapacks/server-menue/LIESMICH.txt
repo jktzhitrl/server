@@ -39,7 +39,8 @@ TASTE G (optional, eigenes kleines Paket: Menue-Taste-G.zip)
   Danach Server NEU STARTEN (/reload reicht für Menüs nicht).
 
 FÜR ADMINS
-  /function spieler:entfernen   vor dem Löschen der ZIP aufrufen, räumt alles weg
+  /function spieler:entfernen      vor dem Löschen der ZIP aufrufen, räumt alles weg
+  /function spieler:name_pruefen   zeigt, ob das Paket deinen Namen auslesen kann
 
 FALLS ETWAS NICHT GEHT
   In der Server-Konsole bzw. im Log nach Fehlermeldungen mit "spieler" suchen und an Claude schicken.
