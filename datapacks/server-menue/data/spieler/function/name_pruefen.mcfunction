@@ -15,10 +15,17 @@ execute store result score #c sp_tmp if entity @e[type=item,distance=..2,nbt={It
 tellraw @s [{"text":"2) Papier erzeugt: ","color":"gray"},{"score":{"name":"#a","objective":"sp_tmp"},"color":"yellow"},{"text":"  erkannt: ","color":"gray"},{"score":{"name":"#c","objective":"sp_tmp"},"color":"yellow"}]
 tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,distance=..0.5,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
 kill @e[type=item,distance=..0.5,limit=1,sort=nearest]
+# Schritt 3: Kopf mit /item modify
+summon item ~ ~ ~ {Item:{id:"minecraft:player_head",count:1},PickupDelay:32767s,Tags:["sp_test"]}
+scoreboard players set #a sp_tmp 0
+execute store success score #a sp_tmp run item modify entity @e[type=item,tag=sp_test,limit=1,sort=nearest] contents spieler:kopf
+tellraw @s [{"text":"3) Kopf gefüllt: ","color":"gray"},{"score":{"name":"#a","objective":"sp_tmp"},"color":"yellow"}]
+tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,tag=sp_test,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
+kill @e[type=item,tag=sp_test]
 # Ergebnis über den normalen Weg
 data remove storage spieler:tmp e.nn
 data remove storage spieler:tmp e.nc
 function spieler:db/name
-execute if data storage spieler:tmp e.nn run tellraw @s [{"text":"Ergebnis: Name gefunden (Weg 1): ","color":"green"},{"storage":"spieler:tmp","nbt":"e.nn","color":"yellow"}]
+execute if data storage spieler:tmp e.nn run tellraw @s [{"text":"Ergebnis: Name gefunden (Kopf): ","color":"green"},{"storage":"spieler:tmp","nbt":"e.nn","color":"yellow"}]
 execute unless data storage spieler:tmp e.nn if data storage spieler:tmp e.nc run tellraw @s [{"text":"Ergebnis: Name gefunden (Weg 2): ","color":"green"},{"storage":"spieler:tmp","nbt":"e.nc","interpret":true,"color":"yellow"}]
 execute unless data storage spieler:tmp e.nn unless data storage spieler:tmp e.nc run tellraw @s {"text":"Ergebnis: kein Name gefunden. Bitte Foto vom ganzen Chat an Claude schicken.","color":"red"}
