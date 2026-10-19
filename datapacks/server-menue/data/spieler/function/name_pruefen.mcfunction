@@ -3,18 +3,18 @@ tellraw @s {"text":"--- Namens-Test ---","color":"gold"}
 # Schritt 1: Spielerkopf
 scoreboard players set #a sp_tmp 0
 execute store success score #a sp_tmp run loot spawn ~ ~ ~ loot spieler:name
-execute store result score #b sp_tmp if entity @e[type=item,distance=..2]
+execute store result score #b sp_tmp if entity @e[type=item,distance=..0.5]
 execute store result score #c sp_tmp if entity @e[type=item,distance=..2,nbt={Item:{id:"minecraft:player_head"}}]
 tellraw @s [{"text":"1) Kopf erzeugt: ","color":"gray"},{"score":{"name":"#a","objective":"sp_tmp"},"color":"yellow"},{"text":"  Items da: ","color":"gray"},{"score":{"name":"#b","objective":"sp_tmp"},"color":"yellow"},{"text":"  davon erkannt: ","color":"gray"},{"score":{"name":"#c","objective":"sp_tmp"},"color":"yellow"}]
-tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,distance=..2,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
-kill @e[type=item,distance=..2,nbt={Item:{id:"minecraft:player_head"}}]
+tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,distance=..0.5,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
+kill @e[type=item,distance=..0.5,limit=1,sort=nearest]
 # Schritt 2: Papier mit Namen
 scoreboard players set #a sp_tmp 0
 execute store success score #a sp_tmp run loot spawn ~ ~ ~ loot spieler:name_papier
 execute store result score #c sp_tmp if entity @e[type=item,distance=..2,nbt={Item:{id:"minecraft:paper"}}]
 tellraw @s [{"text":"2) Papier erzeugt: ","color":"gray"},{"score":{"name":"#a","objective":"sp_tmp"},"color":"yellow"},{"text":"  erkannt: ","color":"gray"},{"score":{"name":"#c","objective":"sp_tmp"},"color":"yellow"}]
-tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,distance=..2,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
-kill @e[type=item,distance=..2,nbt={Item:{id:"minecraft:paper"}}]
+tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,distance=..0.5,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
+kill @e[type=item,distance=..0.5,limit=1,sort=nearest]
 # Ergebnis über den normalen Weg
 data remove storage spieler:tmp e.nn
 data remove storage spieler:tmp e.nc

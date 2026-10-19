@@ -13,6 +13,6 @@ execute store result storage spieler:tmp e.s8 int 1 run scoreboard players get @
 execute store result storage spieler:tmp e.s9 int 1 run scoreboard players get @s bl_handel
 execute store result storage spieler:tmp e.s10 int 1 run scoreboard players get @s bl_zauber
 execute store result storage spieler:tmp e.s11 int 1 run scoreboard players get @s bl_schlaf
-# Name holen (über den Spielerkopf, daher ohne [AFK] davor)
-function spieler:db/name
+# Name holen, falls noch nicht bekannt (über den Spielerkopf, daher ohne [AFK] davor)
+function spieler:db/name_falls_noetig with storage spieler:tmp e
 function spieler:db/ersetzen with storage spieler:tmp e
