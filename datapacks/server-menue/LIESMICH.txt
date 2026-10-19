@@ -13,7 +13,10 @@ INSTALLIEREN
 BENUTZEN
   /trigger menue      öffnet das Menü (Fenster mit Knöpfen)
     oben dein Kopf und dein Name
-    ★ Bestenliste     die besten 3 Spieler in Spielzeit, Tode, Abgebaute Blöcke, Besiegte Mobs
+    ★ Bestenliste     die besten 3 Spieler in 12 Kategorien:
+                      Spielzeit, Tode, Abgebaute Blöcke, Besiegte Mobs, Gelaufene Strecke (km),
+                      Gefangene Fische, Gesetzte Erdblöcke, Abgebaute Diamanterze, Gezüchtete Tiere,
+                      Handel mit Dorfbewohnern, Verzauberte Gegenstände, Nächte geschlafen
                       mit Symbol pro Kategorie, Platz 1 gold, 2 silber, 3 bronze
     ✎ Meine Werte     deine eigenen Zahlen und dein Platz (z. B. "Platz 2 von 5")
     ☾ AFK melden      graues [AFK] vor deinen Namen, bis du dich wieder bewegst

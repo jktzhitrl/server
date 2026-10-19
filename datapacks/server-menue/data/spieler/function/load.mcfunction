@@ -30,6 +30,24 @@ scoreboard objectives add bl_u_netherite_pickaxe minecraft.used:minecraft.nether
 scoreboard objectives add bl_u_netherite_shovel minecraft.used:minecraft.netherite_shovel
 scoreboard objectives add bl_u_netherite_axe minecraft.used:minecraft.netherite_axe
 scoreboard objectives add bl_u_netherite_hoe minecraft.used:minecraft.netherite_hoe
+# ---------- weitere Kategorien ----------
+scoreboard objectives add bl_w1 minecraft.custom:minecraft.walk_one_cm
+scoreboard objectives add bl_w2 minecraft.custom:minecraft.sprint_one_cm
+scoreboard objectives add bl_w3 minecraft.custom:minecraft.crouch_one_cm
+scoreboard objectives add bl_w4 minecraft.custom:minecraft.swim_one_cm
+scoreboard objectives add bl_w5 minecraft.custom:minecraft.walk_on_water_one_cm
+scoreboard objectives add bl_w6 minecraft.custom:minecraft.walk_under_water_one_cm
+scoreboard objectives add bl_km dummy
+scoreboard players set #100000 bl_const 100000
+scoreboard objectives add bl_fisch minecraft.custom:minecraft.fish_caught
+scoreboard objectives add bl_erde minecraft.used:minecraft.dirt
+scoreboard objectives add bl_dia1 minecraft.mined:minecraft.diamond_ore
+scoreboard objectives add bl_dia2 minecraft.mined:minecraft.deepslate_diamond_ore
+scoreboard objectives add bl_dia dummy
+scoreboard objectives add bl_zucht minecraft.custom:minecraft.animals_bred
+scoreboard objectives add bl_handel minecraft.custom:minecraft.traded_with_villager
+scoreboard objectives add bl_zauber minecraft.custom:minecraft.enchant_item
+scoreboard objectives add bl_schlaf minecraft.custom:minecraft.sleep_in_bed
 # ---------- AFK ----------
 scoreboard objectives add afk trigger
 scoreboard objectives add afk_sek dummy

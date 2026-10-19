@@ -7,6 +7,8 @@ function #spieler:regel_an
 scoreboard objectives remove bl_std
 scoreboard objectives remove bl_abbau
 scoreboard objectives remove bl_const
+scoreboard objectives remove bl_km
+scoreboard objectives remove bl_dia
 scoreboard objectives remove afk
 scoreboard objectives remove menue
 scoreboard objectives remove sp_tmp
@@ -22,4 +24,4 @@ scoreboard objectives remove afk_ny
 scoreboard objectives remove afk_nz
 scoreboard objectives remove afk_nr
 scoreboard objectives remove afk_np
-tellraw @s {"text":"Server-Menü entfernt. Die Zähler für Spielzeit, Tode und Mobs bleiben erhalten, falls du das Paket wieder einsetzt.","color":"gray"}
+tellraw @s {"text":"Server-Menü entfernt. Die Zähler von Minecraft (Spielzeit, Tode, Mobs, Strecke, Fische usw.) bleiben erhalten, falls du das Paket wieder einsetzt.","color":"gray"}

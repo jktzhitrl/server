@@ -2,6 +2,7 @@
 execute as @a run scoreboard players operation @s bl_std = @s bl_ticks
 execute as @a run scoreboard players operation @s bl_std /= #72000 bl_const
 execute as @a run function spieler:abbau_zaehlen
+execute as @a run function spieler:werte
 execute as @a at @s run function spieler:afk/pruefen
 scoreboard players enable @a afk
 scoreboard players enable @a menue
