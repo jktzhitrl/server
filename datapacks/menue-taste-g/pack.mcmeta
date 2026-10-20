@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Öffnet das Server-Menü mit der Taste G (braucht das Server-Menü-Paket)",
+    "min_format": 101,
+    "max_format": 200
+  }
+}

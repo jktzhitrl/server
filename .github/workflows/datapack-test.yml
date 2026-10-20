@@ -1,0 +1,68 @@
+name: Datenpaket-Test
+
+on:
+  push:
+    paths:
+      - 'datapacks/**'
+      - '.github/workflows/datapack-test.yml'
+      - '.github/test/**'
+      - '.github/test-pack/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Fabric-Server 26.3 und Carpet (Test-Spieler) holen
+        run: |
+          mkdir srv && cd srv
+          python3 - <<'PY'
+          import json, urllib.request, os
+          get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'datenpaket-test'})))
+          loader = get('https://meta.fabricmc.net/v2/versions/loader/26.3')[0]['loader']['version']
+          inst = next(i['version'] for i in get('https://meta.fabricmc.net/v2/versions/installer') if i['stable'])
+          print('Fabric Loader', loader, 'Installer', inst)
+          urllib.request.urlretrieve(f'https://meta.fabricmc.net/v2/versions/loader/26.3/{loader}/{inst}/server/jar', 'fabric-server.jar')
+          os.makedirs('mods', exist_ok=True)
+          bot = '0'
+          try:
+              vs = get('https://api.modrinth.com/v2/project/carpet/version?game_versions=%5B%2226.3%22%5D&loaders=%5B%22fabric%22%5D')
+              if vs:
+                  f = vs[0]['files'][0]; print('Carpet', vs[0]['version_number'])
+                  urllib.request.urlretrieve(f['url'], 'mods/' + f['filename']); bot = '1'
+              else:
+                  print('Kein Carpet für 26.3 gefunden, Test ohne Spieler')
+          except Exception as e:
+              print('Carpet nicht geladen:', e)
+          open(os.environ['GITHUB_ENV'], 'a').write(f'BOT={bot}\n')
+          PY
+          echo "eula=true" > eula.txt
+          printf "online-mode=false\nview-distance=4\nsimulation-distance=4\nspawn-protection=0\npause-when-empty-seconds=-1\n" > server.properties
+
+      - name: Datenpakete einlegen
+        run: |
+          mkdir -p srv/world/datapacks
+          for d in server-menue menue-taste-g komfort; do
+            (cd datapacks/$d && zip -qr ../../srv/world/datapacks/$d.zip .)
+          done
+          (cd .github/test-pack && zip -qr ../../srv/world/datapacks/test-hilfe.zip .)
+          ls -la srv/world/datapacks srv/mods
+
+      - name: Server starten und testen
+        run: |
+          cd srv
+          python3 ../.github/test/run_test.py fabric-server.jar
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: server-log
+          path: srv/log.txt
