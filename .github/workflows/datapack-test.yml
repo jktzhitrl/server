@@ -1,0 +1,92 @@
+name: Datenpaket-Test
+
+on:
+  push:
+    paths:
+      - 'datapacks/**'
+      - '.github/workflows/datapack-test.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Minecraft-Server 26.3 holen
+        run: |
+          mkdir srv && cd srv
+          python3 - <<'PY'
+          import json, urllib.request
+          m = json.load(urllib.request.urlopen('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'))
+          v = next(x for x in m['versions'] if x['id'] == '26.3')
+          d = json.load(urllib.request.urlopen(v['url']))
+          print('Java', d.get('javaVersion'))
+          urllib.request.urlretrieve(d['downloads']['server']['url'], 'server.jar')
+          PY
+          echo "eula=true" > eula.txt
+          printf "online-mode=false\nview-distance=4\nsimulation-distance=4\nspawn-protection=0\n" > server.properties
+
+      - name: Datenpakete einlegen
+        run: |
+          mkdir -p srv/world/datapacks
+          for d in server-menue menue-taste-g komfort; do
+            (cd datapacks/$d && zip -qr ../../srv/world/datapacks/$d.zip .)
+          done
+          (cd .github/test-pack && zip -qr ../../srv/world/datapacks/test-hilfe.zip .)
+          ls -la srv/world/datapacks
+
+      - name: Server starten und Befehle testen
+        run: |
+          cd srv
+          mkfifo in
+          (tail -f in | java -Xmx3G -jar server.jar nogui > log.txt 2>&1) &
+          exec 3>in
+          for i in $(seq 1 240); do
+            if grep -q 'Done (' log.txt; then break; fi
+            if grep -q 'Failed to load datapacks' log.txt; then break; fi
+            sleep 2
+          done
+          send() { echo "$1" >&3; sleep 2; }
+          send "datapack list enabled"
+          send "gamerule send_command_feedback"
+          send "gamerule sendCommandFeedback"
+          send "function test:daten"
+          send "say >>> TEST Bestenliste"
+          send "function spieler:menue/bestenliste"
+          send "data get storage spieler:ui dlg"
+          send "function test:dlg with storage spieler:ui"
+          send "say >>> TEST Meine Werte"
+          send "function spieler:menue/meine_werte"
+          send "function test:dlg with storage spieler:ui"
+          send "say >>> TEST Hauptmenue"
+          send "function spieler:menue/haupt"
+          send "function test:dlg with storage spieler:ui"
+          send "say >>> TEST statisches Menue (Taste G)"
+          send "dialog show @a spieler:menue"
+          send "say >>> TEST Loot"
+          send "loot spawn 0 100 0 loot spieler:name"
+          send "loot spawn 0 100 0 loot spieler:name_papier"
+          send "function spieler:entfernen"
+          send "reload"
+          send "say >>> ENDE TESTS"
+          send "stop"
+          sleep 15
+          echo "================ ganzes Log ================"
+          cat log.txt
+          echo "================ Auffälligkeiten ================"
+          grep -nE "ERROR|WARN|Failed|failed|Unknown|Couldn't|Exception|spieler|Fehler|Expected|Invalid" log.txt | grep -v "WARNING: " || true
+          echo "================ Ende ================"
+          if ! grep -q 'Done (' log.txt; then echo "SERVER IST NICHT GESTARTET"; exit 1; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: server-log
+          path: srv/log.txt
