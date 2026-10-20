@@ -31,8 +31,6 @@ KEINE CHAT-MELDUNGEN
   im Menü kein "Triggered [menue] ..." mehr im Chat. Nebenwirkung: Auch andere Befehle
   wie /gamemode oder /tp bestätigen sich nicht mehr im Chat. Fehler werden weiter angezeigt.
   Wieder einschalten:  /gamerule send_command_feedback true
-  In der Konsole steht beim Laden EINE Fehlermeldung zu "spieler:regel/alt" oder "spieler:regel/neu".
-  Das ist normal: Das Paket probiert den alten und den neuen Namen der Spielregel.
 
 TASTE G (optional, eigenes kleines Paket: Menue-Taste-G.zip)
   Damit öffnet sich das Menü mit der Taste G ("Schnellaktionen").
