@@ -16,12 +16,10 @@ tellraw @s [{"text":"2) Papier erzeugt: ","color":"gray"},{"score":{"name":"#a",
 tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,distance=..0.5,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
 kill @e[type=item,distance=..0.5,limit=1,sort=nearest]
 # Schritt 3: Kopf mit /item modify
-summon item ~ ~ ~ {Item:{id:"minecraft:player_head",count:1},PickupDelay:32767s,Tags:["sp_test"]}
-scoreboard players set #a sp_tmp 0
-execute store success score #a sp_tmp run item modify entity @e[type=item,tag=sp_test,limit=1,sort=nearest] contents spieler:kopf
-tellraw @s [{"text":"3) Kopf gefüllt: ","color":"gray"},{"score":{"name":"#a","objective":"sp_tmp"},"color":"yellow"}]
-tellraw @s [{"text":"   Item: ","color":"gray"},{"entity":"@e[type=item,tag=sp_test,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
-kill @e[type=item,tag=sp_test]
+summon item ~ ~ ~ {Item:{id:"minecraft:player_head",count:1},PickupDelay:32767s,Tags:["sp_name"]}
+function #spieler:kopf_fuellen
+tellraw @s [{"text":"3) Kopf gefüllt: ","color":"gray"},{"entity":"@e[type=item,tag=sp_name,limit=1,sort=nearest]","nbt":"Item","color":"white"}]
+kill @e[type=item,tag=sp_name]
 # Ergebnis über den normalen Weg
 data remove storage spieler:tmp e.nn
 data remove storage spieler:tmp e.nc
