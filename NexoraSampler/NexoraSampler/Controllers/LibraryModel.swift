@@ -8,7 +8,7 @@ import NexoraCore
 @Observable
 final class LibraryModel {
     @ObservationIgnored let library: SampleLibrary
-    private(set) var collections: [LibraryCollection]
+    private(set) var collections: [SampleLibraryCollection]
     var selectedCollectionID: UUID?
     var selectedItemID: UUID?
     var searchText = ""
@@ -21,11 +21,11 @@ final class LibraryModel {
 
     var root: URL { library.root }
 
-    var selectedCollection: LibraryCollection? {
+    var selectedCollection: SampleLibraryCollection? {
         collections.first { $0.id == selectedCollectionID } ?? collections.first
     }
 
-    var visibleItems: [LibraryItem] {
+    var visibleItems: [SampleLibraryItem] {
         guard let c = selectedCollection else { return [] }
         let query = searchText.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return c.items }
@@ -57,9 +57,9 @@ final class LibraryModel {
 
     /// Importiert Audiodateien in die ausgewählte Bibliothek. Liefert die neuen Einträge.
     @discardableResult
-    func importFiles(_ urls: [URL], copy: Bool) -> (imported: [LibraryItem], failed: [String]) {
+    func importFiles(_ urls: [URL], copy: Bool) -> (imported: [SampleLibraryItem], failed: [String]) {
         guard let target = selectedCollection?.id else { return ([], urls.map(\.lastPathComponent)) }
-        var imported: [LibraryItem] = []
+        var imported: [SampleLibraryItem] = []
         var failed: [String] = []
         for url in urls {
             guard AudioFileLoader.isSupported(url), let info = Self.audioInfo(url) else {
@@ -88,7 +88,7 @@ final class LibraryModel {
         refresh()
     }
 
-    func url(for item: LibraryItem) -> URL? { library.url(for: item) }
+    func url(for item: SampleLibraryItem) -> URL? { library.url(for: item) }
     func url(forItemID id: UUID) -> URL? { library.url(forItemID: id) }
 
     /// Liest Dauer, Abtastrate und Kanalzahl aus dem Dateikopf (ohne vollständiges Dekodieren).

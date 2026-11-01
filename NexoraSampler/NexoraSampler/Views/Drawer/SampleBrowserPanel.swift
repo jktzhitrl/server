@@ -124,12 +124,12 @@ struct SampleBrowserPanel: View {
         }
     }
 
-    private var selectedItem: LibraryItem? {
+    private var selectedItem: SampleLibraryItem? {
         guard let id = controller.library.selectedItemID else { return nil }
         return controller.library.visibleItems.first { $0.id == id }
     }
 
-    private func row(_ item: LibraryItem) -> some View {
+    private func row(_ item: SampleLibraryItem) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "waveform").foregroundStyle(Nexora.Colors.turquoise)
             Text(item.name).lineLimit(1)
@@ -142,7 +142,7 @@ struct SampleBrowserPanel: View {
         .contentShape(Rectangle())
     }
 
-    private func preview(_ item: LibraryItem) {
+    private func preview(_ item: SampleLibraryItem) {
         guard let url = controller.library.url(for: item) else { return }
         controller.preview(url: url)
     }

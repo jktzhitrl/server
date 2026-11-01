@@ -213,7 +213,7 @@ extension SamplerController {
         drawer = .browser
     }
 
-    func loadLibraryItem(_ item: LibraryItem, into pad: Int) {
+    func loadLibraryItem(_ item: SampleLibraryItem, into pad: Int) {
         guard let url = library.url(for: item) else { return }
         loadSample(from: url, into: pad, libraryItemID: item.id)
     }

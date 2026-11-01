@@ -1,6 +1,6 @@
 import Foundation
 
-public struct LibraryItem: Codable, Identifiable, Equatable, Sendable {
+public struct SampleLibraryItem: Codable, Identifiable, Equatable, Sendable {
     public var id: UUID
     public var name: String
     /// Pfad relativ zum Bibliotheksordner (bei kopierten Dateien)
@@ -17,10 +17,10 @@ public struct LibraryItem: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-public struct LibraryCollection: Codable, Identifiable, Equatable, Sendable {
+public struct SampleLibraryCollection: Codable, Identifiable, Equatable, Sendable {
     public var id: UUID
     public var name: String
-    public var items: [LibraryItem]
+    public var items: [SampleLibraryItem]
 
     public init(name: String) {
         id = UUID()
@@ -37,11 +37,11 @@ public final class SampleLibrary {
     public static let indexFileName = "library.json"
 
     public let root: URL
-    public private(set) var collections: [LibraryCollection]
+    public private(set) var collections: [SampleLibraryCollection]
 
     private struct Index: Codable {
         var formatVersion = 1
-        var collections: [LibraryCollection]
+        var collections: [SampleLibraryCollection]
     }
 
     public init(root: URL) {
@@ -52,7 +52,7 @@ public final class SampleLibrary {
            let index = try? SamplePackager.decoder.decode(Index.self, from: data) {
             collections = index.collections
         } else {
-            collections = [LibraryCollection(name: "My Samples")]
+            collections = [SampleLibraryCollection(name: "My Samples")]
         }
     }
 
@@ -69,8 +69,8 @@ public final class SampleLibrary {
     // MARK: Sammlungen
 
     @discardableResult
-    public func createCollection(name: String) throws -> LibraryCollection {
-        let c = LibraryCollection(name: name.isEmpty ? "New Library" : name)
+    public func createCollection(name: String) throws -> SampleLibraryCollection {
+        let c = SampleLibraryCollection(name: name.isEmpty ? "New Library" : name)
         collections.append(c)
         try save()
         return c
@@ -85,7 +85,7 @@ public final class SampleLibrary {
     public func removeCollection(_ id: UUID, deleteFiles: Bool) throws {
         collections.removeAll { $0.id == id }
         if deleteFiles { try? FileManager.default.removeItem(at: folder(for: id)) }
-        if collections.isEmpty { collections.append(LibraryCollection(name: "My Samples")) }
+        if collections.isEmpty { collections.append(SampleLibraryCollection(name: "My Samples")) }
         try save()
     }
 
@@ -96,11 +96,11 @@ public final class SampleLibrary {
     ///   - copy: `true` kopiert die Datei in die Bibliothek (empfohlen), sonst wird sie referenziert.
     @discardableResult
     public func importFile(_ url: URL, into collectionID: UUID, copy: Bool,
-                           duration: Double, sampleRate: Double, channels: Int) throws -> LibraryItem {
+                           duration: Double, sampleRate: Double, channels: Int) throws -> SampleLibraryItem {
         guard let ci = collections.firstIndex(where: { $0.id == collectionID }) else {
             throw ProjectError.invalidPackage("Unbekannte Bibliothek")
         }
-        var item = LibraryItem(id: UUID(), name: url.deletingPathExtension().lastPathComponent,
+        var item = SampleLibraryItem(id: UUID(), name: url.deletingPathExtension().lastPathComponent,
                                relativePath: nil, absolutePath: nil, duration: duration,
                                sampleRate: sampleRate, channels: channels, addedAt: Date())
         if copy {
@@ -148,12 +148,12 @@ public final class SampleLibrary {
         }
     }
 
-    public func item(withID id: UUID) -> LibraryItem? {
+    public func item(withID id: UUID) -> SampleLibraryItem? {
         for c in collections { if let i = c.items.first(where: { $0.id == id }) { return i } }
         return nil
     }
 
-    public func url(for item: LibraryItem) -> URL? {
+    public func url(for item: SampleLibraryItem) -> URL? {
         if let rel = item.relativePath { return root.appendingPathComponent(rel) }
         if let abs = item.absolutePath { return URL(fileURLWithPath: abs) }
         return nil

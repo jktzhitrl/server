@@ -26,7 +26,11 @@ jobs:
         run: |
           xcodebuild -project NexoraSampler.xcodeproj -scheme NexoraSampler -configuration Release \
             -derivedDataPath build/DerivedData -destination 'generic/platform=macOS' \
-            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO build | tail -n 80
+            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO build > build.log 2>&1 || true
+          echo "---- Compilerfehler ----"
+          grep -E "error:" build.log | sort -u | head -n 200 || true
+          echo "---- Ende des Build-Logs ----"
+          tail -n 40 build.log
           test -d "build/DerivedData/Build/Products/Release/NEXORA Sampler.app"
       - name: App-Bundle prüfen
         run: |
