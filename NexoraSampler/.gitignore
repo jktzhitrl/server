@@ -1,0 +1,11 @@
+# Xcode / SwiftPM
+build/
+dist/
+DerivedData/
+.build/
+.swiftpm/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+Packages/NexoraCore/Package.resolved
+.DS_Store

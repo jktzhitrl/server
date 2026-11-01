@@ -1,0 +1,101 @@
+import Foundation
+import Observation
+import AVFoundation
+import NexoraCore
+
+/// Beobachtbare Hülle um `SampleLibrary` für den Sample-Browser.
+@MainActor
+@Observable
+final class LibraryModel {
+    @ObservationIgnored let library: SampleLibrary
+    private(set) var collections: [LibraryCollection]
+    var selectedCollectionID: UUID?
+    var selectedItemID: UUID?
+    var searchText = ""
+
+    init(root: URL) {
+        library = SampleLibrary(root: root)
+        collections = library.collections
+        selectedCollectionID = library.collections.first?.id
+    }
+
+    var root: URL { library.root }
+
+    var selectedCollection: LibraryCollection? {
+        collections.first { $0.id == selectedCollectionID } ?? collections.first
+    }
+
+    var visibleItems: [LibraryItem] {
+        guard let c = selectedCollection else { return [] }
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return c.items }
+        return c.items.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    private func refresh() {
+        collections = library.collections
+        if selectedCollectionID == nil || !collections.contains(where: { $0.id == selectedCollectionID }) {
+            selectedCollectionID = collections.first?.id
+        }
+    }
+
+    func createCollection(named name: String) throws {
+        let c = try library.createCollection(name: name)
+        refresh()
+        selectedCollectionID = c.id
+    }
+
+    func renameCollection(_ id: UUID, to name: String) throws {
+        try library.renameCollection(id, to: name)
+        refresh()
+    }
+
+    func removeCollection(_ id: UUID) throws {
+        try library.removeCollection(id, deleteFiles: true)
+        refresh()
+    }
+
+    /// Importiert Audiodateien in die ausgewählte Bibliothek. Liefert die neuen Einträge.
+    @discardableResult
+    func importFiles(_ urls: [URL], copy: Bool) -> (imported: [LibraryItem], failed: [String]) {
+        guard let target = selectedCollection?.id else { return ([], urls.map(\.lastPathComponent)) }
+        var imported: [LibraryItem] = []
+        var failed: [String] = []
+        for url in urls {
+            guard AudioFileLoader.isSupported(url), let info = Self.audioInfo(url) else {
+                failed.append(url.lastPathComponent)
+                continue
+            }
+            do {
+                imported.append(try library.importFile(url, into: target, copy: copy,
+                                                       duration: info.duration, sampleRate: info.sampleRate, channels: info.channels))
+            } catch {
+                failed.append(url.lastPathComponent)
+            }
+        }
+        refresh()
+        return (imported, failed)
+    }
+
+    func renameItem(_ id: UUID, to name: String) throws {
+        try library.renameItem(id, to: name)
+        refresh()
+    }
+
+    func removeItem(_ id: UUID) throws {
+        try library.removeItem(id, deleteFile: true)
+        if selectedItemID == id { selectedItemID = nil }
+        refresh()
+    }
+
+    func url(for item: LibraryItem) -> URL? { library.url(for: item) }
+    func url(forItemID id: UUID) -> URL? { library.url(forItemID: id) }
+
+    /// Liest Dauer, Abtastrate und Kanalzahl aus dem Dateikopf (ohne vollständiges Dekodieren).
+    static func audioInfo(_ url: URL) -> (duration: Double, sampleRate: Double, channels: Int)? {
+        guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        let format = file.fileFormat
+        guard format.sampleRate > 0 else { return nil }
+        return (Double(file.length) / format.sampleRate, format.sampleRate, Int(format.channelCount))
+    }
+}

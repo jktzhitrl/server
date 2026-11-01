@@ -1,0 +1,42 @@
+name: NEXORA Sampler (macOS build & tests)
+
+on:
+  push:
+    paths:
+      - "NexoraSampler/**"
+      - ".github/workflows/nexora-sampler.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: NexoraSampler
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode-Version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s /Applications/Xcode_16.app || true
+          xcodebuild -version
+      - name: Kern-Tests (Audio, Sequencer, Speicher, Export, MIDI)
+        run: swift test --package-path Packages/NexoraCore
+      - name: App bauen (Universal, Release)
+        run: |
+          xcodebuild -project NexoraSampler.xcodeproj -scheme NexoraSampler -configuration Release \
+            -derivedDataPath build/DerivedData -destination 'generic/platform=macOS' \
+            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO build | tail -n 80
+          test -d "build/DerivedData/Build/Products/Release/NEXORA Sampler.app"
+      - name: App-Bundle prüfen
+        run: |
+          APP="build/DerivedData/Build/Products/Release/NEXORA Sampler.app"
+          lipo -info "$APP/Contents/MacOS/NEXORA Sampler"
+          plutil -p "$APP/Contents/Info.plist" | head -40
+          codesign -dv "$APP" 2>&1 | head -5
+      - name: App als Artefakt hochladen
+        run: ditto -c -k --keepParent "build/DerivedData/Build/Products/Release/NEXORA Sampler.app" NEXORA-Sampler-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-Sampler-macOS
+          path: NexoraSampler/NEXORA-Sampler-macOS.zip
