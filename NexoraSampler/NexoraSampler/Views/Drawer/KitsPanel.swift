@@ -66,11 +66,18 @@ struct KitsPanel: View {
                             .frame(width: 330, alignment: .leading)
                     }
                 }
-                DrawerSection(title: "Werks-Kit") {
-                    HStack(spacing: 6) {
-                        Button("NEXORA Factory laden") { controller.loadFactoryKit(resetPatterns: false) }
-                        Button("Factory + Demo-Patterns") { controller.loadFactoryKit(resetPatterns: true) }
-                        Button("Alle Pads leeren", role: .destructive) { controller.clearAllPads() }
+                DrawerSection(title: "Werks-Kits") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.fixed(118), spacing: 6), count: 4), alignment: .leading, spacing: 6) {
+                            factoryKitButton("NEXORA Factory") { controller.loadFactoryKit(resetPatterns: false) }
+                            ForEach(FactoryLibrary.kits, id: \.name) { kit in
+                                factoryKitButton(kit.name) { controller.loadFactoryKit(kit) }
+                            }
+                        }
+                        HStack(spacing: 6) {
+                            Button("Factory + Demo-Patterns") { controller.loadFactoryKit(resetPatterns: true) }
+                            Button("Alle Pads leeren", role: .destructive) { controller.clearAllPads() }
+                        }
                     }
                 }
                 DrawerSection(title: "Presets-Ordner") {
@@ -87,5 +94,22 @@ struct KitsPanel: View {
             }
         }
         .font(.system(size: 11))
+    }
+
+    private func factoryKitButton(_ name: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: "square.grid.4x3.fill").foregroundStyle(Nexora.Colors.pink)
+                Text(name).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 7)
+            .frame(width: 118, height: 24)
+            .background(RoundedRectangle(cornerRadius: 4).fill(Nexora.Colors.panel))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(controller.project.kitName == name ? Nexora.Colors.turquoise : Color.clear, lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Werks-Kit „\(name)“ auf die 16 Pads laden (Patterns bleiben erhalten)")
     }
 }

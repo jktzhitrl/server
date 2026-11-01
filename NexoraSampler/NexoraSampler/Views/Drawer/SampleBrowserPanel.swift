@@ -17,17 +17,25 @@ struct SampleBrowserPanel: View {
             VStack(alignment: .leading, spacing: 8) {
                 PanelLabel(text: "Bibliotheken", color: Nexora.Colors.labelMuted, size: 8)
                 List(selection: $library.selectedCollectionID) {
-                    ForEach(library.collections) { collection in
-                        HStack {
-                            Image(systemName: "folder.fill").foregroundStyle(Nexora.Colors.turquoise)
-                            Text(collection.name)
-                            Spacer()
-                            Text("\(collection.items.count)").foregroundStyle(.secondary)
+                    Section("Werks-Bibliothek") {
+                        if library.factoryCollections.isEmpty {
+                            HStack(spacing: 6) {
+                                ProgressView().controlSize(.mini)
+                                Text(controller.factoryInstallProgress.map { "Wird eingerichtet … \(Int($0 * 100)) %" } ?? "Wird eingerichtet …")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        .tag(collection.id)
+                        ForEach(library.factoryCollections) { collection in
+                            collectionRow(collection, factory: true).tag(collection.id)
+                        }
+                    }
+                    Section("Eigene Bibliotheken") {
+                        ForEach(library.userCollections) { collection in
+                            collectionRow(collection, factory: false).tag(collection.id)
+                        }
                     }
                 }
-                .frame(width: 210, height: 170)
+                .frame(width: 210, height: 196)
                 HStack(spacing: 4) {
                     TextField("Neue Bibliothek", text: $newCollectionName)
                         .textFieldStyle(.roundedBorder)
@@ -43,14 +51,16 @@ struct SampleBrowserPanel: View {
                         renameDraft = library.selectedCollection?.name ?? ""
                         renamingCollection = true
                     }
+                    .disabled(library.selectedCollection?.isFactory ?? true)
                     Button("Löschen", role: .destructive) {
                         if let id = library.selectedCollection?.id { attempt { try library.removeCollection(id) } }
                     }
+                    .disabled(library.selectedCollection?.isFactory ?? true)
                 }
             }
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    TextField("Suchen", text: $library.searchText)
+                    TextField("Alle Bibliotheken durchsuchen", text: $library.searchText)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 200)
                     Button("Importieren …") { controller.importSamplesWithPanel() }
@@ -129,10 +139,27 @@ struct SampleBrowserPanel: View {
         return controller.library.visibleItems.first { $0.id == id }
     }
 
+    private func collectionRow(_ collection: SampleLibraryCollection, factory: Bool) -> some View {
+        HStack {
+            Image(systemName: factory ? "shippingbox.fill" : "folder.fill")
+                .foregroundStyle(factory ? Nexora.Colors.pink : Nexora.Colors.turquoise)
+            Text(factory ? String(collection.name.dropFirst(FactoryLibraryInstaller.collectionPrefix.count)) : collection.name)
+                .lineLimit(1)
+            Spacer()
+            Text("\(collection.items.count)").foregroundStyle(.secondary)
+        }
+    }
+
     private func row(_ item: SampleLibraryItem) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "waveform").foregroundStyle(Nexora.Colors.turquoise)
             Text(item.name).lineLimit(1)
+            if !controller.library.searchText.isEmpty {
+                Text(controller.library.collectionName(for: item)
+                        .replacingOccurrences(of: FactoryLibraryInstaller.collectionPrefix, with: ""))
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
             Text(item.fileExtension.uppercased()).foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
             Text(String(format: "%.1f kHz", item.sampleRate / 1000)).foregroundStyle(.secondary).frame(width: 60, alignment: .trailing)

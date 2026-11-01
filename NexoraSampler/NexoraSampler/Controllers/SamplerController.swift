@@ -81,6 +81,10 @@ final class SamplerController {
     var midiSourceNames: [String] = []
     var outputDevices: [AudioOutputDevice] = []
     var loadingPads: Set<Int> = []
+    /// Fortschritt der Installation der Werks-Bibliothek (nil = nicht aktiv)
+    var factoryInstallProgress: Double?
+    /// Automatischer Screenshot-Modus (keine Dialoge)
+    var screenshotMode = false
 
     // MARK: Dienste
     let host: AudioEngineHost
@@ -97,6 +101,9 @@ final class SamplerController {
     @ObservationIgnored var patternClipboard: SequencerPattern?
     @ObservationIgnored var tapTimes: [Date] = []
     @ObservationIgnored var previewTask: Task<Void, Never>?
+    @ObservationIgnored var pumpTimer: Timer?
+    @ObservationIgnored var pumpLeft: UnsafeMutablePointer<Float>?
+    @ObservationIgnored var pumpRight: UnsafeMutablePointer<Float>?
     let exportCancellation = CancellationFlag()
 
     static let supportDirectory: URL = {
@@ -118,7 +125,7 @@ final class SamplerController {
             MainActor.assumeIsolated { self?.pushFullState() }
         }
         host.onError = { [weak self] message in
-            MainActor.assumeIsolated { self?.notice = UserNotice(title: "Audio", message: message) }
+            MainActor.assumeIsolated { self?.report("Audio", message) }
         }
         host.preferredBufferSizeFromPreferences()
         restoreOutputDevice()
@@ -130,6 +137,7 @@ final class SamplerController {
         setupMIDI()
         startTimer()
         installKeyboardMonitor()
+        installFactoryLibraryIfNeeded()
     }
 
     // MARK: - Engine-Synchronisation
@@ -266,7 +274,12 @@ final class SamplerController {
            (0..<SequencerState.patternSlots).contains(meters.currentPattern) {
             project.sequencer.currentPattern = meters.currentPattern
         }
-        if let msg = lcdMessage, msg.expires < Date() { lcdMessage = nil }
+        if let progress = factoryInstallProgress {
+            lcdMessage = LCDMessage(title: "INSTALLING SOUND LIBRARY", value: "\(Int(progress * 100))%  ·  \(FactoryLibrary.sounds.count) SOUNDS",
+                                    expires: Date().addingTimeInterval(0.5))
+        } else if let msg = lcdMessage, msg.expires < Date() {
+            lcdMessage = nil
+        }
     }
 
     private func handleEngineEvent(_ event: EngineEvent) {
@@ -320,6 +333,10 @@ final class SamplerController {
     // MARK: - Hinweise
 
     func report(_ title: String, _ message: String) {
+        guard !screenshotMode else {
+            print("[NEXORA] \(title): \(message)")
+            return
+        }
         notice = UserNotice(title: title, message: message)
     }
 }

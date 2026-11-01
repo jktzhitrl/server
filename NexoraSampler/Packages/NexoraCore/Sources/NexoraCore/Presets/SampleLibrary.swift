@@ -21,11 +21,22 @@ public struct SampleLibraryCollection: Codable, Identifiable, Equatable, Sendabl
     public var id: UUID
     public var name: String
     public var items: [SampleLibraryItem]
+    /// Teil der eingebauten Werks-Bibliothek (wird bei neuer Version ersetzt)
+    public var isFactory: Bool
 
-    public init(name: String) {
+    public init(name: String, isFactory: Bool = false) {
         id = UUID()
         self.name = name
         items = []
+        self.isFactory = isFactory
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = c.value(.id, default: UUID())
+        name = c.value(.name, default: "Library")
+        items = c.value(.items, default: [])
+        isFactory = c.value(.isFactory, default: false)
     }
 }
 
@@ -85,7 +96,7 @@ public final class SampleLibrary {
     public func removeCollection(_ id: UUID, deleteFiles: Bool) throws {
         collections.removeAll { $0.id == id }
         if deleteFiles { try? FileManager.default.removeItem(at: folder(for: id)) }
-        if collections.isEmpty { collections.append(SampleLibraryCollection(name: "My Samples")) }
+        if !collections.contains(where: { !$0.isFactory }) { collections.insert(SampleLibraryCollection(name: "My Samples"), at: 0) }
         try save()
     }
 
@@ -123,6 +134,37 @@ public final class SampleLibrary {
         collections[ci].items.append(item)
         try save()
         return item
+    }
+
+    /// Legt eine Sammlung an, ohne sofort zu speichern (für Massenimporte).
+    func appendCollection(_ collection: SampleLibraryCollection) {
+        collections.append(collection)
+    }
+
+    /// Schreibt erzeugte Audiodaten direkt in eine Sammlung (ohne Quelldatei).
+    func addGeneratedItem(name: String, fileName: String, data: Data, into collectionID: UUID,
+                          duration: Double, sampleRate: Double, channels: Int) throws -> SampleLibraryItem {
+        guard let ci = collections.firstIndex(where: { $0.id == collectionID }) else {
+            throw ProjectError.invalidPackage("Unbekannte Bibliothek")
+        }
+        let dir = folder(for: collectionID)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try data.write(to: dir.appendingPathComponent(fileName), options: .atomic)
+        let item = SampleLibraryItem(id: UUID(), name: name, relativePath: "Collections/\(collectionID.uuidString)/\(fileName)",
+                                     absolutePath: nil, duration: duration, sampleRate: sampleRate, channels: channels, addedAt: Date())
+        collections[ci].items.append(item)
+        return item
+    }
+
+    /// Entfernt alle Werks-Sammlungen samt Dateien.
+    func removeFactoryCollections() {
+        for c in collections where c.isFactory { try? FileManager.default.removeItem(at: folder(for: c.id)) }
+        collections.removeAll { $0.isFactory }
+    }
+
+    /// Sucht einen Eintrag der Werks-Bibliothek über Kategorie und Namen.
+    public func factoryItem(category: String, name: String) -> SampleLibraryItem? {
+        collections.first { $0.isFactory && $0.name.hasSuffix(category) }?.items.first { $0.name == name }
     }
 
     public func renameItem(_ id: UUID, to name: String) throws {

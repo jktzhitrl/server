@@ -10,7 +10,10 @@ struct NexoraSamplerApp: App {
         Window("NEXORA Sampler", id: "main") {
             MainView()
                 .environment(controller)
-                .onAppear { appDelegate.controller = controller }
+                .onAppear {
+                    appDelegate.controller = controller
+                    ScreenshotDirector.startIfRequested(controller)
+                }
                 .frame(minWidth: 960, minHeight: 520)
         }
         .defaultSize(width: 1400, height: 780)

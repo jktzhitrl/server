@@ -7,6 +7,9 @@ on:
       - ".github/workflows/nexora-sampler.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-15
@@ -38,6 +41,35 @@ jobs:
           lipo -info "$APP/Contents/MacOS/NEXORA Sampler"
           plutil -p "$APP/Contents/Info.plist" | head -40
           codesign -dv "$APP" 2>&1 | head -5
+      - name: Screenshots erzeugen
+        run: |
+          mkdir -p shots
+          APP="build/DerivedData/Build/Products/Release/NEXORA Sampler.app"
+          "$APP/Contents/MacOS/NEXORA Sampler" --screenshots "$PWD/shots" > app.log 2>&1 &
+          PID=$!
+          sleep 25
+          screencapture -x shots/00-desktop.png || echo "screencapture nicht möglich"
+          for i in $(seq 1 240); do kill -0 $PID 2>/dev/null || break; sleep 1; done
+          kill $PID 2>/dev/null || true
+          cat app.log | tail -n 40
+          ls -la shots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-Sampler-Screenshots
+          path: NexoraSampler/shots/*.png
+          if-no-files-found: warn
+      - name: Screenshots ins Repository übernehmen
+        if: github.event_name == 'push'
+        run: |
+          ls shots/*.png >/dev/null 2>&1 || { echo "Keine Screenshots"; exit 0; }
+          mkdir -p docs/screenshots
+          cp shots/*.png docs/screenshots/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          if git diff --cached --quiet; then echo "Keine Änderungen"; exit 0; fi
+          git commit -m "NEXORA Sampler: Screenshots aktualisieren [skip ci]"
+          git push origin HEAD:${{ github.ref_name }} || echo "Push nicht möglich (Branch inzwischen weiter)"
       - name: App als Artefakt hochladen
         run: ditto -c -k --keepParent "build/DerivedData/Build/Products/Release/NEXORA Sampler.app" NEXORA-Sampler-macOS.zip
       - uses: actions/upload-artifact@v4

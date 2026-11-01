@@ -12,6 +12,8 @@ final class LibraryModel {
     var selectedCollectionID: UUID?
     var selectedItemID: UUID?
     var searchText = ""
+    /// Während die Werks-Bibliothek installiert wird, sind Änderungen gesperrt.
+    var isBusy = false
 
     init(root: URL) {
         library = SampleLibrary(root: root)
@@ -25,11 +27,26 @@ final class LibraryModel {
         collections.first { $0.id == selectedCollectionID } ?? collections.first
     }
 
+    /// Einträge der ausgewählten Sammlung – bei aktiver Suche aus allen Sammlungen.
     var visibleItems: [SampleLibraryItem] {
-        guard let c = selectedCollection else { return [] }
         let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return c.items }
-        return c.items.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        guard !query.isEmpty else { return selectedCollection?.items ?? [] }
+        return collections.flatMap(\.items).filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    var factoryCollections: [SampleLibraryCollection] { collections.filter(\.isFactory) }
+    var userCollections: [SampleLibraryCollection] { collections.filter { !$0.isFactory } }
+
+    func collectionName(for item: SampleLibraryItem) -> String {
+        collections.first { $0.items.contains { $0.id == item.id } }?.name ?? ""
+    }
+
+    func reload() {
+        refresh()
+    }
+
+    private func checkNotBusy() throws {
+        if isBusy { throw ProjectError.invalidPackage("Die Werks-Bibliothek wird gerade eingerichtet – bitte kurz warten.") }
     }
 
     private func refresh() {
@@ -40,17 +57,20 @@ final class LibraryModel {
     }
 
     func createCollection(named name: String) throws {
+        try checkNotBusy()
         let c = try library.createCollection(name: name)
         refresh()
         selectedCollectionID = c.id
     }
 
     func renameCollection(_ id: UUID, to name: String) throws {
+        try checkNotBusy()
         try library.renameCollection(id, to: name)
         refresh()
     }
 
     func removeCollection(_ id: UUID) throws {
+        try checkNotBusy()
         try library.removeCollection(id, deleteFiles: true)
         refresh()
     }
@@ -58,7 +78,10 @@ final class LibraryModel {
     /// Importiert Audiodateien in die ausgewählte Bibliothek. Liefert die neuen Einträge.
     @discardableResult
     func importFiles(_ urls: [URL], copy: Bool) -> (imported: [SampleLibraryItem], failed: [String]) {
-        guard let target = selectedCollection?.id else { return ([], urls.map(\.lastPathComponent)) }
+        guard !isBusy else { return ([], urls.map(\.lastPathComponent)) }
+        // Importe landen nie in einer Werks-Sammlung.
+        let targetCollection = (selectedCollection?.isFactory == false ? selectedCollection : userCollections.first)
+        guard let target = targetCollection?.id else { return ([], urls.map(\.lastPathComponent)) }
         var imported: [SampleLibraryItem] = []
         var failed: [String] = []
         for url in urls {
@@ -78,11 +101,13 @@ final class LibraryModel {
     }
 
     func renameItem(_ id: UUID, to name: String) throws {
+        try checkNotBusy()
         try library.renameItem(id, to: name)
         refresh()
     }
 
     func removeItem(_ id: UUID) throws {
+        try checkNotBusy()
         try library.removeItem(id, deleteFile: true)
         if selectedItemID == id { selectedItemID = nil }
         refresh()
