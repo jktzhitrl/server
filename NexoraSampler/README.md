@@ -246,11 +246,11 @@ Metronom, Pegel-LEDs, Status-LEDs (MIDI/REC/RUN), Kontextmenüs, Einstellungsfen
 
 ## Verifikationsstand
 
-* Der Kern (`NexoraCore`: DSP, Engine, Sequencer, Modelle, Presets, Export, MIDI-Parser) wurde mit Swift 6.0.3
-  kompiliert; alle **83 Tests bestehen**. Performance-Messung (Release): 64 Stimmen mit Pad-Filter, LFO und
-  vollständiger Master-Kette ≈ 8 % eines CPU-Kerns.
-* Die App-Schicht (SwiftUI, AVAudioEngine, Core Audio, Core MIDI) konnte in der Entwicklungsumgebung **nicht auf
-  macOS gebaut** werden: Controller, Audio-Host und MIDI-Code wurden gegen nachgebildete Framework-Schnittstellen
-  typgeprüft, alle Dateien syntaktisch geprüft. Der erste echte Xcode-Build steht noch aus – der GitHub-Actions-Workflow
-  `.github/workflows/nexora-sampler.yml` baut und testet das Projekt auf einem macOS-Runner und lädt die fertige
-  `.app` als Artefakt hoch.
+* **macOS-Build erfolgreich** (GitHub Actions, macOS 15, Xcode 16.4): Universal-Binary (arm64 + x86_64),
+  ad-hoc signiert, Dokumenttypen `.nexora`/`.nexorakit` im Info.plist. Die fertige App liegt als Artefakt
+  `NEXORA-Sampler-macOS` beim jeweiligen Lauf des Workflows `.github/workflows/nexora-sampler.yml`.
+* **Alle 83 Kern-Tests bestehen** unter macOS und Linux (Engine, DSP-Effekte, Sequencer-Timing auf ±1 Sample,
+  Speicherformate, Presets, Sample-Suche, WAV/AIFF-Export, MIDI-Parsing).
+* Performance (Release): 64 Stimmen mit Pad-Filter, LFO und vollständiger Master-Kette ≈ 8 % eines CPU-Kerns.
+* Noch nicht automatisiert geprüft: die Bedienung der Oberfläche und die Audio-/MIDI-Hardware im laufenden
+  Programm (CI-Runner haben weder Bildschirm noch Audiogerät) – das bitte beim ersten Start auf dem eigenen Mac testen.
