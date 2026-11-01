@@ -11,6 +11,32 @@ Audio-Engine, Effekten, MIDI, Presets und Audio-Export.
 
 ---
 
+## Screenshots
+
+Automatisch auf macOS erzeugt (`--screenshots`, siehe CI-Workflow) – Demo-Pattern läuft, Pads leuchten im Takt.
+
+![Instrument](docs/screenshots/01-instrument.png)
+
+| Sequencer | Pad-Editor |
+|---|---|
+| ![Sequencer](docs/screenshots/02-sequencer.png) | ![Pad-Editor](docs/screenshots/03-pad-editor.png) |
+| **Sample-Browser mit Werks-Bibliothek** | **Kits & Presets** |
+| ![Browser](docs/screenshots/04-browser.png) | ![Kits](docs/screenshots/06-kits.png) |
+| **Master-Effekte** | **Step-Modus** |
+| ![FX](docs/screenshots/05-effects.png) | ![Step](docs/screenshots/08-step-mode.png) |
+
+## Werks-Bibliothek
+
+Beim ersten Start richtet die App **151 eingebaute Klänge** in 13 Kategorien ein (Fortschritt im LCD):
+Kicks (18), Snares (12), Claps & Snaps (6), Hi-Hats (13), Cymbals (6), Toms (8), Percussion (24),
+808 & Bass (16), Synth & Keys (13), Chords & Stabs (11), Pads & Atmos (6), Vocal Chops (8), FX (13).
+Alle Klänge werden per Synthese erzeugt (keine mitgelieferten Fremd-Samples, keine Lizenzfragen) und als
+WAV in `~/Library/Application Support/NEXORA Sampler/Library` abgelegt. Im **Sample-Browser** vorhören,
+durchsuchen und auf Pads ziehen. Unter **KIT** stehen sieben fertige Werks-Kits bereit:
+NEXORA Factory, House, Techno, Trap, Lo-Fi, Electro und Percussion World.
+
+---
+
 ## Installation
 
 ### Voraussetzungen
@@ -55,7 +81,7 @@ cd NexoraSampler
 ```
 
 oder in Xcode **⌘U** (das geteilte Scheme enthält die Test-Suite `NexoraCoreTests`).
-83 Tests decken Audio-Engine, DSP-Effekte, Sequencer-Timing, Speicherformate, Presets,
+90 Tests decken Audio-Engine, DSP-Effekte, Sequencer-Timing, Speicherformate, Presets,
 Sample-Suche, WAV/AIFF-Export und MIDI-Parsing ab.
 
 ---
@@ -202,7 +228,7 @@ NexoraSampler/
 │   │   ├── MIDI/                  MIDI-1.0- und UMP-Parser
 │   │   ├── Audio/                 AudioFileLoader (AVAudioFile)
 │   │   └── Factory/               synthetisiertes Werks-Kit + Demo-Patterns
-│   └── Tests/NexoraCoreTests/     83 Tests
+│   └── Tests/NexoraCoreTests/     90 Tests
 ├── docs/                          ARCHITECTURE.md, PROJECT_FORMAT.md
 └── scripts/                       build-app.sh, test-core.sh
 ```
@@ -249,7 +275,7 @@ Metronom, Pegel-LEDs, Status-LEDs (MIDI/REC/RUN), Kontextmenüs, Einstellungsfen
 * **macOS-Build erfolgreich** (GitHub Actions, macOS 15, Xcode 16.4): Universal-Binary (arm64 + x86_64),
   ad-hoc signiert, Dokumenttypen `.nexora`/`.nexorakit` im Info.plist. Die fertige App liegt als Artefakt
   `NEXORA-Sampler-macOS` beim jeweiligen Lauf des Workflows `.github/workflows/nexora-sampler.yml`.
-* **Alle 83 Kern-Tests bestehen** unter macOS und Linux (Engine, DSP-Effekte, Sequencer-Timing auf ±1 Sample,
+* **Alle 90 Kern-Tests bestehen** unter macOS und Linux (Engine, DSP-Effekte, Sequencer-Timing auf ±1 Sample,
   Speicherformate, Presets, Sample-Suche, WAV/AIFF-Export, MIDI-Parsing).
 * Performance (Release): 64 Stimmen mit Pad-Filter, LFO und vollständiger Master-Kette ≈ 8 % eines CPU-Kerns.
 * Noch nicht automatisiert geprüft: die Bedienung der Oberfläche und die Audio-/MIDI-Hardware im laufenden
