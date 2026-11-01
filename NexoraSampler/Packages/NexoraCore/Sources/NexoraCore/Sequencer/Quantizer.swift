@@ -28,11 +28,11 @@ public enum Quantizer {
 
     /// Quantisiert ein vorhandenes Pattern nachträglich: Mikro-Timing wird entfernt und
     /// Noten werden auf das gewählte Raster verschoben (Kollisionen behalten die lautere Note).
-    public static func quantize(_ pattern: Pattern, mode: QuantizeMode) -> Pattern {
+    public static func quantize(_ pattern: SequencerPattern, mode: QuantizeMode) -> SequencerPattern {
         var result = pattern
         let grid = mode.gridSteps ?? 1
-        for track in 0..<Pattern.trackCount {
-            var newSteps = Array(repeating: SequencerStep(), count: Pattern.maxSteps)
+        for track in 0..<SequencerPattern.trackCount {
+            var newSteps = Array(repeating: SequencerStep(), count: SequencerPattern.maxSteps)
             for s in 0..<pattern.length {
                 var step = pattern[track, s]
                 guard step.active else { continue }
@@ -44,7 +44,7 @@ public enum Quantizer {
                     newSteps[target] = step
                 }
             }
-            for s in pattern.length..<Pattern.maxSteps { newSteps[s] = pattern[track, s] }
+            for s in pattern.length..<SequencerPattern.maxSteps { newSteps[s] = pattern[track, s] }
             result.steps[track] = newSteps
         }
         return result

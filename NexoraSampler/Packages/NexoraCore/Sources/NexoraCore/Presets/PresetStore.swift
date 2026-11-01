@@ -35,11 +35,11 @@ public struct PatternPreset: Codable, Equatable, Sendable {
     public var format = PatternPreset.formatIdentifier
     public var formatVersion = 1
     public var name: String
-    public var pattern: Pattern
+    public var pattern: SequencerPattern
     public var bpm: Double
     public var swing: Double
 
-    public init(name: String, pattern: Pattern, bpm: Double, swing: Double) {
+    public init(name: String, pattern: SequencerPattern, bpm: Double, swing: Double) {
         self.name = name
         self.pattern = pattern
         self.bpm = bpm
@@ -150,7 +150,7 @@ public final class PresetStore {
     // MARK: Patterns
 
     @discardableResult
-    public func savePattern(name: String, pattern: Pattern, bpm: Double, swing: Double) throws -> URL {
+    public func savePattern(name: String, pattern: SequencerPattern, bpm: Double, swing: Double) throws -> URL {
         let destination = url(for: name, kind: .pattern)
         var p = pattern
         p.name = name

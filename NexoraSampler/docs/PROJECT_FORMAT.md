@@ -110,7 +110,7 @@ Nicht gefundene Samples werden nach dem Öffnen aufgelistet; das Pad behält Nam
 `compThreshold` (dB), `compRatio`, `compAttack` (s), `compRelease` (s), `compMakeup` (dB),
 `modRate` (Hz), `modDepth` (0…1), `modShape`, `modTarget` (`filter`, `tremolo`, `vibrato`, `pan`).
 
-### SequencerState / Pattern
+### SequencerState / SequencerPattern
 
 ```json
 "sequencer": {
@@ -162,7 +162,7 @@ Gleicher Aufbau wie ein Projekt, jedoch mit `kit.json`:
 
 ## 4. Pattern-Preset – `Name.nexorapattern`
 
-`{ "format": "de.nexora.sampler.pattern", "formatVersion": 1, "name": "…", "pattern": Pattern, "bpm": 120, "swing": 50 }`
+`{ "format": "de.nexora.sampler.pattern", "formatVersion": 1, "name": "…", "pattern": SequencerPattern, "bpm": 120, "swing": 50 }`
 
 Presets liegen unter `~/Library/Application Support/NEXORA Sampler/Presets/{Kits,Effects,Patterns}`.
 

@@ -94,7 +94,7 @@ final class SamplerController {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var keyMonitor: Any?
     @ObservationIgnored private var heldKeys: [UInt16: Int] = [:]
-    @ObservationIgnored var patternClipboard: Pattern?
+    @ObservationIgnored var patternClipboard: SequencerPattern?
     @ObservationIgnored var tapTimes: [Date] = []
     @ObservationIgnored var previewTask: Task<Void, Never>?
     let exportCancellation = CancellationFlag()

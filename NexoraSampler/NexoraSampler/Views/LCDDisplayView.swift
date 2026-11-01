@@ -92,7 +92,7 @@ struct LCDDisplayView: View {
         let track = controller.selectedPad
         let playing = controller.meters.transport != .stopped
         return HStack(spacing: 2) {
-            ForEach(0..<Pattern.maxSteps, id: \.self) { step in
+            ForEach(0..<SequencerPattern.maxSteps, id: \.self) { step in
                 let active = pattern[track, step].active
                 let current = playing && controller.meters.currentStep == step
                 RoundedRectangle(cornerRadius: 1)

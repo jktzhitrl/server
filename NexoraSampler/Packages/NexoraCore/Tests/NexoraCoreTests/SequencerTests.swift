@@ -4,7 +4,7 @@ import XCTest
 final class SequencerTests: XCTestCase {
     private let sr = 44_100.0
 
-    private func sequencedEngine(pattern: Pattern, bpm: Double = 120, swing: Double = 50,
+    private func sequencedEngine(pattern: SequencerPattern, bpm: Double = 120, swing: Double = 50,
                                  pads: [Int] = [0], settings: PadSettings = neutralPadSettings()) -> SamplerEngine {
         let e = makeNeutralEngine()
         for pad in pads {
@@ -18,7 +18,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testStepTimingIsSampleAccurate() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         for s in [0, 4, 8, 12] { p[0, s] = SequencerStep(active: true, velocity: 1) }
         let e = sequencedEngine(pattern: p)
         e.send(.transport(.play))
@@ -32,7 +32,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testEverySixteenthWithFractionalStepLength() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         for s in 0..<16 { p[0, s] = SequencerStep(active: true, velocity: 1) }
         let e = sequencedEngine(pattern: p)
         e.send(.transport(.play))
@@ -45,7 +45,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testSwingDelaysOddSteps() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p[0, 0] = SequencerStep(active: true)
         p[0, 1] = SequencerStep(active: true)
         let e = sequencedEngine(pattern: p, swing: 66.6667)
@@ -56,7 +56,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testMicroTimingOffset() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p[0, 4] = SequencerStep(active: true, velocity: 1, offset: -0.25)
         let e = sequencedEngine(pattern: p)
         e.send(.transport(.play))
@@ -65,7 +65,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testTempoChangesStepLength() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p[0, 0] = SequencerStep(active: true)
         p[0, 4] = SequencerStep(active: true)
         let e = sequencedEngine(pattern: p, bpm: 60)
@@ -75,9 +75,9 @@ final class SequencerTests: XCTestCase {
     }
 
     func testPatternSwitchHappensAtBarEnd() {
-        var a = Pattern(name: "A")
+        var a = SequencerPattern(name: "A")
         a[0, 0] = SequencerStep(active: true)
-        var b = Pattern(name: "B")
+        var b = SequencerPattern(name: "B")
         b[1, 0] = SequencerStep(active: true)
         let e = sequencedEngine(pattern: a, pads: [0, 1])
         var s1 = neutralPadSettings()
@@ -104,7 +104,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testMuteAndSolo() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p[0, 0] = SequencerStep(active: true)
         p[1, 8] = SequencerStep(active: true)
         let muted = sequencedEngine(pattern: p, pads: [0, 1])
@@ -121,7 +121,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testPauseResumeAndStop() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p[0, 8] = SequencerStep(active: true)
         let e = sequencedEngine(pattern: p)
         e.send(.transport(.play))
@@ -144,7 +144,7 @@ final class SequencerTests: XCTestCase {
         var s = neutralPadSettings()
         s.playMode = .gate
         s.release = 0.005
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p[0, 0] = SequencerStep(active: true)
         p.gates[0] = 2
         let e = makeNeutralEngine()
@@ -158,7 +158,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testLiveRecordingReportsPosition() {
-        let e = sequencedEngine(pattern: Pattern(name: "Empty"))
+        let e = sequencedEngine(pattern: SequencerPattern(name: "Empty"))
         e.send(.setRecording(true))
         e.send(.transport(.play))
         _ = renderEngine(e, frames: Int(5512.5 * 6))
@@ -179,7 +179,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testMetronomeClicksOnBeats() {
-        let e = sequencedEngine(pattern: Pattern(name: "Empty"))
+        let e = sequencedEngine(pattern: SequencerPattern(name: "Empty"))
         e.send(.setMetronome(true))
         e.send(.transport(.play))
         let found = onsets(renderEngine(e, frames: 88_200).left)
@@ -199,7 +199,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testQuantizePatternRemovesOffsets() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p[2, 5] = SequencerStep(active: true, velocity: 0.7, offset: 0.3)
         p[2, 9] = SequencerStep(active: true, velocity: 0.7, offset: -0.4)
         let q16 = Quantizer.quantize(p, mode: .sixteenth)
@@ -213,7 +213,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testPatternNormalizationAndToggle() {
-        var p = Pattern(name: "T")
+        var p = SequencerPattern(name: "T")
         p.steps = [[SequencerStep(active: true)]]
         p.gates = []
         p.normalize()
@@ -227,7 +227,7 @@ final class SequencerTests: XCTestCase {
     }
 
     func testShorterPatternLengthLoops() {
-        var p = Pattern(name: "T", length: 4)
+        var p = SequencerPattern(name: "T", length: 4)
         p[0, 0] = SequencerStep(active: true)
         let e = sequencedEngine(pattern: p)
         e.send(.transport(.play))

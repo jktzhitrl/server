@@ -25,7 +25,7 @@ struct SequencerPanel: View {
                         }
                         Stepper("Länge: \(controller.currentPattern.length) Schritte",
                                 value: Binding(get: { controller.currentPattern.length }, set: { controller.setPatternLength($0) }),
-                                in: 1...Pattern.maxSteps)
+                                in: 1...SequencerPattern.maxSteps)
                         Toggle("Wechsel am Taktende", isOn: Binding(get: { controller.project.sequencer.switchAtBarEnd },
                                                                    set: { controller.setSwitchAtBarEnd($0) }))
                             .toggleStyle(.checkbox)
@@ -92,7 +92,7 @@ struct StepGridView: View {
                 Text("TRACK").frame(width: 92, alignment: .leading)
                 Text("M").frame(width: 16)
                 Text("S").frame(width: 16)
-                ForEach(0..<Pattern.maxSteps, id: \.self) { step in
+                ForEach(0..<SequencerPattern.maxSteps, id: \.self) { step in
                     Text("\(step + 1)")
                         .frame(width: cellWidth)
                         .foregroundStyle(playing && current == step ? Nexora.Colors.pink : Nexora.Colors.labelMuted)
@@ -101,13 +101,13 @@ struct StepGridView: View {
             }
             .font(Nexora.Fonts.value(8))
             .foregroundStyle(Nexora.Colors.labelMuted)
-            ForEach(0..<Pattern.trackCount, id: \.self) { track in
+            ForEach(0..<SequencerPattern.trackCount, id: \.self) { track in
                 trackRow(track, pattern: pattern, playing: playing, current: current)
             }
         }
     }
 
-    private func trackRow(_ track: Int, pattern: Pattern, playing: Bool, current: Int) -> some View {
+    private func trackRow(_ track: Int, pattern: SequencerPattern, playing: Bool, current: Int) -> some View {
         let seq = controller.project.sequencer
         let selected = controller.selectedPad == track
         return HStack(spacing: 2) {
@@ -126,7 +126,7 @@ struct StepGridView: View {
             .buttonStyle(.plain)
             smallToggle("M", on: seq.trackMutes[track], color: Color(hex: 0xFFD166)) { controller.toggleMute(track) }
             smallToggle("S", on: seq.trackSolos[track], color: Nexora.Colors.turquoise) { controller.toggleSolo(track) }
-            ForEach(0..<Pattern.maxSteps, id: \.self) { step in
+            ForEach(0..<SequencerPattern.maxSteps, id: \.self) { step in
                 StepCell(step: pattern[track, step], inRange: step < pattern.length,
                          isCurrent: playing && current == step, beat: step % 4 == 0,
                          width: cellWidth, height: cellHeight)

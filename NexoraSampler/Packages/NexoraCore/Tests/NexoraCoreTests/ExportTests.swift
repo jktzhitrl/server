@@ -47,7 +47,7 @@ final class ExportTests: XCTestCase {
     private func demoRequest(sampleRate: Double, loops: Int = 1) -> OfflineRenderer.Request {
         var doc = ProjectDocument(name: "Export")
         doc.bpm = 120
-        var p = Pattern(name: "A")
+        var p = SequencerPattern(name: "A")
         p[0, 0] = SequencerStep(active: true, velocity: 1)
         p[0, 8] = SequencerStep(active: true, velocity: 1)
         doc.sequencer.patterns[0] = p
@@ -95,7 +95,7 @@ final class ExportTests: XCTestCase {
 
     func testPatternChainExport() throws {
         var request = demoRequest(sampleRate: 44_100)
-        var b = Pattern(name: "B", length: 8)
+        var b = SequencerPattern(name: "B", length: 8)
         b[0, 4] = SequencerStep(active: true, velocity: 1)
         request.document.sequencer.patterns[1] = b
         request.patternOrder = [0, 1]

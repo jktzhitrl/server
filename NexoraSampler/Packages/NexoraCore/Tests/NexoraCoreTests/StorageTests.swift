@@ -173,7 +173,7 @@ final class StorageTests: XCTestCase {
         let fxURL = try store.saveEffects(name: "Dub", master: master)
         XCTAssertEqual(try store.loadEffects(at: fxURL).master.delayMix, 0.6)
 
-        var pattern = Pattern(name: "x")
+        var pattern = SequencerPattern(name: "x")
         pattern.toggle(track: 0, step: 3)
         let patURL = try store.savePattern(name: "Groove", pattern: pattern, bpm: 90, swing: 60)
         let loaded = try store.loadPattern(at: patURL)

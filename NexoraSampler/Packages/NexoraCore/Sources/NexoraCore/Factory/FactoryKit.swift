@@ -54,8 +54,8 @@ public enum FactoryKit {
 
     // MARK: Demo-Patterns
 
-    public static func demoPatterns() -> [Pattern] {
-        var a = Pattern(name: "Pattern A")
+    public static func demoPatterns() -> [SequencerPattern] {
+        var a = SequencerPattern(name: "Pattern A")
         for s in [0, 4, 8, 12] { a[0, s] = SequencerStep(active: true, velocity: 1) }
         a[0, 10] = SequencerStep(active: true, velocity: 0.6)
         for s in [4, 12] { a[1, s] = SequencerStep(active: true, velocity: 0.95) }
@@ -64,7 +64,7 @@ public enum FactoryKit {
         a[5, 14] = SequencerStep(active: true, velocity: 0.7)
         for s in [0, 3, 6, 10] { a[12, s] = SequencerStep(active: true, velocity: 0.9) }
 
-        var b = Pattern(name: "Pattern B")
+        var b = SequencerPattern(name: "Pattern B")
         for s in [0, 7, 10] { b[0, s] = SequencerStep(active: true, velocity: 1) }
         for s in [4, 12] { b[1, s] = SequencerStep(active: true, velocity: 1) }
         b[1, 15] = SequencerStep(active: true, velocity: 0.45)

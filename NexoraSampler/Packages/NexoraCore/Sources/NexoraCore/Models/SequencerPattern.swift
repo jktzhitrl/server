@@ -22,8 +22,8 @@ public struct SequencerStep: Codable, Equatable, Hashable, Sendable {
     }
 }
 
-/// Ein Pattern: 16 Spuren (eine je Pad) × bis zu 16 Schritte.
-public struct Pattern: Codable, Equatable, Identifiable, Sendable {
+/// Ein SequencerPattern: 16 Spuren (eine je Pad) × bis zu 16 Schritte.
+public struct SequencerPattern: Codable, Equatable, Identifiable, Sendable {
     public static let trackCount = 16
     public static let maxSteps = 16
 
@@ -102,7 +102,7 @@ public final class PatternSnapshot {
     public let steps: [SequencerStep]
     public let gates: [Double]
 
-    public init(_ pattern: Pattern) {
+    public init(_ pattern: SequencerPattern) {
         var p = pattern
         p.normalize()
         length = p.length
@@ -112,6 +112,6 @@ public final class PatternSnapshot {
 
     @inline(__always)
     public func step(track: Int, step: Int) -> SequencerStep {
-        steps[track * Pattern.maxSteps + step]
+        steps[track * SequencerPattern.maxSteps + step]
     }
 }

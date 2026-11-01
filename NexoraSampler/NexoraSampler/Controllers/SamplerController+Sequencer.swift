@@ -60,7 +60,7 @@ extension SamplerController {
 
     // MARK: - Patterns
 
-    var currentPattern: Pattern { project.currentPattern }
+    var currentPattern: SequencerPattern { project.currentPattern }
 
     func selectPattern(_ slot: Int) {
         guard (0..<SequencerState.patternSlots).contains(slot) else { return }
@@ -100,7 +100,7 @@ extension SamplerController {
 
     func setPatternLength(_ length: Int) {
         let slot = project.sequencer.currentPattern
-        project.sequencer.patterns[slot].length = min(max(length, 1), Pattern.maxSteps)
+        project.sequencer.patterns[slot].length = min(max(length, 1), SequencerPattern.maxSteps)
         pushPattern(slot)
         showLCD("PATTERN LENGTH", "\(project.sequencer.patterns[slot].length) STEPS")
         markDirty()

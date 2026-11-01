@@ -101,17 +101,17 @@ public enum QuantizeMode: String, Codable, CaseIterable, Sendable {
 public struct SequencerState: Codable, Equatable, Sendable {
     public static let patternSlots = 8
 
-    public var patterns: [Pattern]
+    public var patterns: [SequencerPattern]
     public var currentPattern: Int = 0
     public var quantize: QuantizeMode = .sixteenth
     public var metronome: Bool = false
     /// Pattern-Wechsel erst am Taktende (wie bei Hardware) statt sofort
     public var switchAtBarEnd: Bool = true
-    public var trackMutes: [Bool] = Array(repeating: false, count: Pattern.trackCount)
-    public var trackSolos: [Bool] = Array(repeating: false, count: Pattern.trackCount)
+    public var trackMutes: [Bool] = Array(repeating: false, count: SequencerPattern.trackCount)
+    public var trackSolos: [Bool] = Array(repeating: false, count: SequencerPattern.trackCount)
 
     public init() {
-        patterns = (0..<Self.patternSlots).map { Pattern(name: "Pattern \(Self.slotName($0))") }
+        patterns = (0..<Self.patternSlots).map { SequencerPattern(name: "Pattern \(Self.slotName($0))") }
     }
 
     public init(from decoder: Decoder) throws {
@@ -129,7 +129,7 @@ public struct SequencerState: Codable, Equatable, Sendable {
     public mutating func normalize() {
         if patterns.count > Self.patternSlots { patterns = Array(patterns.prefix(Self.patternSlots)) }
         while patterns.count < Self.patternSlots {
-            patterns.append(Pattern(name: "Pattern \(Self.slotName(patterns.count))"))
+            patterns.append(SequencerPattern(name: "Pattern \(Self.slotName(patterns.count))"))
         }
         for i in patterns.indices { patterns[i].normalize() }
         currentPattern = DSP.clamp(currentPattern, 0, Self.patternSlots - 1)
@@ -138,8 +138,8 @@ public struct SequencerState: Codable, Equatable, Sendable {
     }
 
     private static func normalizedFlags(_ flags: [Bool]) -> [Bool] {
-        var f = Array(flags.prefix(Pattern.trackCount))
-        while f.count < Pattern.trackCount { f.append(false) }
+        var f = Array(flags.prefix(SequencerPattern.trackCount))
+        while f.count < SequencerPattern.trackCount { f.append(false) }
         return f
     }
 
@@ -296,7 +296,7 @@ public struct ProjectDocument: Codable, Equatable, Sendable {
         if patternChain.isEmpty { patternChain = [sequencer.currentPattern] }
     }
 
-    public var currentPattern: Pattern {
+    public var currentPattern: SequencerPattern {
         get { sequencer.patterns[sequencer.currentPattern] }
         set { sequencer.patterns[sequencer.currentPattern] = newValue }
     }

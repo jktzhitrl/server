@@ -138,7 +138,7 @@ final class SequencerClock {
         }
         guard let pattern = patterns[currentSlot] else { return }
         let soloActive = soloMask != 0
-        for track in 0..<Pattern.trackCount {
+        for track in 0..<SequencerPattern.trackCount {
             let bit = UInt16(1) << UInt16(track)
             if muteMask & bit != 0 { continue }
             if soloActive && soloMask & bit == 0 { continue }
