@@ -9,7 +9,8 @@ let package = Package(
     name: "NexoraCore",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "NexoraCore", targets: ["NexoraCore"])
+        .library(name: "NexoraCore", targets: ["NexoraCore"]),
+        .executable(name: "FactoryExport", targets: ["FactoryExport"])
     ],
     targets: [
         .target(
@@ -20,6 +21,12 @@ let package = Package(
                 // Echtzeit-Wiedergabe beim Entwickeln in Xcode nicht aussetzt.
                 .unsafeFlags(["-O"], .when(configuration: .debug))
             ]
+        ),
+        // Exportiert die Werks-Klänge als WAV + Manifest (für die Windows-Version).
+        .executableTarget(
+            name: "FactoryExport",
+            dependencies: ["NexoraCore"],
+            path: "Sources/FactoryExport"
         ),
         .testTarget(
             name: "NexoraCoreTests",

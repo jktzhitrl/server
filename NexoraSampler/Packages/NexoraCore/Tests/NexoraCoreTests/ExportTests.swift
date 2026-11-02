@@ -19,6 +19,16 @@ final class ExportTests: XCTestCase {
         }
     }
 
+    func testMonoWav() throws {
+        let x: [Float] = [0, 0.5, -0.5, 0.25]
+        let data = try AudioFileWriter.encode(left: x, right: [], sampleRate: 44_100, format: .wav, bitDepth: .pcm24, mono: true)
+        let decoded = try AudioFileReader.decode(data)
+        XCTAssertEqual(decoded.channels.count, 1)
+        XCTAssertEqual(decoded.channels[0][1], 0.5, accuracy: 1e-6)
+        let aiff = try AudioFileWriter.encode(left: x, right: [], sampleRate: 48_000, format: .aiff, bitDepth: .pcm16, dither: false, mono: true)
+        XCTAssertEqual(try AudioFileReader.decode(aiff).channels.count, 1)
+    }
+
     func testWavHeaderLayout() throws {
         let data = try AudioFileWriter.encode(left: [0, 0.5], right: [0, -0.5], sampleRate: 44_100, format: .wav, bitDepth: .pcm16)
         let bytes = [UInt8](data)

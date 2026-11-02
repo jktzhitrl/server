@@ -17,31 +17,35 @@ public enum AudioFileWriter {
 
     /// Erzeugt die Dateidaten.
     /// - Note: AIFF unterstützt hier 16/24 Bit PCM; 32-Bit-Float wird als WAV geschrieben.
+    /// - Parameter mono: schreibt nur den linken Kanal als Mono-Datei
     public static func encode(left: [Float], right: [Float], sampleRate: Double,
-                              format: ExportFileFormat, bitDepth: ExportBitDepth, dither: Bool = true) throws -> Data {
-        let frames = min(left.count, right.count)
+                              format: ExportFileFormat, bitDepth: ExportBitDepth, dither: Bool = true,
+                              mono: Bool = false) throws -> Data {
+        let frames = mono ? left.count : min(left.count, right.count)
         guard frames > 0 else { throw WriterError.empty }
         if format == .aiff && bitDepth == .float32 {
             throw WriterError.unsupportedCombination("AIFF unterstützt in NEXORA nur 16 oder 24 Bit. Bitte WAV für 32-Bit-Float wählen.")
         }
         let bigEndian = format == .aiff
-        let pcm = encodeSamples(left: left, right: right, frames: frames, bitDepth: bitDepth,
+        let channels = mono ? 1 : 2
+        let pcm = encodeSamples(left: left, right: right, frames: frames, channels: channels, bitDepth: bitDepth,
                                 bigEndian: bigEndian, dither: dither)
         switch format {
-        case .wav: return wavFile(pcm: pcm, frames: frames, sampleRate: sampleRate, bitDepth: bitDepth)
-        case .aiff: return aiffFile(pcm: pcm, frames: frames, sampleRate: sampleRate, bitDepth: bitDepth)
+        case .wav: return wavFile(pcm: pcm, frames: frames, channels: channels, sampleRate: sampleRate, bitDepth: bitDepth)
+        case .aiff: return aiffFile(pcm: pcm, frames: frames, channels: channels, sampleRate: sampleRate, bitDepth: bitDepth)
         }
     }
 
     public static func write(left: [Float], right: [Float], sampleRate: Double, format: ExportFileFormat,
-                             bitDepth: ExportBitDepth, to url: URL, dither: Bool = true) throws {
-        let data = try encode(left: left, right: right, sampleRate: sampleRate, format: format, bitDepth: bitDepth, dither: dither)
+                             bitDepth: ExportBitDepth, to url: URL, dither: Bool = true, mono: Bool = false) throws {
+        let data = try encode(left: left, right: right, sampleRate: sampleRate, format: format, bitDepth: bitDepth,
+                              dither: dither, mono: mono)
         try data.write(to: url, options: .atomic)
     }
 
     // MARK: Samples
 
-    private static func encodeSamples(left: [Float], right: [Float], frames: Int, bitDepth: ExportBitDepth,
+    private static func encodeSamples(left: [Float], right: [Float], frames: Int, channels: Int, bitDepth: ExportBitDepth,
                                       bigEndian: Bool, dither: Bool) -> Data {
         var data = Data()
         var rng = FastRandom(seed: 0xDEC0DE)
@@ -50,7 +54,7 @@ public enum AudioFileWriter {
             data.reserveCapacity(frames * 4)
             let scale: Float = 32_767
             for i in 0..<frames {
-                for ch in 0..<2 {
+                for ch in 0..<channels {
                     var x = (ch == 0 ? left[i] : right[i]) * scale
                     if dither { x += (rng.nextBipolar() + rng.nextBipolar()) * 0.5 } // TPDF, ±1 LSB
                     let v = Int16(DSP.clamp(x.rounded(), -32_768, 32_767))
@@ -61,7 +65,7 @@ public enum AudioFileWriter {
             data.reserveCapacity(frames * 6)
             let scale: Float = 8_388_607
             for i in 0..<frames {
-                for ch in 0..<2 {
+                for ch in 0..<channels {
                     let x = DSP.clamp((ch == 0 ? left[i] : right[i]), -1, 1) * scale
                     let v = Int32(DSP.clamp(x.rounded(), -8_388_608, 8_388_607))
                     appendInt(&data, Int(v), bytes: 3, bigEndian: bigEndian)
@@ -70,7 +74,7 @@ public enum AudioFileWriter {
         case .float32:
             data.reserveCapacity(frames * 8)
             for i in 0..<frames {
-                for ch in 0..<2 {
+                for ch in 0..<channels {
                     let bits = (ch == 0 ? left[i] : right[i]).bitPattern
                     appendInt(&data, Int(bits), bytes: 4, bigEndian: bigEndian)
                 }
@@ -104,8 +108,7 @@ public enum AudioFileWriter {
 
     // MARK: WAV
 
-    private static func wavFile(pcm: Data, frames: Int, sampleRate: Double, bitDepth: ExportBitDepth) -> Data {
-        let channels = 2
+    private static func wavFile(pcm: Data, frames: Int, channels: Int, sampleRate: Double, bitDepth: ExportBitDepth) -> Data {
         let bps = bits(bitDepth)
         let blockAlign = channels * bps / 8
         let byteRate = Int(sampleRate) * blockAlign
@@ -149,8 +152,7 @@ public enum AudioFileWriter {
         return bytes
     }
 
-    private static func aiffFile(pcm: Data, frames: Int, sampleRate: Double, bitDepth: ExportBitDepth) -> Data {
-        let channels = 2
+    private static func aiffFile(pcm: Data, frames: Int, channels: Int, sampleRate: Double, bitDepth: ExportBitDepth) -> Data {
         let bps = bits(bitDepth)
         let padByte = pcm.count % 2
         let commSize = 18

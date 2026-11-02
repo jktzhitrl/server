@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# Werks-Klänge werden aus dem Swift-Kern erzeugt (npm run factory bzw. CI)
+resources/factory/

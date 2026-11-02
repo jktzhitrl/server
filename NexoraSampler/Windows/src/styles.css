@@ -1,0 +1,222 @@
+/* NEXORA Sampler – Windows-Oberfläche. Farben entsprechen dem Designsystem der Mac-Version. */
+:root {
+  --display: #0a090f; --turquoise: #3ee6d2; --pink: #ff4fa8; --led-red: #ff2e45; --blue-glow: #57c8ff;
+  --play-blue: #3d6bff; --violet: #b45cff; --button-top: #34303a; --button-bottom: #16141a; --button-text: #e8e4ee;
+  --pad-top: #2c2830; --pad: #1f1c22; --label-light: #ede6ff; --label-muted: #b9aec2; --knob-mark: #1d2028;
+  --font: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  --mono: "Cascadia Mono", "Consolas", ui-monospace, "SF Mono", Menlo, monospace;
+}
+body.theme-crimson {
+  --body-top: #9a3346; --body-bottom: #7a2234; --body-edge: #5a1424; --body-hi: #c4687a;
+  --body-label: #f4e6e9; --body-label-muted: #e3c3ca;
+  --panel: #2e2226; --panel-deep: #1c1416; --panel-line: #553840;
+  --lcd-bg: #c3cedf; --lcd-bg2: #a3b2c9; --lcd-ink: #1b2233; --lcd-band: #2b3654; --lcd-band-text: #d3ddee; --lcd-frame: #6b1a2b;
+  --knob-hi: #edeef1; --knob-mid: #a8aab1; --knob-lo: #65676e; --knob-skirt: #2a2528; --knob-ring: rgba(244, 230, 233, .55);
+  --jog-top: #b2384e; --jog-bottom: #6a1626;
+}
+body.theme-lilac {
+  --body-top: #d6c6f0; --body-bottom: #ae98dd; --body-edge: #8c74c4; --body-hi: #ffffff;
+  --body-label: #2d2050; --body-label-muted: #4a3a75;
+  --panel: #3b2d5e; --panel-deep: #261c40; --panel-line: #5b4888;
+  --lcd-bg: #a9def3; --lcd-bg2: #86c9e6; --lcd-ink: #0f2c3b; --lcd-band: #123647; --lcd-band-text: #bdebfa; --lcd-frame: #0a090f;
+  --knob-hi: #e4f6ff; --knob-mid: #a9ddf5; --knob-lo: #6fb2d6; --knob-skirt: #5b4888; --knob-ring: #3ee6d2;
+  --jog-top: #c9b6f2; --jog-bottom: #7e62c2;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: linear-gradient(#1e1a20, #0e0c10); color: var(--label-light); font-family: var(--font); user-select: none; }
+#stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+#canvas { position: relative; width: 1360px; transform-origin: center center; display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+button { font-family: var(--font); }
+input, select { font-family: var(--font); }
+
+/* ------------------------------------------------------------------ Gehäuse */
+.body { position: relative; width: 1320px; height: 742px; border-radius: 22px;
+  background: linear-gradient(var(--body-top), var(--body-bottom));
+  box-shadow: 0 16px 52px rgba(0,0,0,.6), inset 0 0 0 2.5px var(--body-edge), inset 0 2px 0 0 var(--body-hi); }
+.body::before { content: ""; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,0) 35%, rgba(0,0,0,0) 70%, rgba(0,0,0,.12)); }
+.body::after { content: ""; position: absolute; inset: 8px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--body-hi) 25%, transparent); pointer-events: none; }
+.body-inner { position: absolute; left: 28px; top: 26px; display: flex; gap: 30px; }
+.left-col { width: 290px; display: flex; flex-direction: column; gap: 14px; }
+.right-col { width: 944px; display: flex; flex-direction: column; }
+
+.label { color: var(--body-label); font-size: 10px; font-weight: 600; }
+.label.caps { text-transform: uppercase; letter-spacing: 1.2px; font-size: 8px; font-weight: 700; }
+.muted { color: var(--body-label-muted); }
+
+.brand { height: 74px; display: flex; justify-content: space-between; align-items: flex-start; }
+.brand .leds { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+.brand .logo { text-align: left; }
+.brand .logo .name { font-size: 38px; line-height: 1; color: var(--body-label); font-family: "Segoe UI Variable Display", var(--font); text-shadow: 0 1px 0 rgba(0,0,0,.18); }
+.brand .logo .name b { font-weight: 900; }
+.brand .logo .name span { font-weight: 300; }
+.brand .logo .sub { font-size: 10.5px; font-weight: 600; letter-spacing: 1.4px; color: var(--body-label-muted); margin-top: 2px; }
+
+.led { width: 6px; height: 6px; border-radius: 50%; background: #4a2440; box-shadow: none; transition: background .12s, box-shadow .12s; }
+.led.on { background: var(--led-color, var(--pink)); box-shadow: 0 0 5px var(--led-color, var(--pink)); }
+
+/* ------------------------------------------------------------------ Drehregler */
+.knob { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: calc(var(--size) + 16px); }
+.knob .dial { position: relative; width: calc(var(--size) + 16px); height: calc(var(--size) + 16px); cursor: ns-resize; touch-action: none; }
+.knob svg { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); overflow: visible; }
+.knob svg .track { fill: none; stroke: rgba(0,0,0,.22); stroke-width: 2.6; stroke-linecap: round; }
+.knob svg .value { fill: none; stroke: var(--knob-ring); stroke-width: 2.6; stroke-linecap: round; filter: drop-shadow(0 0 2px var(--knob-ring)); }
+.knob.learning svg .value { stroke: var(--pink); }
+.knob .skirt { position: absolute; left: 50%; top: 50%; width: calc(var(--size) + 3px); height: calc(var(--size) + 3px); transform: translate(-50%, -50%);
+  border-radius: 50%; background: linear-gradient(var(--knob-skirt), #000); box-shadow: 0 4px 9px rgba(0,0,0,.45); }
+.knob .cap { position: absolute; left: 50%; top: 50%; width: calc(var(--size) * .9); height: calc(var(--size) * .9); transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(circle at 40% 28%, var(--knob-hi), var(--knob-mid) 55%, var(--knob-lo)); box-shadow: inset 0 0 0 .8px rgba(255,255,255,.45); }
+.knob.jog .cap { background: radial-gradient(circle at 40% 28%, color-mix(in srgb, var(--jog-top) 85%, white), var(--jog-top) 50%, var(--jog-bottom)); }
+.knob .rot { position: absolute; inset: 0; transition: transform .06s linear; }
+.knob .mark { position: absolute; left: 50%; top: calc(50% - var(--size) * .40); width: max(2px, calc(var(--size) * .055)); height: calc(var(--size) * .3);
+  transform: translateX(-50%); border-radius: 2px; background: var(--knob-mark); }
+.knob.jog .mark { width: calc(var(--size) * .18); height: calc(var(--size) * .18); border-radius: 50%; top: calc(50% - var(--size) * .36); background: rgba(0,0,0,.18); }
+.knob .map-dot { position: absolute; right: 2px; top: 2px; width: 4px; height: 4px; border-radius: 50%; background: var(--turquoise); display: none; }
+.knob.mapped .map-dot { display: block; }
+.knob .title { color: var(--k-label, var(--body-label)); font-size: 10px; font-weight: 500; white-space: nowrap; }
+.knob.kbig .title { font-size: 11px; }
+.knob .val { color: var(--k-label, var(--body-label)); opacity: .55; font: 500 8px var(--mono); white-space: nowrap; }
+.knob:hover .val { opacity: .95; }
+
+/* ------------------------------------------------------------------ Tasten */
+.fbtn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 0; padding: 0 4px; cursor: pointer;
+  border-radius: 5px; background: linear-gradient(var(--button-top), var(--button-bottom)); color: color-mix(in srgb, var(--button-text) 88%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 2px 3px rgba(0,0,0,.45); font-size: 10.5px; font-weight: 500; white-space: nowrap; overflow: hidden;
+  transition: transform .08s, filter .08s, box-shadow .12s; }
+.fbtn:active { transform: scale(.95); filter: brightness(1.12); }
+.fbtn.lit { color: var(--lit, var(--led-red)); background: linear-gradient(color-mix(in srgb, var(--lit, var(--led-red)) 16%, var(--button-top)), color-mix(in srgb, var(--lit, var(--led-red)) 16%, var(--button-bottom)));
+  box-shadow: inset 0 0 0 1.5px var(--lit, var(--led-red)), 0 0 7px color-mix(in srgb, var(--lit, var(--led-red)) 55%, transparent); text-shadow: 0 0 4px var(--lit, var(--led-red)); }
+.fbtn.lit.fill { color: #fff; background: linear-gradient(var(--lit), color-mix(in srgb, var(--lit) 65%, black)); box-shadow: 0 0 9px color-mix(in srgb, var(--lit) 60%, transparent); }
+.fbtn svg { width: 1.3em; height: 1.3em; fill: currentColor; }
+
+/* ------------------------------------------------------------------ LCD */
+.lcd { position: relative; width: 290px; height: 156px; border-radius: 8px; padding: 9px; background: linear-gradient(var(--lcd-frame), color-mix(in srgb, var(--lcd-frame) 75%, black));
+  box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.35); }
+.lcd .screen { height: 100%; border-radius: 3px; background: linear-gradient(var(--lcd-bg), var(--lcd-bg2)); color: var(--lcd-ink); padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; font-family: var(--mono);
+  background-image: linear-gradient(var(--lcd-bg), var(--lcd-bg2)), repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px, transparent 1px 3px); }
+.lcd .top { display: grid; grid-template-columns: 1fr auto 1fr; font-size: 9.5px; font-weight: 600; align-items: center; }
+.lcd .top .bpm { font-size: 13px; }
+.lcd .top .ptn { text-align: right; }
+.lcd .band { height: 50px; background: var(--lcd-band); color: var(--lcd-band-text); padding: 3px 8px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.lcd .band .small { font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.lcd .band .big { font-size: 21px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcd canvas.wave { width: 100%; height: 18px; }
+.lcd .steps { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; height: 4px; }
+.lcd .steps i { background: var(--lcd-ink); opacity: .15; }
+.lcd .bottom { display: flex; gap: 6px; font-size: 9px; font-weight: 600; white-space: nowrap; }
+.lcd .bottom .grow { flex: 1; }
+
+/* ------------------------------------------------------------------ Pads */
+.pads { display: flex; flex-direction: column; gap: 14px; margin-top: 22px; }
+.pad-row { display: flex; gap: 12px; }
+.pad-row .gap { width: 18px; }
+.pad { position: relative; width: 105px; height: 105px; border-radius: 8px; background: linear-gradient(var(--pad-top), var(--pad)); cursor: pointer; touch-action: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), inset 0 -2px 0 rgba(0,0,0,.4), 0 3px 4px rgba(0,0,0,.55); transition: transform .07s; }
+.pad.pressed { transform: scale(.96); }
+.pad .glow { position: absolute; inset: 0; border-radius: 8px; pointer-events: none; background: radial-gradient(circle, var(--led) 0%, transparent 60%); opacity: 0; }
+.pad .ledp { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #3a2a30; pointer-events: none; }
+.pad .ledp::after { content: ""; position: absolute; left: 5px; top: 5px; width: 6px; height: 6px; border-radius: 50%; background: #fff; opacity: 0; }
+.pad .num, .pad .key, .pad .cap { position: absolute; color: color-mix(in srgb, var(--label-muted) 75%, transparent); pointer-events: none; }
+.pad .num { left: 7px; top: 6px; font: 500 8.5px var(--mono); }
+.pad .key { right: 7px; top: 6px; font: 500 8px var(--mono); text-transform: uppercase; }
+.pad .cap { left: 7px; bottom: 6px; right: 7px; font-size: 8.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pad.selected { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--violet) 70%, transparent), 0 3px 4px rgba(0,0,0,.55); }
+.pad.drop { box-shadow: inset 0 0 0 2px var(--turquoise), 0 3px 4px rgba(0,0,0,.55); }
+.pad .spinner { position: absolute; right: 6px; top: 5px; width: 9px; height: 9px; border: 2px solid var(--label-muted); border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ------------------------------------------------------------------ Touchpad */
+.xy-head { display: flex; gap: 6px; align-items: center; }
+.xy-head select { background: var(--display); color: var(--turquoise); border: 0; border-radius: 4px; height: 20px; font: 600 9px var(--mono); padding: 0 6px; }
+.xy { position: relative; width: 290px; height: 264px; border-radius: 12px; background: var(--display); overflow: hidden; cursor: crosshair; touch-action: none;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 3px 4px rgba(0,0,0,.45);
+  background-image: linear-gradient(rgba(62,230,210,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(62,230,210,.12) 1px, transparent 1px);
+  background-size: 36.25px 33px; }
+.xy .cross-x, .xy .cross-y { position: absolute; background: rgba(255,79,168,.18); pointer-events: none; }
+.xy .cross-x { top: 0; bottom: 0; width: 1px; } .xy .cross-y { left: 0; right: 0; height: 1px; }
+.xy .dot { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, #fff 0%, var(--pink) 35%, transparent 70%); box-shadow: 0 0 14px var(--pink); transition: width .12s, height .12s, margin .12s; }
+.xy.touching .dot { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+.xy .xl, .xy .yl { position: absolute; font: 500 9px var(--mono); color: color-mix(in srgb, var(--turquoise) 80%, transparent); pointer-events: none; }
+.xy .yl { left: 8px; top: 8px; } .xy .xl { right: 8px; bottom: 8px; }
+
+/* ------------------------------------------------------------------ Sektionen */
+.sections { display: flex; height: 290px; }
+.section { display: flex; flex-direction: column; align-items: center; }
+.section .stitle { height: 30px; font-size: 22px; font-weight: 500; color: var(--body-label); }
+.section .big { height: 96px; display: flex; gap: 16px; align-items: flex-start; }
+.section .row2 { height: 78px; display: flex; gap: 10px; align-items: flex-start; }
+.section .row3 { height: 86px; display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; justify-content: center; align-content: flex-start; }
+.nav { width: 150px; display: flex; flex-direction: column; gap: 10px; }
+.nav .pair { display: flex; gap: 10px; }
+.btn-row { height: 50px; display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.btn-row .spacer { flex: 1; min-width: 6px; }
+.meters { display: flex; gap: 3px; }
+.meter { display: flex; flex-direction: column-reverse; gap: 2px; }
+.meter i { width: 8px; height: 4px; border-radius: 1px; opacity: .16; }
+.meter i.on { opacity: 1; }
+
+/* ------------------------------------------------------------------ Drawer */
+.drawer { width: 1320px; height: 330px; border-radius: 20px; background: linear-gradient(var(--panel), var(--panel-deep)); box-shadow: inset 0 0 0 1px var(--panel-line), 0 8px 32px rgba(0,0,0,.5); display: flex; flex-direction: column; color: var(--label-light); font-size: 11px; }
+.drawer .tabs { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--panel-line); align-items: center; }
+.drawer .tab { border: 0; background: transparent; color: var(--label-muted); font: 700 9px var(--font); letter-spacing: 1px; height: 24px; padding: 0 12px; border-radius: 5px; cursor: pointer; }
+.drawer .tab.on { background: var(--turquoise); color: var(--display); }
+.drawer .close { margin-left: auto; }
+.drawer .content { flex: 1; padding: 14px; display: flex; gap: 18px; overflow: hidden; --k-label: var(--label-light); }
+.dsec { display: flex; flex-direction: column; gap: 6px; }
+.dsec > .h { display: flex; gap: 6px; align-items: center; color: var(--label-muted); font: 700 8.5px var(--font); letter-spacing: 1.2px; text-transform: uppercase; }
+.dsec > .h::after { content: ""; flex: 1; height: 1px; background: color-mix(in srgb, var(--label-muted) 35%, transparent); }
+.row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.seg { display: flex; gap: 2px; }
+.seg button { border: 0; height: 20px; padding: 0 7px; border-radius: 3px; background: var(--panel); color: var(--label-light); font: 500 9px var(--mono); cursor: pointer; }
+.seg button.on { background: var(--turquoise); color: var(--display); }
+.ui-btn { border: 0; height: 22px; padding: 0 10px; border-radius: 5px; background: color-mix(in srgb, white 14%, var(--panel)); color: var(--label-light); font-size: 11px; cursor: pointer; }
+.ui-btn:hover { filter: brightness(1.15); }
+.ui-btn.danger { color: #ff8a9a; }
+.ui-btn:disabled { opacity: .45; cursor: default; }
+.ui-input, .ui-select { height: 22px; border-radius: 5px; border: 1px solid var(--panel-line); background: var(--panel-deep); color: var(--label-light); padding: 0 6px; font-size: 11px; user-select: text; }
+.list { background: var(--panel-deep); border: 1px solid var(--panel-line); border-radius: 6px; overflow-y: auto; }
+.list .li { display: flex; gap: 10px; align-items: center; height: 22px; padding: 0 8px; cursor: default; white-space: nowrap; }
+.list .li:hover { background: rgba(255,255,255,.05); }
+.list .li.sel { background: color-mix(in srgb, var(--turquoise) 28%, transparent); }
+.list .sechead { padding: 6px 8px 2px; color: var(--label-muted); font-size: 10px; font-weight: 700; }
+.list .li .grow { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.list .li .dim { color: var(--label-muted); }
+.check { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+
+.wave-edit { position: relative; width: 430px; height: 120px; border-radius: 8px; background: var(--display); cursor: ew-resize; }
+.wave-edit canvas { width: 100%; height: 100%; }
+
+.grid { display: flex; flex-direction: column; gap: 2px; font: 500 8.5px var(--mono); }
+.grid .gr { display: flex; gap: 2px; align-items: center; height: 13px; }
+.grid .tn { width: 92px; overflow: hidden; white-space: nowrap; cursor: pointer; display: flex; gap: 4px; align-items: center; }
+.grid .tn.sel { color: var(--turquoise); }
+.grid .tog { width: 16px; height: 12px; border: 0; border-radius: 2px; background: var(--panel); color: var(--label-muted); font: 700 8px var(--font); padding: 0; cursor: pointer; }
+.grid .tog.m.on { background: #ffd166; color: var(--display); } .grid .tog.s.on { background: var(--turquoise); color: var(--display); }
+.grid .cell { width: 34px; height: 12px; border-radius: 2px; background: var(--panel); cursor: pointer; position: relative; }
+.grid .cell.beat { background: color-mix(in srgb, var(--panel-line) 90%, transparent); }
+.grid .cell.on { box-shadow: 0 0 3px color-mix(in srgb, var(--blue-glow) 60%, transparent); }
+.grid .cell.cur { outline: 1px solid var(--pink); }
+.grid .cell.out { opacity: .3; }
+.grid .cell .mt { position: absolute; top: 2px; bottom: 2px; width: 2px; background: rgba(255,255,255,.8); }
+.grid .hd { color: var(--label-muted); }
+.grid .gate { width: 44px; display: flex; gap: 2px; align-items: center; }
+.grid .gate button { width: 12px; height: 12px; padding: 0; border: 0; border-radius: 2px; background: var(--panel); color: var(--label-light); font-size: 9px; line-height: 12px; cursor: pointer; }
+
+/* ------------------------------------------------------------------ Dialoge, Menüs */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal { width: 470px; max-height: 90vh; overflow: auto; background: #2a2630; color: #eee; border-radius: 12px; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.6); font-size: 13px; user-select: text; }
+.modal h2 { margin: 0 0 6px; font-size: 18px; }
+.modal p { color: #bbb; margin: 0 0 14px; font-size: 12px; }
+.modal .frow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+.modal .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.modal .ui-btn.primary { background: var(--play-blue); color: white; }
+.modal .section-title { margin: 14px 0 4px; font-size: 11px; color: #9a9; text-transform: uppercase; letter-spacing: 1px; }
+.progress { height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; margin-top: 10px; }
+.progress i { display: block; height: 100%; background: var(--turquoise); }
+.ctx { position: fixed; z-index: 60; min-width: 220px; background: #2c2830; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; padding: 4px; box-shadow: 0 10px 30px rgba(0,0,0,.5); font-size: 12px; }
+.ctx div { padding: 5px 10px; border-radius: 4px; cursor: default; color: #eee; }
+.ctx div:hover { background: var(--play-blue); }
+.ctx hr { border: 0; border-top: 1px solid rgba(255,255,255,.1); margin: 4px 0; }
+.tooltip-hint { position: fixed; z-index: 70; pointer-events: none; }

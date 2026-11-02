@@ -1,4 +1,4 @@
-name: NEXORA Sampler (macOS build & tests)
+name: NEXORA Sampler (macOS + Windows build & tests)
 
 on:
   push:
@@ -25,6 +25,13 @@ jobs:
           xcodebuild -version
       - name: Kern-Tests (Audio, Sequencer, Speicher, Export, MIDI)
         run: swift test --package-path Packages/NexoraCore
+      - name: Werks-Klänge für die Windows-Version exportieren
+        run: swift run -c release --package-path Packages/NexoraCore FactoryExport Windows/resources/factory
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-Factory-Sounds
+          path: NexoraSampler/Windows/resources/factory
+          retention-days: 7
       - name: App bauen (Universal, Release)
         run: |
           xcodebuild -project NexoraSampler.xcodeproj -scheme NexoraSampler -configuration Release \
@@ -69,10 +76,70 @@ jobs:
           git add docs/screenshots
           if git diff --cached --quiet; then echo "Keine Änderungen"; exit 0; fi
           git commit -m "NEXORA Sampler: Screenshots aktualisieren [skip ci]"
-          git push origin HEAD:${{ github.ref_name }} || echo "Push nicht möglich (Branch inzwischen weiter)"
+          for i in 1 2 3; do
+            git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break
+            sleep 5
+          done
       - name: App als Artefakt hochladen
         run: ditto -c -k --keepParent "build/DerivedData/Build/Products/Release/NEXORA Sampler.app" NEXORA-Sampler-macOS.zip
       - uses: actions/upload-artifact@v4
         with:
           name: NEXORA-Sampler-macOS
           path: NexoraSampler/NEXORA-Sampler-macOS.zip
+
+  windows:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash
+        working-directory: NexoraSampler/Windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: NEXORA-Factory-Sounds
+          path: NexoraSampler/Windows/resources/factory
+      - name: Abhängigkeiten installieren
+        run: npm ci
+      - name: Engine-Tests (Audio, Sequencer, Export, Projektformat)
+        run: npm test
+      - name: Windows-App bauen (Installer + portable EXE)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --win nsis portable --x64 --publish never
+      - name: Screenshots unter Windows erzeugen
+        run: |
+          mkdir -p shots
+          SHOTS="$(cygpath -w "$PWD/shots")"
+          timeout 180 "dist/win-unpacked/NEXORA Sampler.exe" --screenshots "$SHOTS" || echo "App beendet (Code $?)"
+          ls -la shots dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-Sampler-Windows
+          path: |
+            NexoraSampler/Windows/dist/*.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXORA-Sampler-Windows-Screenshots
+          path: NexoraSampler/Windows/shots/*.png
+          if-no-files-found: warn
+      - name: Screenshots ins Repository übernehmen
+        if: github.event_name == 'push'
+        run: |
+          ls shots/*.png >/dev/null 2>&1 || { echo "Keine Screenshots"; exit 0; }
+          mkdir -p ../docs/screenshots/windows
+          cp shots/*.png ../docs/screenshots/windows/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ../docs/screenshots/windows
+          if git diff --cached --quiet; then echo "Keine Änderungen"; exit 0; fi
+          git commit -m "NEXORA Sampler: Windows-Screenshots aktualisieren [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break
+            sleep 5
+          done

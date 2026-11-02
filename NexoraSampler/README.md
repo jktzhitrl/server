@@ -12,6 +12,12 @@ Audio-Engine, Effekten, MIDI, Presets und Audio-Export.
 
 ---
 
+## Windows-Version
+
+Zusätzlich zur Mac-App gibt es eine **Windows-Version** mit gleicher Oberfläche, gleichen 151 Werks-Klängen und
+gleichem Projektformat (Projekte, Kits und Presets sind zwischen Mac und Windows austauschbar).
+Download, Installation und Unterschiede: [`Windows/README.md`](Windows/README.md).
+
 ## Screenshots
 
 Automatisch auf macOS erzeugt (`--screenshots`, siehe CI-Workflow) – Demo-Pattern läuft, Pads leuchten im Takt.
@@ -234,6 +240,7 @@ NexoraSampler/
 │   │   ├── Audio/                 AudioFileLoader (AVAudioFile)
 │   │   └── Factory/               synthetisiertes Werks-Kit + Demo-Patterns
 │   └── Tests/NexoraCoreTests/     93 Tests
+├── Windows/                       Windows-Version (Electron, Web Audio, Web MIDI) – siehe Windows/README.md
 ├── docs/                          ARCHITECTURE.md, PROJECT_FORMAT.md
 └── scripts/                       build-app.sh, test-core.sh
 ```
