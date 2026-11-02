@@ -44,13 +44,14 @@
         "portable"
       ],
       "icon": "build/icon.png",
-      "artifactName": "NEXORA-Sampler-${version}-${arch}-${target}.${ext}"
+      "artifactName": "NEXORA-Sampler-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "NEXORA Sampler"
+      "shortcutName": "NEXORA Sampler",
+      "artifactName": "NEXORA-Sampler-${version}-Setup.${ext}"
     },
     "portable": {
       "artifactName": "NEXORA-Sampler-${version}-portable.exe"

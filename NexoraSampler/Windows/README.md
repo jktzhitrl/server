@@ -10,7 +10,7 @@ zwischen Mac und Windows austauschen.
 
 1. Auf GitHub unter **Actions → „NEXORA Sampler (macOS + Windows build & tests)“** den neuesten grünen Lauf öffnen.
 2. Unten bei *Artifacts* **NEXORA-Sampler-Windows** herunterladen und entpacken. Darin liegen:
-   * `NEXORA-Sampler-1.0.0-x64-nsis.exe` – **Installer** (Startmenü- und Desktop-Verknüpfung)
+   * `NEXORA-Sampler-1.0.0-Setup.exe` – **Installer** (Startmenü- und Desktop-Verknüpfung)
    * `NEXORA-Sampler-1.0.0-portable.exe` – **portable Version**, läuft ohne Installation (z. B. vom USB-Stick)
 3. Starten. Da die App (noch) nicht mit einem kostenpflichtigen Zertifikat signiert ist, zeigt Windows
    beim ersten Start eventuell „Der Computer wurde durch Windows geschützt“ (SmartScreen):
