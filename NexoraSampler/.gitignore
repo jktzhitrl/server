@@ -9,3 +9,6 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 Packages/NexoraCore/Package.resolved
 .DS_Store
+
+# App-Icon der Windows-Version (Build-Ressource)
+!Windows/build/
