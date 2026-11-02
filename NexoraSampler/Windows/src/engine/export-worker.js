@@ -11,6 +11,12 @@ self.onmessage = (e) => {
       return true;
     });
     if (settings.normalize) normalizeResult(result);
+    if (settings.raw) {
+      // Resampling: rohe Kanäle zurückgeben (werden zum neuen Sample)
+      self.postMessage({ type: 'done', left: result.left, right: result.right, sampleRate: result.sampleRate,
+        duration: result.left.length / result.sampleRate }, [result.left.buffer, result.right.buffer]);
+      return;
+    }
     const data = encodeAudio(result.left, result.right, result.sampleRate, settings.format, settings.bitDepth);
     self.postMessage({ type: 'done', data, duration: result.left.length / result.sampleRate }, [data.buffer]);
   } catch (err) {

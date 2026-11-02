@@ -34,3 +34,35 @@ class NexoraEngineProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor('nexora-engine', NexoraEngineProcessor);
+
+/** Aufnahme (Sampling/Resampling): sammelt Eingangsblöcke und schickt sie gebündelt an die Oberfläche. */
+class NexoraRecorderProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.size = 2048;
+    this.l = new Float32Array(this.size); this.r = new Float32Array(this.size); this.fill = 0;
+    this.stereo = false;
+    this.running = true;
+    this.port.onmessage = (e) => { if (e.data === 'stop') { this._flush(); this.running = false; this.port.postMessage({ type: 'stopped' }); } };
+  }
+  _flush() {
+    if (!this.fill) return;
+    const l = this.l.slice(0, this.fill), r = this.stereo ? this.r.slice(0, this.fill) : null;
+    this.port.postMessage({ type: 'audio', l, r }, r ? [l.buffer, r.buffer] : [l.buffer]);
+    this.fill = 0;
+  }
+  process(inputs) {
+    if (!this.running) return false;
+    const input = inputs[0];
+    if (!input || !input.length) return true;
+    const L = input[0], R = input[1] ?? input[0];
+    if (input.length > 1) this.stereo = true;
+    for (let i = 0; i < L.length; i++) {
+      this.l[this.fill] = L[i]; this.r[this.fill] = R[i];
+      if (++this.fill === this.size) this._flush();
+    }
+    return true;
+  }
+}
+
+registerProcessor('nexora-recorder', NexoraRecorderProcessor);

@@ -1,5 +1,6 @@
 // Automatischer Screenshot-Modus (CI/Dokumentation): "NEXORA Sampler.exe --screenshots <Ordner>".
 import { bridge, join } from '../core/bridge.js';
+import { recordMotion } from '../engine/model.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -38,6 +39,34 @@ export async function runScreenshots(c, dir) {
   await sleep(800);
   await shot('win-10-theme-lilac');
   c.setPref('theme', 'crimson');
+  // Song, Motion, Sampling, Slice
+  await bridge.setSize(1500, 1280);
+  c.songClear(); [0, 0, 1, 0].forEach((s) => c.songAppend(s));
+  c.setSongMode(true);
+  const lane = (id, pad, fn) => { for (let s = 0; s < 16; s++) recordMotion(c.currentPattern, id, pad, s, fn(s)); };
+  lane('padCutoff', 0, (s) => 300 * Math.pow(50, s / 15));
+  lane('reverbMix', 0, (s) => (s % 8) / 10);
+  c.pushPattern(c.project.sequencer.currentPattern);
+  c.drawer = 'song';
+  await sleep(1800);
+  await shot('win-11-song-motion');
+  c.setSongMode(false);
+  c.drawer = 'sampling';
+  c.setSampling({ targetPad: 15 });
+  await sleep(600);
+  await shot('win-12-sampling');
+  c.drawer = 'sequencer';
+  c.setPatternLength(64);
+  c.setStepPage(2, true);
+  await sleep(600);
+  await shot('win-13-64-steps');
+  c.drawer = null;
+  await bridge.setSize(1500, 900);
+  c.selectPad(13);
+  c.dialog = 'slice';
+  await sleep(800);
+  await shot('win-14-slice');
+  c.dialog = null;
   c.stop();
   console.log('[NEXORA] Screenshots gespeichert:', dir);
   await bridge.quit();

@@ -64,6 +64,56 @@ export class AudioHost {
     }
   }
 
+  async inputDevices() {
+    try {
+      const all = await navigator.mediaDevices.enumerateDevices();
+      return all.filter((d) => d.kind === 'audioinput' && d.deviceId !== 'communications')
+        .map((d, i) => ({ id: d.deviceId === 'default' ? '' : d.deviceId, name: d.label || `Eingang ${i + 1}` }))
+        .filter((d, i, a) => a.findIndex((x) => x.id === d.id) === i);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Startet eine Aufnahme. `source`: 'input' (Mikrofon/Line-In) oder 'output' (eigener Ausgang = Resampling).
+   * `onChunk(left, right|null)` erhält Blöcke zu 2048 Frames. Liefert `{ stop() }`.
+   */
+  async startCapture({ source = 'input', deviceId = '', monitor = false } = {}, onChunk) {
+    if (!this.ctx) throw new Error('Audio ist nicht gestartet.');
+    if (this.ctx.state !== 'running') await this.ctx.resume().catch(() => {});
+    const rec = new AudioWorkletNode(this.ctx, 'nexora-recorder', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 2, channelCountMode: 'explicit' });
+    let stream = null, src = null, monitorNode = null;
+    if (source === 'input') {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: deviceId ? { exact: deviceId } : undefined, channelCount: { ideal: 2 },
+          echoCancellation: false, noiseSuppression: false, autoGainControl: false
+        }
+      });
+      src = this.ctx.createMediaStreamSource(stream);
+      src.connect(rec);
+      if (monitor) { monitorNode = this.ctx.createGain(); src.connect(monitorNode); monitorNode.connect(this.ctx.destination); }
+    } else {
+      this.node.connect(rec);
+    }
+    rec.port.onmessage = (e) => { if (e.data.type === 'audio') onChunk(e.data.l, e.data.r); };
+    const stopped = new Promise((resolve) => {
+      const prev = rec.port.onmessage;
+      rec.port.onmessage = (e) => { if (e.data.type === 'stopped') resolve(); else prev(e); };
+    });
+    return {
+      stop: async () => {
+        rec.port.postMessage('stop');
+        await Promise.race([stopped, new Promise((r) => setTimeout(r, 300))]);
+        try { if (src) src.disconnect(); else this.node?.disconnect(rec); } catch { /* bereits getrennt */ }
+        try { monitorNode?.disconnect(); } catch { /* bereits getrennt */ }
+        stream?.getTracks().forEach((t) => t.stop());
+        rec.port.onmessage = null;
+      }
+    };
+  }
+
   async setSink(id) {
     if (this.ctx?.setSinkId) await this.ctx.setSinkId(id || '');
   }

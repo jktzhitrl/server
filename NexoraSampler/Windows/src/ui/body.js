@@ -75,11 +75,15 @@ function lcd(c) {
     else { setText(small, String(pad + 1).padStart(3, '0')); setText(big, s ? cfg.name.charAt(0) + cfg.name.slice(1).toLowerCase() : '— empty —'); setStyle(big, 'font-size', '21px'); }
     const pattern = c.currentPattern;
     const playing = m.transport !== 'stopped';
-    stepEls.forEach((el, i) => {
+    const offset = c.stepPage * 16;
+    stepEls.forEach((el, j) => {
+      const i = offset + j;
       const on = pattern.steps[pad][i].active;
       setStyle(el, 'opacity', i >= pattern.length ? '0.06' : playing && m.currentStep === i ? '1' : on ? '0.6' : '0.15');
     });
-    setText(info, `Pad:${pad2(pad + 1)} ${({ oneShot: 'ONE', gate: 'GATE', loop: 'LOOP' })[cfg.settings.playMode]}`);
+    const song = c.project.sequencer.songMode && m.songIndex >= 0 ? ` SONG ${m.songIndex + 1}/${c.project.patternChain.length}` : '';
+    const pages = c.pageCount > 1 ? ` P${c.stepPage + 1}/${c.pageCount}` : '';
+    setText(info, `Pad:${pad2(pad + 1)} ${({ oneShot: 'ONE', gate: 'GATE', loop: 'LOOP' })[cfg.settings.playMode]}${pages}${song}`);
     setText(sampleInfo, s ? `${(s.sampleRate / 1000).toFixed(1)}k ${s.stereo ? 'ST' : 'MO'} ${(s.frameCount / s.sampleRate).toFixed(2)}s` : '');
     setText(voices, `V${m.activeVoices}`);
     const key = `${pad}|${cfg.settings.start}|${cfg.settings.end}|${c.padWaveforms[pad] ? c.padWaveforms[pad].length + ':' + c.padWaveforms[pad][10] : 'x'}|${document.body.className}`;
@@ -324,12 +328,13 @@ function padView(c, index) {
     let color = 'var(--led-red)', intensity = 0, caption;
     if (c.padMode === 'step') {
       const pattern = c.currentPattern;
-      const st = pattern.steps[c.selectedPad][index];
-      const inRange = index < pattern.length;
-      if (c.meters.transport !== 'stopped' && c.meters.currentStep === index) { color = 'var(--violet)'; intensity = 1; }
+      const step = c.stepPage * 16 + index;
+      const st = pattern.steps[c.selectedPad][step];
+      const inRange = step < pattern.length;
+      if (c.meters.transport !== 'stopped' && c.meters.currentStep === step) { color = 'var(--violet)'; intensity = 1; }
       else if (st.active && inRange) intensity = 0.45 + 0.55 * st.velocity;
       else intensity = inRange ? 0.05 : 0;
-      caption = `STEP ${index + 1}`;
+      caption = `STEP ${step + 1}`;
     } else if (c.padMode === 'keyboard') {
       const semi = keyboardSemitone(index);
       if (semi == null) { intensity = 0; caption = ''; }

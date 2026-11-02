@@ -10,7 +10,7 @@ export function knob({ size = 36, style = 'standard', title = '', showValue = tr
   svg.setAttribute('viewBox', '0 0 100 100');
   svg.innerHTML = `<path class="track" d="${ARC}" pathLength="100"/><path class="value" d="${ARC}" pathLength="100" stroke-dasharray="0 100"/>`;
   const rot = h('div', { class: 'rot' }, h('div', { class: 'mark' }));
-  const dial = h('div', { class: 'dial', title: tip ?? '' }, svg, h('div', { class: 'skirt' }), h('div', { class: 'cap' }), rot, h('i', { class: 'map-dot' }));
+  const dial = h('div', { class: 'dial', title: tip ?? '' }, svg, h('div', { class: 'skirt' }), h('div', { class: 'cap' }), rot, h('i', { class: 'map-dot' }), h('i', { class: 'motion-dot', title: 'Motion-Spur im aktuellen Pattern' }));
   const titleEl = title ? h('div', { class: 'title', text: title }) : null;
   const valEl = showValue ? h('div', { class: 'val' }) : null;
   const el = h('div', { class: `knob ${style === 'jog' ? 'jog' : ''} ${size > 50 ? 'kbig' : ''}`, style: { '--size': `${size}px` } }, dial, titleEl, valEl);
@@ -57,6 +57,7 @@ export function knob({ size = 36, style = 'standard', title = '', showValue = tr
     if (valEl) setText(valEl, v.text);
     setClass(el, 'learning', !!v.learning);
     setClass(el, 'mapped', !!v.mapped);
+    setClass(el, 'motion', !!v.motion);
   });
   return el;
 }
@@ -70,7 +71,8 @@ export function paramKnob(c, id, { title, size = 36, style, showValue = true, pa
     tip: `${spec.name} – ziehen oder Mausrad, Umschalt = fein, Doppelklick = Standardwert. Rechtsklick: MIDI-Learn und XY-Zuweisung.`,
     get: () => ({
       n: c.normalized(id, target()), text: c.display(id, target()),
-      learning: c.midiLearnActive && c.learnTarget === id, mapped: !!c.mappingFor(id)
+      learning: c.midiLearnActive && c.learnTarget === id, mapped: !!c.mappingFor(id),
+      motion: c.hasMotion(id, target())
     }),
     set: (n) => c.setParameter(id, n, pad),
     onBegin: () => { if (c.midiLearnActive) c.learnTarget = id; c.showParameter(id, target()); },
@@ -81,6 +83,7 @@ export function paramKnob(c, id, { title, size = 36, style, showValue = true, pa
       '-',
       { label: 'Auf Touchpad X-Achse legen', action: () => c.assignXY('x', id) },
       { label: 'Auf Touchpad Y-Achse legen', action: () => c.assignXY('y', id) },
+      ...(c.hasMotion(id, target()) ? ['-', { label: 'Motion-Spur löschen', action: () => c.removeMotionLane(c.currentPattern.motion.findIndex((l) => l.parameter === id && l.pad === (PARAMS[id].pad ? target() : -1))) }] : []),
       '-',
       { label: 'Zurücksetzen', action: () => c.setParameter(id, toNormalized(id, spec.def), pad) }
     ]

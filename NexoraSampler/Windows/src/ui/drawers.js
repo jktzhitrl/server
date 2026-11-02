@@ -3,7 +3,8 @@ import { h, setText, setClass, setStyle, onUpdate, segment, contextMenu, pad2 } 
 import { paramKnob } from './knob.js';
 import { drawWave } from './body.js';
 import { DRAWERS, cycle, LFO_TARGET_NAMES, LFO_SHAPE_NAMES, FILTER_NAMES, MOD_TARGET_NAMES, PLAY_MODE_NAMES, noteName } from '../core/controller.js';
-import { PARAMS, slotName, PATTERN_SLOTS, MAX_STEPS, TEMPO_DIVISION_NAMES, QUANTIZE_NAMES, defaultMaster } from '../engine/model.js';
+import { PARAMS, slotName, PATTERN_SLOTS, MAX_STEPS, TEMPO_DIVISION_NAMES, QUANTIZE_NAMES, defaultMaster, PAGE_COUNT, STEPS_PER_PAGE,
+  MOTION_MODES, motionLaneName, SONG_MAX_LENGTH } from '../engine/model.js';
 
 const dk = (c, id, title, extra = {}) => paramKnob(c, id, { title, size: 34, ...extra });
 const dsec = (title, ...children) => {
@@ -32,7 +33,8 @@ function keyedList(container, signature, build) {
 
 export function buildDrawer(c) {
   const panels = {
-    editor: padEditor(c), sequencer: sequencer(c), browser: browser(c), effects: effects(c), kits: kits(c), midi: midiPanel(c)
+    editor: padEditor(c), sequencer: sequencer(c), song: songMotion(c), sampling: samplingPanel(c),
+    browser: browser(c), effects: effects(c), kits: kits(c), midi: midiPanel(c)
   };
   const tabs = h('div', { class: 'tabs' },
     ...DRAWERS.map(([id, title]) => {
@@ -97,6 +99,7 @@ function padEditor(c) {
   const left = h('div', { style: { width: '440px', display: 'flex', flexDirection: 'column', gap: '10px' } },
     h('div', { class: 'row' }, title, name, btn('Laden …', () => c.chooseSampleForSelectedPad(), { tip: 'Audiodatei auf dieses Pad laden (Strg+L)' }),
       btn('Leeren', () => c.clearPad(c.selectedPad)),
+      btn('Slice …', () => { c.dialog = 'slice'; c.changed(); }, { tip: 'Sample in Stücke zerlegen und auf Pads verteilen' }),
       btn('▶', () => { c.padDown(c.selectedPad, 1); setTimeout(() => c.padUp(c.selectedPad), 300); }, { tip: 'Pad anspielen' })),
     wave,
     h('div', { class: 'row', style: { gap: '14px' } },
@@ -137,7 +140,7 @@ function sequencer(c) {
   const head = h('div', { class: 'gr hd' }, h('div', { class: 'tn', text: 'TRACK' }), h('div', { style: { width: '16px', textAlign: 'center' }, text: 'M' }),
     h('div', { style: { width: '16px', textAlign: 'center' }, text: 'S' }));
   const headSteps = [];
-  for (let s = 0; s < MAX_STEPS; s++) { const d = h('div', { style: { width: '34px', textAlign: 'center' }, text: String(s + 1) }); headSteps.push(d); head.append(d); }
+  for (let s = 0; s < STEPS_PER_PAGE; s++) { const d = h('div', { style: { width: '34px', textAlign: 'center' }, text: String(s + 1) }); headSteps.push(d); head.append(d); }
   head.append(h('div', { style: { width: '44px', textAlign: 'center' }, text: 'GATE' }));
   grid.append(head);
   for (let t = 0; t < 16; t++) {
@@ -146,11 +149,12 @@ function sequencer(c) {
     const s = h('button', { class: 'tog s', text: 'S', title: 'Spur solo', onclick: () => c.toggleSolo(t) });
     const row = h('div', { class: 'gr' }, name, m, s);
     const cells = [];
-    for (let st = 0; st < MAX_STEPS; st++) {
-      const cell = h('div', { class: `cell ${st % 4 === 0 ? 'beat' : ''}`, title: 'Klick: Schritt an/aus · Umschalt+Klick: Anschlagstärke' });
+    for (let j = 0; j < STEPS_PER_PAGE; j++) {
+      const cell = h('div', { class: `cell ${j % 4 === 0 ? 'beat' : ''}`, title: 'Klick: Schritt an/aus · Umschalt+Klick: Anschlagstärke' });
       const mt = h('i', { class: 'mt' });
       cell.append(mt);
-      cell.addEventListener('click', (e) => (e.shiftKey ? c.cycleStepVelocity(t, st) : c.toggleStep(t, st)));
+      const stepOf = () => c.stepPage * STEPS_PER_PAGE + j;
+      cell.addEventListener('click', (e) => (e.shiftKey ? c.cycleStepVelocity(t, stepOf()) : c.toggleStep(t, stepOf())));
       cells.push([cell, mt]);
       row.append(cell);
     }
@@ -165,7 +169,8 @@ function sequencer(c) {
       setText(name, `${pad2(t + 1)} ${c.project.pads[t].name}`);
       setClass(name, 'sel', c.selectedPad === t);
       setClass(m, 'on', seq.trackMutes[t]); setClass(s, 'on', seq.trackSolos[t]);
-      cells.forEach(([cell, mt], st) => {
+      cells.forEach(([cell, mt], j) => {
+        const st = c.stepPage * STEPS_PER_PAGE + j;
         const step = p.steps[t][st];
         setClass(cell, 'on', step.active);
         setClass(cell, 'cur', playing && c.meters.currentStep === st);
@@ -177,7 +182,21 @@ function sequencer(c) {
       setText(gateVal, String(+p.gates[t].toFixed(2)));
     });
   }
-  onUpdate(() => headSteps.forEach((d, i) => setStyle(d, 'color', c.meters.transport !== 'stopped' && c.meters.currentStep === i ? 'var(--pink)' : '')));
+  onUpdate(() => headSteps.forEach((d, j) => {
+    const i = c.stepPage * STEPS_PER_PAGE + j;
+    setText(d, String(i + 1));
+    setStyle(d, 'color', c.meters.transport !== 'stopped' && c.meters.currentStep === i ? 'var(--pink)' : '');
+  }));
+  const pages = h('div', { class: 'seg' }, ...Array.from({ length: PAGE_COUNT }, (_, i) => {
+    const b = h('button', { text: `${i * 16 + 1}–${i * 16 + 16}`, onclick: () => c.setStepPage(i), title: `Seite ${i + 1}: Schritte ${i * 16 + 1}–${i * 16 + 16}` });
+    onUpdate(() => {
+      setClass(b, 'on', c.stepPage === i);
+      setStyle(b, 'opacity', i < c.pageCount ? '' : '0.35');
+      const playingHere = c.meters.transport !== 'stopped' && Math.floor(c.meters.currentStep / 16) === i;
+      setStyle(b, 'box-shadow', playingHere ? 'inset 0 -2px 0 var(--pink)' : '');
+    });
+    return b;
+  }));
 
   const slots = h('div', { class: 'seg' }, ...Array.from({ length: PATTERN_SLOTS }, (_, i) => {
     const b = h('button', { text: slotName(i), onclick: () => c.selectPattern(i) });
@@ -185,7 +204,7 @@ function sequencer(c) {
     return b;
   }));
   const len = h('span');
-  onUpdate(() => setText(len, `Länge: ${c.currentPattern.length} Schritte`));
+  onUpdate(() => setText(len, `Länge: ${c.currentPattern.length}`));
   const quant = h('select', { class: 'ui-select' }, ...Object.entries(QUANTIZE_NAMES).map(([k, v]) => h('option', { value: k, text: `Rec-Quantisierung ${v}` })));
   quant.addEventListener('change', () => c.setQuantize(quant.value));
   onUpdate(() => { if (quant.value !== c.project.sequencer.quantize) quant.value = c.project.sequencer.quantize; });
@@ -204,11 +223,13 @@ function sequencer(c) {
     presetSelect.value = '';
   });
 
-  const side = h('div', { style: { width: '330px', display: 'flex', flexDirection: 'column', gap: '10px' } },
+  const side = h('div', { style: { width: '400px', display: 'flex', flexDirection: 'column', gap: '8px' } },
     dsec(() => `PATTERN ${slotName(c.project.sequencer.currentPattern)}`,
       slots,
-      h('div', { class: 'row' }, btn('–', () => c.setPatternLength(c.currentPattern.length - 1)), len, btn('+', () => c.setPatternLength(c.currentPattern.length + 1))),
-      check('Wechsel am Taktende', () => c.project.sequencer.switchAtBarEnd, (v) => { c.project.sequencer.switchAtBarEnd = v; c.markDirty(); }),
+      h('div', { class: 'row' }, btn('–', () => c.setPatternLength(c.currentPattern.length - 1)), len, btn('+', () => c.setPatternLength(c.currentPattern.length + 1)),
+        btn('×2', () => c.setPatternLength(Math.min(MAX_STEPS, c.currentPattern.length * 2)), { tip: 'Länge verdoppeln (bis 64 Schritte)' }), pages),
+      h('div', { class: 'row' }, check('Seite folgt Wiedergabe', () => c.followPage, (v) => c.setFollowPage(v)),
+        check('Wechsel am Taktende', () => c.project.sequencer.switchAtBarEnd, (v) => { c.project.sequencer.switchAtBarEnd = v; c.markDirty(); })),
       h('div', { class: 'row' }, btn('Kopieren', () => c.copyPattern()), btn('Einfügen', () => c.pastePattern()), btn('Leeren', () => c.clearCurrentPattern()))),
     dsec('Timing', h('div', { class: 'row', style: { gap: '4px', alignItems: 'flex-start' } }, dk(c, 'tempo'), dk(c, 'swing'),
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } }, quant,
@@ -216,6 +237,135 @@ function sequencer(c) {
     dsec('Pattern-Presets', h('div', { class: 'row' }, presetName,
       btn('Speichern', () => { c.savePatternPreset(presetName.value); presetName.value = ''; }), presetSelect)));
   return h('div', { style: { display: 'flex', gap: '16px' } }, grid, side);
+}
+
+// ------------------------------------------------------------ Song & Motion
+
+function songMotion(c) {
+  const seq = () => c.project.sequencer;
+  const chain = h('div', { class: 'chain' });
+  keyedList(chain, () => `${c.project.patternChain.join(',')}|${c.meters.songIndex}|${seq().songMode}|${c.meters.transport}`, () => {
+    const list = c.project.patternChain;
+    if (!list.length) return [h('span', { class: 'muted', text: 'Noch leer – unten Patterns anhängen.' })];
+    return list.map((slot, i) => {
+      const active = seq().songMode && c.meters.transport !== 'stopped' && c.meters.songIndex === i;
+      const el = h('div', { class: `chip ${active ? 'on' : ''}`, title: 'Klick: Pattern ändern · Rechtsklick: verschieben/entfernen' },
+        h('small', { text: String(i + 1) }), h('b', { text: slotName(slot) }));
+      el.addEventListener('click', () => c.songSetEntry(i, (slot + 1) % PATTERN_SLOTS));
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        contextMenu(e.clientX, e.clientY, [
+          { label: '◀ Nach vorn', action: () => c.songMove(i, -1) },
+          { label: 'Nach hinten ▶', action: () => c.songMove(i, 1) },
+          ...Array.from({ length: PATTERN_SLOTS }, (_, k) => ({ label: `Pattern ${slotName(k)}`, action: () => c.songSetEntry(i, k) })),
+          '-', { label: 'Entfernen', action: () => c.songRemoveAt(i) }
+        ]);
+      });
+      return el;
+    });
+  });
+  const adders = h('div', { class: 'seg' }, ...Array.from({ length: PATTERN_SLOTS }, (_, i) =>
+    h('button', { text: `+${slotName(i)}`, title: `Pattern ${slotName(i)} an die Kette anhängen`, onclick: () => c.songAppend(i) })));
+  const count = h('span', { class: 'muted' });
+  onUpdate(() => {
+    const n = c.project.patternChain.length;
+    const steps = c.project.patternChain.reduce((a, s) => a + c.project.sequencer.patterns[s].length, 0);
+    const secs = (steps * 60) / c.project.bpm / 4;
+    setText(count, `${n}/${SONG_MAX_LENGTH} Einträge · ${Math.floor(secs / 60)}:${String(Math.round(secs % 60)).padStart(2, '0')} min`);
+  });
+  const songSec = dsec('SONG',
+    h('div', { class: 'row' }, check('Song-Modus: Patterns laufen in dieser Reihenfolge', () => seq().songMode, (v) => c.setSongMode(v))),
+    chain,
+    h('div', { class: 'row' }, adders),
+    h('div', { class: 'row' }, btn('Letzten entfernen', () => c.songRemoveAt(c.project.patternChain.length - 1)), btn('Leeren', () => c.songClear(), { danger: true }), count),
+    h('p', { class: 'muted', text: 'Klick auf einen Eintrag wechselt das Pattern, Rechtsklick verschiebt oder entfernt. Die Kette wird auch beim Export „Pattern-Kette“ verwendet. Am Ende beginnt der Song von vorn.' }));
+
+  const lanes = h('div', { class: 'lanes' });
+  keyedList(lanes, () => `${c.project.sequencer.currentPattern}|${c.currentPattern.motion.map((l) => l.parameter + l.pad + l.values.filter((v) => v != null).length).join(',')}|${c.currentPattern.length}`, () => {
+    const p = c.currentPattern;
+    if (!p.motion.length) return [h('span', { class: 'muted', text: 'Keine Motion-Spuren in diesem Pattern.' })];
+    return p.motion.map((lane, i) => {
+      const spec = PARAMS[lane.parameter];
+      const bars = h('div', { class: 'mbars' });
+      for (let s = 0; s < p.length; s++) {
+        const v = lane.values[s];
+        const n = v == null ? 0 : (v - spec.min) / (spec.max - spec.min || 1);
+        bars.append(h('i', { style: { height: v == null ? '1px' : `${Math.max(2, Math.round(n * 18))}px`, opacity: v == null ? '0.25' : '1' } }));
+      }
+      return h('div', { class: 'lane' }, h('span', { class: 'ln', text: motionLaneName(lane) }), bars,
+        h('button', { class: 'ui-btn', text: '×', title: 'Spur löschen', onclick: () => c.removeMotionLane(i) }));
+    });
+  });
+  const motionSec = dsec(() => `MOTION · PATTERN ${slotName(c.project.sequencer.currentPattern)} (${c.currentPattern.motion.length}/24)`,
+    h('div', { class: 'row' }, h('span', { class: 'muted', text: 'Wiedergabe' }),
+      segment(Object.entries(MOTION_MODES), () => seq().motionMode, (v) => c.setMotionMode(v)),
+      btn('Alle löschen', () => c.clearMotion(), { danger: true })),
+    lanes,
+    h('p', { class: 'muted', text: 'Aufnehmen: ● (REC) und ▶ drücken, dann Regler, Touchpad oder MIDI-Controller bewegen. Die Bewegung wird pro Schritt gespeichert und bei jedem Durchlauf wiederholt. Regler mit Motion-Spur zeigen einen rosa Punkt.' }));
+  return h('div', { style: { display: 'flex', gap: '18px', alignItems: 'flex-start' } },
+    h('div', { style: { width: '520px' } }, songSec), h('div', { style: { flex: '1' } }, motionSec));
+}
+
+// ------------------------------------------------------------ Sampling
+
+function samplingPanel(c) {
+  const o = c.sampling;
+  const set = (patch) => c.setSampling(patch);
+  const devices = h('select', { class: 'ui-select', style: { maxWidth: '260px' } });
+  keyedList(devices, () => o.devices.map((d) => d.id).join('|'), () =>
+    [h('option', { value: '', text: 'Standard-Eingang' }), ...o.devices.filter((d) => d.id).map((d) => h('option', { value: d.id, text: d.name }))]);
+  devices.addEventListener('change', () => set({ deviceId: devices.value }));
+  onUpdate(() => { if (devices.value !== o.deviceId) devices.value = o.deviceId; devices.disabled = o.source !== 'input' || o.active; });
+  const thresholds = [['', 'Sofort'], ['-50', 'ab −50 dB'], ['-40', 'ab −40 dB'], ['-30', 'ab −30 dB'], ['-20', 'ab −20 dB']];
+  const thr = h('select', { class: 'ui-select' }, ...thresholds.map(([v, t]) => h('option', { value: v, text: t })));
+  thr.addEventListener('change', () => set({ thresholdDb: thr.value === '' ? null : Number(thr.value) }));
+  onUpdate(() => { const v = o.thresholdDb == null ? '' : String(o.thresholdDb); if (thr.value !== v) thr.value = v; });
+  const lengths = [[10, '10 s'], [30, '30 s'], [60, '1 min'], [300, '5 min'], [600, '10 min']];
+  const maxLen = h('select', { class: 'ui-select' }, ...lengths.map(([v, t]) => h('option', { value: String(v), text: `max. ${t}` })));
+  maxLen.addEventListener('change', () => set({ maxSeconds: Number(maxLen.value) }));
+  onUpdate(() => { if (maxLen.value !== String(o.maxSeconds)) maxLen.value = String(o.maxSeconds); });
+  const target = h('select', { class: 'ui-select' }, ...Array.from({ length: 16 }, (_, i) => h('option', { value: String(i), text: `Pad ${i + 1}` })));
+  target.addEventListener('change', () => set({ targetPad: Number(target.value) }));
+  onUpdate(() => {
+    const v = String(o.targetPad);
+    if (target.value !== v) target.value = v;
+    [...target.options].forEach((op, i) => { op.text = `Pad ${i + 1} · ${c.padSamples[i] ? c.project.pads[i].name : 'leer'}`; });
+  });
+  const recBtn = h('button', { class: 'ui-btn rec-btn' });
+  recBtn.addEventListener('click', () => (o.active ? c.stopSampling() : c.startSampling()));
+  onUpdate(() => {
+    setText(recBtn, o.active ? '■ Stopp' : '● Aufnahme starten');
+    setClass(recBtn, 'on', o.active);
+  });
+  const meter = h('div', { class: 'rmeter' }, h('i'));
+  const status = h('span', { class: 'muted' });
+  onUpdate(() => {
+    const db = o.level > 0 ? 20 * Math.log10(o.level) : -90;
+    setStyle(meter.firstChild, 'width', `${Math.max(0, Math.min(100, ((db + 60) / 60) * 100)).toFixed(0)}%`);
+    setStyle(meter.firstChild, 'background', db > -1 ? 'var(--led-red)' : 'var(--turquoise)');
+    setText(status, o.active ? (o.state === 'armed' ? 'Wartet auf Signal …' : `Aufnahme läuft · ${o.seconds.toFixed(1)} s`) : 'Bereit');
+  });
+  const recSec = dsec('AUFNAHME (SAMPLING)',
+    h('div', { class: 'row' }, h('span', { class: 'muted', text: 'Quelle' }),
+      segment([['input', 'Mikrofon / Line-In'], ['output', 'Resampling (eigener Ausgang)']], () => o.source, (v) => { if (!o.active) set({ source: v }); })),
+    h('div', { class: 'row' }, devices, btn('Geräte suchen', () => c.refreshInputDevices())),
+    h('div', { class: 'row' }, thr, maxLen, target),
+    h('div', { class: 'row' },
+      check('Mithören', () => o.monitor, (v) => set({ monitor: v }), 'Eingang über die Lautsprecher hören (Vorsicht vor Rückkopplung)'),
+      check('Wiedergabe mitstarten', () => o.startPlayback, (v) => set({ startPlayback: v }), 'Beim Resampling startet der Sequencer mit der Aufnahme und stoppt mit ihr')),
+    h('div', { class: 'row' }, recBtn, meter, status),
+    h('p', { class: 'muted', text: 'Mikrofon / Line-In: nimmt über das gewählte Audiogerät auf. Resampling: nimmt alles auf, was NEXORA gerade spielt – inklusive Touchpad-Bewegungen und Effekten. Die Aufnahme landet auf dem Ziel-Pad und wird beim Speichern ins Projekt kopiert.' }));
+  const resSec = dsec('PATTERN RESAMPLEN',
+    h('p', { class: 'muted', text: 'Rendert das aktuelle Pattern einmal (ohne Ausklang, nahtlos loopbar) mit allen Effekten auf das Ziel-Pad – z. B. um einen Beat als Loop weiterzuverarbeiten oder Pads freizumachen.' }),
+    h('div', { class: 'row' }, (() => {
+      const b = btn('', () => c.resamplePattern(o.targetPad));
+      onUpdate(() => { setText(b, c.resampling ? 'Rendert …' : `Pattern ${slotName(c.project.sequencer.currentPattern)} → Pad ${o.targetPad + 1}`); b.disabled = c.resampling; });
+      return b;
+    })()));
+  let asked = false;
+  onUpdate(() => { if (!asked && c.drawer === 'sampling') { asked = true; c.refreshInputDevices(); } });
+  return h('div', { style: { display: 'flex', gap: '18px', alignItems: 'flex-start' } },
+    h('div', { style: { width: '640px' } }, recSec), h('div', { style: { width: '380px' } }, resSec));
 }
 
 // ------------------------------------------------------------ Sample-Browser

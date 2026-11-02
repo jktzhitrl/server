@@ -45,6 +45,7 @@ function buildMenu() {
     { label: '&Transport', submenu: [
       m('Play / Stop (Leertaste)', 'togglePlay', 'CmdOrCtrl+Enter'), m('Pause', 'pause', 'CmdOrCtrl+.'),
       m('Aufnahme', 'record', 'CmdOrCtrl+R'), m('Metronom', 'metronome', 'CmdOrCtrl+K'), m('Tap Tempo', 'tap', 'CmdOrCtrl+T'),
+      m('Song-Modus an/aus', 'song', 'CmdOrCtrl+G'),
       { type: 'separator' },
       ...'ABCDEFGH'.split('').map((l, i) => m(`Pattern ${l}`, `pattern:${i}`, `CmdOrCtrl+${i + 1}`))
     ] },
@@ -52,10 +53,14 @@ function buildMenu() {
       m('Trigger-Modus', 'mode:play', 'CmdOrCtrl+Alt+P'), m('Sequencer-Modus', 'mode:step', 'CmdOrCtrl+Alt+T'),
       m('Keyboard-Modus', 'mode:keyboard', 'CmdOrCtrl+Alt+K'),
       m('Keyboard: Oktave höher', 'octave:+1', 'CmdOrCtrl+Alt+Up'), m('Keyboard: Oktave tiefer', 'octave:-1', 'CmdOrCtrl+Alt+Down'),
+      m('Nächste Seite (Schritte +16)', 'page:+1', 'CmdOrCtrl+Alt+Right'), m('Vorherige Seite (Schritte −16)', 'page:-1', 'CmdOrCtrl+Alt+Left'),
+      { type: 'separator' },
+      m('Slice …', 'slice', 'CmdOrCtrl+Shift+L'), m('Pattern auf Pad resamplen', 'resample', 'CmdOrCtrl+Shift+R'),
       { type: 'separator' },
       m('Pad-Editor', 'drawer:editor', 'CmdOrCtrl+Alt+1'), m('Sequencer', 'drawer:sequencer', 'CmdOrCtrl+Alt+2'),
       m('Sample-Browser', 'drawer:browser', 'CmdOrCtrl+Alt+3'), m('Master-Effekte', 'drawer:effects', 'CmdOrCtrl+Alt+4'),
       m('Kits & Presets', 'drawer:kits', 'CmdOrCtrl+Alt+5'), m('MIDI', 'drawer:midi', 'CmdOrCtrl+Alt+6'),
+      m('Song & Motion', 'drawer:song', 'CmdOrCtrl+Alt+7'), m('Sampling', 'drawer:sampling', 'CmdOrCtrl+Alt+8'),
       m('Bereich schließen', 'drawer:none', 'CmdOrCtrl+Alt+0'),
       { type: 'separator' }, m('MIDI-Learn', 'learn', 'CmdOrCtrl+Shift+M'), m('Alle Noten aus', 'panic', 'Shift+Escape')
     ] },

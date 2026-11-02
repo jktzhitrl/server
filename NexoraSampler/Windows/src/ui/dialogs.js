@@ -14,6 +14,7 @@ export function buildDialogs(c, root) {
     if (want === 'notice') root.append(noticeDialog(c));
     else if (want === 'export') root.append(exportDialog(c));
     else if (want === 'settings') root.append(settingsDialog(c));
+    else if (want === 'slice') root.append(sliceDialog(c));
   });
 }
 
@@ -29,6 +30,65 @@ const select = (options, value, onChange) => {
   s.addEventListener('change', () => onChange(s.value));
   return s;
 };
+
+function sliceDialog(c) {
+  const close = () => { c.dialog = null; c.changed(); };
+  const src = c.selectedPad;
+  const sample = c.padSamples[src];
+  if (!sample) {
+    return modal(close, h('h2', { text: 'Slice' }), h('p', { text: 'Das ausgewählte Pad ist leer. Laden Sie zuerst ein Sample oder einen Song auf das Pad.' }),
+      h('div', { class: 'actions' }, h('button', { class: 'ui-btn primary', text: 'OK', onclick: close })));
+  }
+  const o = { mode: 'transients', count: 8, sensitivity: 0.5, startPad: src, makePattern: true };
+  const wave = h('canvas', { width: 1120, height: 240 });
+  const box = h('div', { class: 'slice-wave' }, wave);
+  const info = h('p', { class: 'muted' });
+  const st = c.project.pads[src].settings;
+  const peaks = c.padWaveforms[src];
+  const draw = () => {
+    const g = wave.getContext('2d');
+    const W = wave.width, H = wave.height;
+    g.clearRect(0, 0, W, H);
+    const a = st.start, b = st.end;
+    g.fillStyle = '#9ad7ff';
+    if (peaks) {
+      const n = peaks.length;
+      for (let x = 0; x < W; x++) {
+        const pos = a + ((b - a) * x) / W;
+        const v = peaks[Math.min(n - 1, Math.floor(pos * n))] ?? 0;
+        const hh = Math.max(1, v * H * 0.9);
+        g.fillRect(x, (H - hh) / 2, 1, hh);
+      }
+    }
+    box.querySelectorAll('i').forEach((el) => el.remove());
+    const parts = c.previewSlices(o);
+    parts.forEach((p, i) => {
+      const x = ((p.start - a) / (b - a || 1)) * 100;
+      box.append(h('i', { style: { left: `${x.toFixed(2)}%` } }, h('span', { text: String(o.startPad + i + 1) })));
+    });
+    const last = Math.min(16, o.startPad + parts.length);
+    setText(info, `${parts.length} Slices → Pads ${o.startPad + 1}–${last}${o.makePattern ? ' · Pattern ' + slotName(c.project.sequencer.currentPattern) + ' wird belegt' : ''}. Bereich: Start/Ende des Pads (${Math.round(a * 100)}–${Math.round(b * 100)} %).`);
+  };
+  const modeSel = select([['transients', 'Nach Anschlägen (Transienten)'], ['equal', 'Gleichmäßig']], o.mode, (v) => { o.mode = v; refresh(); });
+  const countSel = select([[2, '2'], [4, '4'], [8, '8'], [16, '16']], o.count, (v) => { o.count = Number(v); draw(); });
+  const sens = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: o.sensitivity });
+  sens.addEventListener('input', () => { o.sensitivity = Number(sens.value); draw(); });
+  const startSel = select(Array.from({ length: 16 }, (_, i) => [i, `Pad ${i + 1}`]), o.startPad, (v) => { o.startPad = Number(v); draw(); });
+  const pat = h('input', { type: 'checkbox' }); pat.checked = o.makePattern;
+  pat.addEventListener('change', () => { o.makePattern = pat.checked; draw(); });
+  const countRow = frow('Anzahl', countSel), sensRow = frow('Empfindlichkeit', sens);
+  const refresh = () => { countRow.style.display = o.mode === 'equal' ? '' : 'none'; sensRow.style.display = o.mode === 'equal' ? 'none' : ''; draw(); };
+  const go = h('button', { class: 'ui-btn primary', text: 'Slicen', onclick: () => { if (c.sliceSelectedPad(o)) close(); } });
+  const node = modal(close,
+    h('h2', { text: `Slice – Pad ${src + 1}: ${c.project.pads[src].name}` }),
+    h('p', { text: 'Zerlegt das Sample (z. B. einen Drum-Loop oder einen Song-Ausschnitt) in Stücke und legt jedes Stück auf ein eigenes Pad. Alle Pads verwenden dieselbe Datei – es wird kein zusätzlicher Speicher belegt.' }),
+    box, info,
+    frow('Modus', modeSel), countRow, sensRow, frow('Ab Pad', startSel),
+    frow('Pattern erzeugen (Sample = ein Pattern-Durchlauf)', pat),
+    h('div', { class: 'actions' }, h('button', { class: 'ui-btn', text: 'Abbrechen', onclick: close }), go));
+  refresh();
+  return node;
+}
 
 function noticeDialog(c) {
   const close = () => { c.notice = null; c.changed(); };

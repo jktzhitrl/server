@@ -9,8 +9,11 @@ import { patternSnapshot, makeSample } from '../engine/engine.js';
 import {
   PARAMS, newProject, newPattern, normalizePattern, getValue, setValue, toNormalized, fromNormalized, formatValue,
   muteMask, slotName, placeHit, quantizePattern, QUANTIZE_NAMES, defaultPadSettings, defaultMaster, DEFAULT_KEYS,
-  PATTERN_SLOTS, MAX_STEPS
+  PATTERN_SLOTS, MAX_STEPS, STEPS_PER_PAGE, PAGE_COUNT, SONG_MAX_LENGTH, MOTION_MODES, canRecordMotion, recordMotion,
+  hasMotion, motionLaneName
 } from '../engine/model.js';
+import { slices as computeSlices, patternSteps as slicePatternSteps } from '../engine/slicer.js';
+import { SampleRecorder } from '../engine/recorder.js';
 
 const PREFS_KEY = 'nexora.prefs';
 const DEFAULT_PREFS = {
@@ -19,8 +22,8 @@ const DEFAULT_PREFS = {
 };
 
 export const DRAWERS = [
-  ['editor', 'PAD EDIT'], ['sequencer', 'SEQUENCER'], ['browser', 'SAMPLE BROWSER'],
-  ['effects', 'MASTER FX'], ['kits', 'KITS & PRESETS'], ['midi', 'MIDI']
+  ['editor', 'PAD EDIT'], ['sequencer', 'SEQUENCER'], ['song', 'SONG & MOTION'], ['sampling', 'SAMPLING'],
+  ['browser', 'SAMPLE BROWSER'], ['effects', 'MASTER FX'], ['kits', 'KITS & PRESETS'], ['midi', 'MIDI']
 ];
 
 export const LFO_TARGET_NAMES = { off: 'OFF', pitch: 'VIB', volume: 'TREM', cutoff: 'FILT', pan: 'PAN' };
@@ -77,8 +80,19 @@ export class Controller {
     this.searchText = '';
     this.meters = {
       padGlow: new Float32Array(16), currentStep: 0, transport: 'stopped', currentPattern: 0, queuedPattern: -1,
-      peakL: 0, peakR: 0, activeVoices: 0, gainReduction: 0, midiActivityUntil: 0
+      peakL: 0, peakR: 0, activeVoices: 0, gainReduction: 0, midiActivityUntil: 0, songIndex: -1
     };
+    /** Sichtbare Seite (0 … 3) im Raster und Step-Modus; `followPage` = folgt der Wiedergabe */
+    this.stepPage = 0;
+    this.followPage = true;
+    this._motionLast = null;
+    this._motionPushTimer = null;
+    this.sampling = {
+      source: 'input', deviceId: '', thresholdDb: null, maxSeconds: 60, monitor: false, startPlayback: true,
+      targetPad: 0, active: false, state: 'idle', level: 0, seconds: 0, devices: []
+    };
+    this._capture = null;
+    this.resampling = false;
     this._lastTriggers = new Array(16).fill(0);
     this._flash = new Float32Array(16);
   }
@@ -142,6 +156,8 @@ export class Controller {
     this.send({ cmd: 'selectPattern', slot: this.project.sequencer.currentPattern, immediately: true });
     this.send({ cmd: 'setMetronome', on: this.project.sequencer.metronome });
     this.send({ cmd: 'setRecording', on: this.isRecording });
+    this.send({ cmd: 'setMotionMode', mode: this.project.sequencer.motionMode });
+    this.sendSong();
   }
 
   pushPattern(slot) { this.send({ cmd: 'setPattern', slot, pattern: patternSnapshot(this.project.sequencer.patterns[slot]) }); }
@@ -161,6 +177,7 @@ export class Controller {
   setParameter(id, n, pad = null, showOnLCD = true) {
     const target = pad ?? this.selectedPad;
     this._apply(setValue(this.project, id, fromNormalized(id, n), target));
+    this._recordMotionValue(id, target);
     if (showOnLCD) this.showParameter(id, target);
     this.markDirty();
     this.changed();
@@ -169,6 +186,7 @@ export class Controller {
   setParameterValue(id, value, pad = null) {
     const target = pad ?? this.selectedPad;
     this._apply(setValue(this.project, id, value, target));
+    this._recordMotionValue(id, target);
     this.showParameter(id, target);
     this.markDirty();
     this.changed();
@@ -231,6 +249,11 @@ export class Controller {
     m.currentStep = s.currentStep; m.transport = s.transport; m.currentPattern = s.currentPattern;
     m.queuedPattern = s.queuedPattern; m.peakL = s.peakL; m.peakR = s.peakR; m.activeVoices = s.activeVoices;
     m.gainReduction = s.gainReduction;
+    m.songIndex = s.songIndex ?? -1;
+    if (this.followPage && m.transport === 'playing') {
+      const page = Math.floor(m.currentStep / STEPS_PER_PAGE);
+      if (page !== this.stepPage) this.stepPage = page;
+    }
     if (m.transport === 'playing' && m.currentPattern !== this.project.sequencer.currentPattern) {
       this.project.sequencer.currentPattern = m.currentPattern;
       this.patternBank = Math.floor(m.currentPattern / 4);
@@ -257,7 +280,7 @@ export class Controller {
       this.send({ cmd: 'noteOn', pad, velocity });
       if (this.prefs.selectOnHit && this.selectedPad !== pad) { this.selectedPad = pad; this.changed(); }
     } else if (this.padMode === 'step') {
-      this.toggleStep(this.selectedPad, pad);
+      this.toggleStep(this.selectedPad, this.stepPage * STEPS_PER_PAGE + pad);
     } else {
       const semi = keyboardSemitone(pad);
       if (semi == null) return;
@@ -494,6 +517,7 @@ export class Controller {
 
   toggleRecord() {
     this.isRecording = !this.isRecording;
+    this._motionLast = null;
     this.send({ cmd: 'setRecording', on: this.isRecording });
     this.showLCD('RECORD', this.isRecording ? `ARMED · Q ${QUANTIZE_NAMES[this.project.sequencer.quantize]}` : 'OFF');
     if (this.isRecording && this.meters.transport !== 'playing') this.play();
@@ -555,6 +579,7 @@ export class Controller {
   setPatternLength(n) {
     const slot = this.project.sequencer.currentPattern;
     this.project.sequencer.patterns[slot].length = Math.min(Math.max(n, 1), MAX_STEPS);
+    this.stepPage = Math.min(this.stepPage, Math.ceil(this.project.sequencer.patterns[slot].length / STEPS_PER_PAGE) - 1);
     this.pushPattern(slot);
     this.showLCD('PATTERN LENGTH', `${this.project.sequencer.patterns[slot].length} STEPS`);
     this.markDirty();
@@ -608,6 +633,255 @@ export class Controller {
   setQuantize(mode) { this.project.sequencer.quantize = mode; this.showLCD('REC QUANTIZE', QUANTIZE_NAMES[mode]); this.markDirty(); }
   toggleMute(t) { this.project.sequencer.trackMutes[t] = !this.project.sequencer.trackMutes[t]; this.sendTrackStates(); this.markDirty(); this.changed(); }
   toggleSolo(t) { this.project.sequencer.trackSolos[t] = !this.project.sequencer.trackSolos[t]; this.sendTrackStates(); this.markDirty(); this.changed(); }
+
+  // ------------------------------------------------------------ Seiten (bis 64 Schritte)
+
+  get pageCount() { return Math.ceil(this.currentPattern.length / STEPS_PER_PAGE); }
+
+  setStepPage(page, follow = false) {
+    this.stepPage = Math.min(Math.max(page, 0), PAGE_COUNT - 1);
+    this.followPage = follow;
+    this.showLCD('PAGE', `${this.stepPage + 1}/${PAGE_COUNT} · STEPS ${this.stepPage * STEPS_PER_PAGE + 1}–${(this.stepPage + 1) * STEPS_PER_PAGE}`, 1);
+    this.changed();
+  }
+
+  setFollowPage(on) { this.followPage = on; this.changed(); }
+
+  // ------------------------------------------------------------ Song-Modus
+
+  sendSong() {
+    const seq = this.project.sequencer;
+    this.send({ cmd: 'setSong', chain: seq.songMode && this.project.patternChain.length ? [...this.project.patternChain] : null });
+  }
+
+  setSongMode(on) {
+    this.project.sequencer.songMode = !!on;
+    if (on && !this.project.patternChain.length) this.project.patternChain = [this.project.sequencer.currentPattern];
+    this.sendSong();
+    this.showLCD('SONG MODE', on ? `ON · ${this.project.patternChain.length} PATTERNS` : 'OFF');
+    this.markDirty();
+  }
+
+  _songChanged() { if (this.project.sequencer.songMode) this.sendSong(); this.markDirty(); this.changed(); }
+
+  songAppend(slot) {
+    if (this.project.patternChain.length >= SONG_MAX_LENGTH) { this.showLCD('SONG', 'FULL (64)'); return; }
+    this.project.patternChain.push(slot);
+    this.showLCD('SONG', `+ ${slotName(slot)} · ${this.project.patternChain.length}`, 1);
+    this._songChanged();
+  }
+
+  songRemoveAt(i) { this.project.patternChain.splice(i, 1); this._songChanged(); }
+
+  songMove(i, delta) {
+    const c = this.project.patternChain, j = i + delta;
+    if (j < 0 || j >= c.length) return;
+    [c[i], c[j]] = [c[j], c[i]];
+    this._songChanged();
+  }
+
+  songSetEntry(i, slot) { if (this.project.patternChain[i] !== undefined) { this.project.patternChain[i] = slot; this._songChanged(); } }
+
+  songClear() { this.project.patternChain = []; this._songChanged(); this.showLCD('SONG', 'CLEARED'); }
+
+  // ------------------------------------------------------------ Motion-Sequenz
+
+  setMotionMode(mode) {
+    this.project.sequencer.motionMode = mode;
+    this.send({ cmd: 'setMotionMode', mode });
+    this.showLCD('MOTION SEQ', MOTION_MODES[mode]);
+    this.markDirty();
+  }
+
+  /** Zeichnet bei laufender Aufnahme Reglerbewegungen in das hörbare Pattern auf. */
+  _recordMotionValue(id, pad) {
+    if (!this.isRecording || this.meters.transport !== 'playing' || !canRecordMotion(id)) return;
+    const slot = this.meters.currentPattern, step = this.meters.currentStep;
+    const pattern = this.project.sequencer.patterns[slot];
+    if (!pattern || step >= pattern.length) return;
+    const value = getValue(this.project, id, pad);
+    const key = `${id}#${PARAMS[id].pad ? pad : -1}`;
+    const now = performance.now();
+    const last = this._motionLast;
+    const from = last && last.key === key && last.slot === slot && step > last.step && now - last.time < 600 ? last : null;
+    if (!recordMotion(pattern, id, pad, step, value, from?.step ?? null, from?.value ?? null)) {
+      if (!this._motionFullShown) { this.showLCD('MOTION', `FULL (${pattern.motion.length} LANES)`); this._motionFullShown = true; }
+      return;
+    }
+    this._motionFullShown = false;
+    this._motionLast = { key, slot, step, value, time: now };
+    if (!this._motionPushTimer) {
+      this._motionPushTimer = setTimeout(() => { this._motionPushTimer = null; this.pushPattern(slot); }, 40);
+    }
+    this.markDirty();
+  }
+
+  hasMotion(id, pad = this.selectedPad) { return hasMotion(this.currentPattern, id, pad); }
+
+  removeMotionLane(index) {
+    const slot = this.project.sequencer.currentPattern;
+    const lane = this.currentPattern.motion[index];
+    if (!lane) return;
+    this.currentPattern.motion.splice(index, 1);
+    this.pushPattern(slot);
+    this.showLCD('MOTION ERASED', motionLaneName(lane));
+    this.markDirty(); this.changed();
+  }
+
+  clearMotion() {
+    const slot = this.project.sequencer.currentPattern;
+    this.currentPattern.motion = [];
+    this.pushPattern(slot);
+    this.showLCD(`PATTERN ${slotName(slot)}`, 'MOTION CLEARED');
+    this.markDirty(); this.changed();
+  }
+
+  // ------------------------------------------------------------ Slice
+
+  /**
+   * Zerlegt das Sample des ausgewählten Pads und verteilt die Slices ab `startPad` auf die Pads.
+   * @param {{ mode: 'equal'|'transients', count?: number, sensitivity?: number, startPad?: number, makePattern?: boolean }} o
+   */
+  sliceSelectedPad(o) {
+    const src = this.selectedPad;
+    const sample = this.padSamples[src];
+    if (!sample) { this.showLCD('SLICE', 'PAD IS EMPTY'); return 0; }
+    const startPad = Math.min(Math.max(o.startPad ?? src, 0), 15);
+    const st = { ...this.project.pads[src].settings };
+    const parts = this.previewSlices(o);
+    if (!parts.length) return 0;
+    const srcPad = structuredClone(this.project.pads[src]);
+    const source = this.padSources[src];
+    const base = srcPad.name.replace(/\s+\d+$/, '').slice(0, 10) || 'SLICE';
+    parts.forEach((part, i) => {
+      const t = startPad + i;
+      const pad = this.project.pads[t];
+      pad.name = `${base} ${i + 1}`.slice(0, 14);
+      pad.settings = { ...st, start: part.start, end: part.end, reverse: false, playMode: st.playMode === 'loop' ? 'oneShot' : st.playMode };
+      pad.sample = srcPad.sample ? { ...srcPad.sample } : undefined;
+      if (!pad.sample) delete pad.sample;
+      this._setPadSample(t, sample, source);
+      this.send({ cmd: 'setPadSettings', pad: t, settings: pad.settings });
+    });
+    if (o.makePattern) {
+      const slot = this.project.sequencer.currentPattern;
+      const p = this.project.sequencer.patterns[slot];
+      const steps = slicePatternSteps(parts, p.length);
+      parts.forEach((_, i) => {
+        const t = startPad + i;
+        p.steps[t] = Array.from({ length: MAX_STEPS }, () => ({ active: false, velocity: 0.8, offset: 0 }));
+        p.steps[t][steps[i]] = { active: true, velocity: 0.8, offset: 0 };
+      });
+      this.pushPattern(slot);
+    }
+    this.selectedPad = startPad;
+    this.showLCD('SLICE', `${parts.length} SLICES → PAD ${startPad + 1}–${startPad + parts.length}`, 2.5);
+    this.markDirty(); this.changed();
+    return parts.length;
+  }
+
+  /** Slices, die `sliceSelectedPad` mit diesen Einstellungen erzeugen würde (für die Vorschau). */
+  previewSlices(o) {
+    const src = this.selectedPad;
+    const sample = this.padSamples[src];
+    if (!sample) return [];
+    const startPad = Math.min(Math.max(o.startPad ?? src, 0), 15);
+    const available = 16 - startPad;
+    const st = this.project.pads[src].settings;
+    const mode = o.mode === 'equal'
+      ? { type: 'equal', count: Math.min(o.count ?? 8, available) }
+      : { type: 'transients', sensitivity: o.sensitivity ?? 0.5, maxSlices: available };
+    return computeSlices(sample.left, sample.stereo ? sample.right : null, sample.sampleRate, mode, st.start, st.end).slice(0, available);
+  }
+
+  // ------------------------------------------------------------ Sampling & Resampling
+
+  async refreshInputDevices() {
+    this.sampling.devices = await this.audio.inputDevices();
+    this.changed();
+  }
+
+  setSampling(patch) { Object.assign(this.sampling, patch); this.changed(); }
+
+  async startSampling() {
+    if (this.sampling.active) return;
+    const o = this.sampling;
+    const recorder = new SampleRecorder(this.audio.sampleRate, { thresholdDb: o.thresholdDb, maxSeconds: o.maxSeconds });
+    try {
+      this._capture = await this.audio.startCapture({ source: o.source, deviceId: o.deviceId, monitor: o.monitor }, (l, r) => {
+        recorder.append(l, r);
+        o.level = recorder.level; o.seconds = recorder.recordedSeconds; o.state = recorder.state;
+        if (recorder.state === 'finished') this.stopSampling();
+      });
+    } catch (err) {
+      this.report('Aufnahme nicht möglich', o.source === 'input'
+        ? `Auf das Mikrofon bzw. den Audio-Eingang konnte nicht zugegriffen werden (${err.message ?? err}). Prüfen Sie in den Windows-Einstellungen unter Datenschutz → Mikrofon, ob Desktop-Apps zugreifen dürfen.`
+        : String(err.message ?? err));
+      return;
+    }
+    this._recorder = recorder;
+    o.active = true; o.state = recorder.state; o.level = 0; o.seconds = 0;
+    if (o.source === 'output' && o.startPlayback && this.meters.transport !== 'playing') {
+      this.send({ cmd: 'transport', transport: 'stop' });
+      this.send({ cmd: 'transport', transport: 'play' });
+    }
+    this.showLCD(o.source === 'input' ? 'SAMPLING' : 'RESAMPLING', recorder.state === 'armed' ? 'WAITING FOR SIGNAL' : 'RECORDING', 2);
+    this.changed();
+  }
+
+  async stopSampling() {
+    const o = this.sampling;
+    if (!o.active) return;
+    o.active = false;
+    const cap = this._capture; this._capture = null;
+    await cap?.stop();
+    const rec = this._recorder; this._recorder = null;
+    if (o.source === 'output' && o.startPlayback) this.send({ cmd: 'transport', transport: 'stop' });
+    const n = (this._recCount = (this._recCount ?? 0) + 1);
+    const name = `${o.source === 'input' ? 'REC' : 'RESAMPLE'} ${String(n).padStart(2, '0')}`;
+    const sample = rec?.finish(name);
+    o.state = 'idle'; o.level = 0;
+    if (!sample) { this.showLCD('SAMPLING', 'NOTHING RECORDED'); this.changed(); return; }
+    await this._assignNewSample(o.targetPad, sample, name);
+  }
+
+  /** Rendert das aktuelle Pattern (ein Durchlauf, ohne Ausklang) und legt es als neues Sample auf ein Pad. */
+  resamplePattern(targetPad = this.sampling.targetPad) {
+    if (this.resampling) return Promise.resolve(null);
+    const slot = this.project.sequencer.currentPattern;
+    const request = {
+      sampleRate: this.audio.sampleRate, project: structuredClone(this.project), samples: this.padSamples,
+      patternOrder: [slot], loops: 1, tailSeconds: 0
+    };
+    this.resampling = true; this.showLCD('RESAMPLE', `PATTERN ${slotName(slot)} …`, 3); this.changed();
+    return new Promise((resolve) => {
+      const worker = new Worker(new URL('../engine/export-worker.js', import.meta.url), { type: 'module' });
+      const done = (v) => { worker.terminate(); this.resampling = false; this.changed(); resolve(v); };
+      worker.onmessage = async (e) => {
+        const m = e.data;
+        if (m.type === 'progress') return;
+        if (m.type === 'error') { this.report('Resampling fehlgeschlagen', m.message); done(null); return; }
+        const name = `PTN ${slotName(slot)} RESMP`;
+        const sample = makeSample([m.left, m.right], m.sampleRate, name);
+        await this._assignNewSample(targetPad, sample, name);
+        done(sample);
+      };
+      worker.onerror = (err) => { this.report('Resampling fehlgeschlagen', err.message ?? 'Worker-Fehler'); done(null); };
+      worker.postMessage({ request, settings: { raw: true, normalize: false } });
+    });
+  }
+
+  async _assignNewSample(pad, sample, name) {
+    const p = this.project.pads[pad];
+    p.name = name.slice(0, 14);
+    p.settings = { ...defaultPadSettings(), ...p.settings, start: 0, end: 1, reverse: false };
+    p.sample = { fileName: `${name}.wav`, frameCount: sample.frameCount, sampleRate: sample.sampleRate };
+    this._setPadSample(pad, sample, { type: 'buffer', sample });
+    this.send({ cmd: 'setPadSettings', pad, settings: p.settings });
+    this.selectedPad = pad;
+    this.showLCD(`PAD ${String(pad + 1).padStart(2, '0')} ← ${name}`, `${sample.frameCount ? (sample.frameCount / sample.sampleRate).toFixed(2) : 0}s ${sample.stereo ? 'ST' : 'MONO'}`, 2.5);
+    this.markDirty(); this.changed();
+  }
 
   // ------------------------------------------------------------ Projekte
 
@@ -960,7 +1234,11 @@ export class Controller {
       metronome: () => this.toggleMetronome(), tap: () => this.tapTempo(), pattern: () => this.selectPattern(Number(arg)),
       mode: () => this.setPadMode(arg), octave: () => { this.keyboardOctave = Math.max(-3, Math.min(3, this.keyboardOctave + Number(arg))); this.showLCD('KEYBOARD', `OCT ${this.keyboardOctave}`); },
       drawer: () => { this.drawer = arg === 'none' ? null : arg; this.changed(); }, learn: () => this.toggleMIDILearn(),
-      panic: () => this.send({ cmd: 'allNotesOff' }), openPath: () => this.openProject(id.slice('openPath:'.length))
+      panic: () => this.send({ cmd: 'allNotesOff' }),
+      page: () => this.setStepPage(this.stepPage + Number(arg)),
+      slice: () => { this.dialog = 'slice'; this.changed(); },
+      resample: () => this.resamplePattern(this.selectedPad),
+      song: () => this.setSongMode(!this.project.sequencer.songMode), openPath: () => this.openProject(id.slice('openPath:'.length))
     };
     actions[cmd]?.();
   }
