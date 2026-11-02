@@ -1,13 +1,14 @@
 # NEXORA sampler
 
-Nativer macOS-Sampler im Stil eines digitalen Hardware-Instruments: lilafarbenes Gehäuse,
-hellblaue Drehregler, hellblaues LCD, schwarze Funktionstasten, 16 leuchtende Drum-Pads,
-XY-Touchpad und ein integrierter 16×16-Step-Sequencer – mit einer echten, echtzeitfähigen
+Nativer macOS-Sampler im Stil einer Hardware-Groovebox: lackiertes Gehäuse, Metall-Drehregler,
+hintergrundbeleuchtetes LCD, Gummitasten mit leuchtender Beschriftung, 16 Pads (2 × 8) mit LEDs,
+Touchpad und ein integrierter 16×16-Step-Sequencer – mit einer echten, echtzeitfähigen
 Audio-Engine, Effekten, MIDI, Presets und Audio-Export.
 
 * **Swift 5.9+ · SwiftUI · AVFoundation/AVAudioEngine · Core Audio · Core MIDI · Accelerate**
 * keine externen Abhängigkeiten, läuft vollständig offline
 * Universal-App (Apple Silicon + Intel), macOS 14 Sonoma oder neuer
+* zwei Gehäusefarben: **Crimson** (Metallic-Rot, Standard) und **Lilac** – umschaltbar in den Einstellungen
 
 ---
 
@@ -24,6 +25,8 @@ Automatisch auf macOS erzeugt (`--screenshots`, siehe CI-Workflow) – Demo-Patt
 | ![Browser](docs/screenshots/04-browser.png) | ![Kits](docs/screenshots/06-kits.png) |
 | **Master-Effekte** | **Step-Modus** |
 | ![FX](docs/screenshots/05-effects.png) | ![Step](docs/screenshots/08-step-mode.png) |
+| **Keyboard-Modus** | **Farbschema Lilac** |
+| ![Keyboard](docs/screenshots/09-keyboard-mode.png) | ![Lilac](docs/screenshots/10-theme-lilac.png) |
 
 ## Werks-Bibliothek
 
@@ -81,7 +84,7 @@ cd NexoraSampler
 ```
 
 oder in Xcode **⌘U** (das geteilte Scheme enthält die Test-Suite `NexoraCoreTests`).
-90 Tests decken Audio-Engine, DSP-Effekte, Sequencer-Timing, Speicherformate, Presets,
+93 Tests decken Audio-Engine, DSP-Effekte, Sequencer-Timing, Speicherformate, Presets,
 Sample-Suche, WAV/AIFF-Export und MIDI-Parsing ab.
 
 ---
@@ -91,25 +94,24 @@ Sample-Suche, WAV/AIFF-Export und MIDI-Parsing ab.
 ### Aufbau der Oberfläche
 
 ```
-┌───────────────────────────────────────────────────────────────────────────────────────┐
-│ ┌─────────LCD─────────┐   MIDI● REC● RUN●                          NEXORA sampler   │
-│ │ Modus · PTN · BPM    │   PAD SOUND: VOLUME PAN PITCH SAMPLE END SPEED │ ENVELOPE A D S R │ MODE/REV │
-│ │ Kit · Pad · Name     │   FILTER RESO TYPE │ LFO MOD TARGET │ DRIVE CRUSH DELAY REVERB │ LOW MID HIGH COMP │
-│ │ Wellenform · Steps   │                                                               │
-│ └──────────────────────┘                                                               │
-│ [PAD][STEP][EDIT][BROWSE]                                                              │
-│ [SEQ][FX]  [KIT] [LEARN]                                                               │
-│ ┌──────XY-PAD──────┐  ┌──── 4×4 PADS ────┐   TRANSPORT ▶ ❚❚ ■ ●   TEMPO  SWING        │
-│ │        ●          │  │ 13 14 15 16      │   PATTERN A B C D       MASTER ▮▮           │
-│ │                   │  │  9 10 11 12      │           E F G H       REC Q  POLY         │
-│ │                   │  │  5  6  7  8      │   TAP CLICK COPY PASTE EXPORT              │
-│ └───────────────────┘  │  1  2  3  4      │                                            │
-│                        └──────────────────┘                                            │
-└───────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│ (Volume)(Swing)  ▮▮                                                  nexora sampler          │
+│ ┌──── LCD ────┐   (TEMPO)    Sample     Filter      Modulation    Amp/EG        Insert Fx    │
+│ │ 120.0  PTN A │   [<][>]     (Start)    (Cutoff)    (Depth)      (Level)(Pan)  (Drive)      │
+│ │█ 002 Snare  █│   [Edit]     (Pitch)    (Reso)(EG)  (Speed)      (A)(D)(R)     (Edit=Bits)  │
+│ │ Pad:02 ONE   │   [Exit]     (End)      LPF HPF BPF Target/Wave  MFX/AmpEG     IFX/Reverse  │
+│ └──────────────┘   [Browse][Kit]                                                             │
+│ [●][■][▶❚❚][Tap]   [◀Pad][Pad▶][Mute][Erase][Trigger][Sequencer][Keyboard][SeqEdit][MIDI][Bank]  A B C D │
+│ [Click][Latch][MFX][Learn]                                                                    │
+│ ┌── Touchpad ──┐   [ 1 ][ 2 ][ 3 ][ 4 ]   [ 5 ][ 6 ][ 7 ][ 8 ]                              │
+│ │      ●       │   [ 9 ][10 ][11 ][12 ]   [13 ][14 ][15 ][16 ]                              │
+│ └──────────────┘                                                                              │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
         ▼ ausklappbarer Bereich: PAD EDIT · SEQUENCER · SAMPLE BROWSER · MASTER FX · KITS & PRESETS · MIDI
 ```
 
-Das gesamte Instrument skaliert proportional mit der Fenstergröße.
+Die fünf Regler-Sektionen wirken auf das **ausgewählte Pad**; die Master-Effekte (Delay, Hall, EQ, Kompressor,
+Master-Filter, Modulation) liegen unter **Master Fx** und auf dem Touchpad. Das Instrument skaliert mit der Fenstergröße.
 
 ### Drehregler
 
@@ -122,7 +124,10 @@ Das gesamte Instrument skaliert proportional mit der Fenstergröße.
 ### Pads
 
 * **Klicken** spielt das Pad; die Klickposition bestimmt die Anschlagstärke (oben laut, unten leise – abschaltbar).
-* **Tastatur:** `1 2 3 4` / `Q W E R` / `A S D F` / `Z X C V` = Pads 13–16 / 9–12 / 5–8 / 1–4 (frei änderbar im Pad-Editor).
+* **Tastatur:** `Q W E R T Y U I` = Pads 1–8 (obere Reihe), `A S D F G H J K` = Pads 9–16 (untere Reihe) – frei änderbar im Pad-Editor.
+* **Pad-Modi** (Tasten über den Pads): **Trigger** = Pads spielen, **Sequencer** = Pads schalten die 16 Schritte der
+  ausgewählten Spur, **Keyboard** = Pads spielen das ausgewählte Sample chromatisch (untere Reihe weiße, obere Reihe
+  schwarze Tasten; Oktave mit ⌥⌘↑/↓).
 * **Audiodateien** (WAV, AIFF, MP3, M4A – zusätzlich CAF, FLAC) aus dem Finder oder dem Browser auf ein Pad ziehen.
   Mehrere Dateien werden auf aufeinanderfolgende Pads verteilt.
 * Rechtsklick: Sample laden, bearbeiten, MIDI-Note lernen, Spur löschen, Pad leeren.
@@ -196,7 +201,7 @@ Audio-Ausgabegerät, Puffergröße (32–1024 Samples) mit Latenzanzeige, Polyph
 | ⌘N / ⌘O / ⌘S / ⇧⌘S | Neu / Öffnen / Sichern / Sichern unter |
 | ⌘I / ⌘L / ⌘E | Samples importieren / Sample auf Pad laden / Audio exportieren |
 | ⌥⌘1 … ⌥⌘6, ⌥⌘0 | Bereiche Pad-Editor, Sequencer, Browser, FX, Kits, MIDI / schließen |
-| ⌥⌘P / ⌥⌘T | Pad-Spielmodus / Step-Modus |
+| ⌥⌘P / ⌥⌘T / ⌥⌘K | Trigger- / Sequencer- / Keyboard-Modus · ⌥⌘↑/↓ Oktave |
 | ⇧⌘M | MIDI-Learn |
 | Esc | Alle Noten aus |
 
@@ -228,7 +233,7 @@ NexoraSampler/
 │   │   ├── MIDI/                  MIDI-1.0- und UMP-Parser
 │   │   ├── Audio/                 AudioFileLoader (AVAudioFile)
 │   │   └── Factory/               synthetisiertes Werks-Kit + Demo-Patterns
-│   └── Tests/NexoraCoreTests/     90 Tests
+│   └── Tests/NexoraCoreTests/     93 Tests
 ├── docs/                          ARCHITECTURE.md, PROJECT_FORMAT.md
 └── scripts/                       build-app.sh, test-core.sh
 ```
@@ -275,7 +280,7 @@ Metronom, Pegel-LEDs, Status-LEDs (MIDI/REC/RUN), Kontextmenüs, Einstellungsfen
 * **macOS-Build erfolgreich** (GitHub Actions, macOS 15, Xcode 16.4): Universal-Binary (arm64 + x86_64),
   ad-hoc signiert, Dokumenttypen `.nexora`/`.nexorakit` im Info.plist. Die fertige App liegt als Artefakt
   `NEXORA-Sampler-macOS` beim jeweiligen Lauf des Workflows `.github/workflows/nexora-sampler.yml`.
-* **Alle 90 Kern-Tests bestehen** unter macOS und Linux (Engine, DSP-Effekte, Sequencer-Timing auf ±1 Sample,
+* **Alle 93 Kern-Tests bestehen** unter macOS und Linux (Engine, DSP-Effekte, Sequencer-Timing auf ±1 Sample,
   Speicherformate, Presets, Sample-Suche, WAV/AIFF-Export, MIDI-Parsing).
 * Performance (Release): 64 Stimmen mit Pad-Filter, LFO und vollständiger Master-Kette ≈ 8 % eines CPU-Kerns.
 * Noch nicht automatisiert geprüft: die Bedienung der Oberfläche und die Audio-/MIDI-Hardware im laufenden
