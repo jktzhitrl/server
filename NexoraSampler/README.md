@@ -2,8 +2,8 @@
 
 Nativer macOS-Sampler im Stil einer Hardware-Groovebox: lackiertes Gehäuse, Metall-Drehregler,
 hintergrundbeleuchtetes LCD, Gummitasten mit leuchtender Beschriftung, 16 Pads (2 × 8) mit LEDs,
-Touchpad und ein integrierter 16×16-Step-Sequencer – mit einer echten, echtzeitfähigen
-Audio-Engine, Effekten, MIDI, Presets und Audio-Export.
+Touchpad und ein integrierter Step-Sequencer mit bis zu 64 Schritten – mit einer echten, echtzeitfähigen
+Audio-Engine, Effekten, Motion-Sequenz, Song-Modus, Slice, Sampling/Resampling, MIDI, Presets und Audio-Export.
 
 * **Swift 5.9+ · SwiftUI · AVFoundation/AVAudioEngine · Core Audio · Core MIDI · Accelerate**
 * keine externen Abhängigkeiten, läuft vollständig offline
@@ -151,14 +151,40 @@ Pad-LFO (Vibrato, Tremolo, Filter, Auto-Pan), Drive, Bitcrusher sowie Reverb- un
 
 ### Sequencer (SEQ / STEP)
 
-* **STEP-Taste:** Die 16 Pads zeigen und schalten die 16 Schritte der ausgewählten Spur (wie bei Hardware-Samplern).
-* **SEQ-Bereich:** vollständiges 16 Spuren × 16 Schritte-Raster. Klick = Schritt an/aus, **⇧-Klick** = Anschlagstärke (100/70/40 %).
-  Pro Spur Mute, Solo und Notenlänge (Gate) für Gate/Loop-Pads.
-* 8 Patterns (A–H), Länge 1–16 Schritte, Kopieren/Einfügen/Leeren, Wechsel am Taktende oder sofort.
+* **STEP-Taste:** Die 16 Pads zeigen und schalten 16 Schritte der ausgewählten Spur (wie bei Hardware-Samplern),
+  bei längeren Patterns die gewählte Seite (⌥⌘← / ⌥⌘→).
+* **SEQ-Bereich:** 16 Spuren × 16 Schritte je Seite, Patterns bis **64 Schritte** (4 Seiten, „Seite folgt Wiedergabe“).
+  Klick = Schritt an/aus, **⇧-Klick** = Anschlagstärke (100/70/40 %). Pro Spur Mute, Solo und Notenlänge (Gate) für Gate/Loop-Pads.
+* 8 Patterns (A–H), Länge 1–64 Schritte (×2 verdoppelt), Kopieren/Einfügen/Leeren, Wechsel am Taktende oder sofort.
 * Tempo 40–300 BPM, Tap-Tempo, Swing 50–75 %, Metronom.
 * **Live-Aufnahme:** REC (⌘R) aktivieren und Pads spielen. Rec-Quantisierung 1/16, 1/8, 1/4 oder AUS
   (dann wird das Mikro-Timing gespeichert und kann später mit „Pattern quantisieren“ entfernt werden).
 * Play/Stop: Leertaste, Pause setzt an derselben Stelle fort.
+
+### Motion-Sequenz (SONG & MOTION)
+
+Bei laufender Aufnahme (REC + Play) werden Bewegungen aller Pad- und Master-Regler, des XY-Pads und von
+MIDI-CCs pro Schritt aufgezeichnet und bei jedem Durchlauf wiederholt (bis 24 Spuren je Pattern).
+Wiedergabe **Stufen**, **Glatt** (weiche Übergänge) oder **Aus**; Regler mit Motion zeigen einen rosa Punkt.
+Die Engine wendet die Werte sample-genau an der Schrittgrenze an und stellt nach dem Stopp die Grundwerte wieder her.
+
+### Song-Modus (SONG & MOTION)
+
+Pattern-Kette mit bis zu 64 Einträgen (z. B. `A A B A C`), die beim Abspielen automatisch durchläuft und am Ende
+von vorn beginnt (⌘G). Anzeige des laufenden Eintrags im LCD; dieselbe Kette wird beim Ketten-Export gerendert.
+
+### Slice (PAD EDIT → Slice …, ⇧⌘L)
+
+Zerlegt das Sample eines Pads (innerhalb von Start/Ende) nach **Anschlägen** (Transientenerkennung mit
+einstellbarer Empfindlichkeit) oder **gleichmäßig** (2/4/8/16) und verteilt die Stücke auf aufeinanderfolgende Pads.
+Optional wird ein Pattern erzeugt, das den Loop originalgetreu wiedergibt. Alle Slices teilen sich eine Datei.
+
+### Sampling & Resampling (SAMPLING)
+
+* **Aufnahme** über Mikrofon/Line-In/Interface (Gerätewahl, Startschwelle mit Vorlauf, max. Länge, Mithören)
+  direkt auf ein Pad; Stille am Ende wird entfernt.
+* **Resampling** des eigenen Ausgangs in Echtzeit (inkl. XY-Pad, Motion und Effekten) oder offline:
+  **Pattern → Pad** rendert das aktuelle Pattern genau einen Durchlauf lang, nahtlos loopbar (⇧⌘R).
 
 ### XY-Pad
 
@@ -210,6 +236,10 @@ Audio-Ausgabegerät, Puffergröße (32–1024 Samples) mit Latenzanzeige, Polyph
 | ⌘R / ⌘K / ⌘T | Aufnahme / Metronom / Tap-Tempo |
 | ⌘1 … ⌘8 | Pattern A … H |
 | ⌘N / ⇧⌘N | Neues Projekt (Auswahl) / neues leeres Projekt |
+| ⌘G | Song-Modus an/aus |
+| ⌥⌘← / ⌥⌘→ | Vorherige / nächste Seite (16 Schritte) |
+| ⇧⌘L / ⇧⌘R | Slice … / Pattern auf Pad resamplen |
+| ⌥⌘7 / ⌥⌘8 | Song & Motion / Sampling |
 | ⌘O / ⌘S / ⇧⌘S | Öffnen / Sichern / Sichern unter |
 | ⌘I / ⌘L / ⌘E | Samples importieren / Sample auf Pad laden / Audio exportieren |
 | ⌥⌘1 … ⌥⌘6, ⌥⌘0 | Bereiche Pad-Editor, Sequencer, Browser, FX, Kits, MIDI / schließen |

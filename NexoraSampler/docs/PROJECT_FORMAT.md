@@ -118,19 +118,34 @@ Nicht gefundene Samples werden nach dem Öffnen aufgelistet; das Pad behält Nam
   "quantize": "sixteenth",          // off | sixteenth | eighth | quarter (Live-Aufnahme)
   "metronome": false,
   "switchAtBarEnd": true,
+  "motionMode": "hold",             // off | hold (Stufen) | smooth (glatt)
+  "songMode": false,                // true = Patterns laufen in der Reihenfolge von patternChain
   "trackMutes": [false, …],          // 16 Einträge
   "trackSolos": [false, …],
   "patterns": [                      // 8 Slots (A–H)
     {
-      "id": "UUID", "name": "Pattern A", "length": 16,
+      "id": "UUID", "name": "Pattern A", "length": 16,   // 1 … 64
       "gates": [1, 1, …],            // Notenlänge je Spur in Schritten (Gate/Loop-Pads)
-      "steps": [                     // [Spur 0…15][Schritt 0…15]
+      "steps": [                     // [Spur 0…15][Schritt 0…n-1]
         [ {"active": true, "velocity": 1, "offset": 0}, … ], …
+      ],
+      "motion": [                    // optional, max. 24 Spuren
+        { "parameter": "padCutoff", "pad": 0, "values": [1200, null, 3400, …] },
+        { "parameter": "reverbMix", "pad": -1, "values": [0.1, …] }
       ]
     }
   ]
-}
+},
+"patternChain": [0, 0, 1, 0]          // Song-Kette bzw. Ketten-Export (max. 64 Einträge)
 ```
+
+`steps` enthält nur die belegten Seiten (Pattern-Länge bzw. letzter aktiver Schritt, auf 16er-Seiten
+gerundet); beim Laden wird jede Spur auf 64 Schritte aufgefüllt. Dateien älterer Versionen (16 Schritte)
+bleiben dadurch lesbar, und ältere Versionen lesen die ersten 16 Schritte neuer Dateien.
+
+`motion.values` enthält den tatsächlichen Parameterwert je Schritt (`null` = kein Wert; Lücken werden bei
+der Wiedergabe zyklisch mit dem vorherigen Wert gehalten bzw. im Modus `smooth` linear überblendet).
+`pad` ist −1 bei Master-Parametern. Tempo und Swing sind nicht aufzeichenbar.
 
 `offset` ist das Mikro-Timing einer unquantisiert aufgenommenen Note in Schritten (−0.5 … 0.5).
 Spur *n* spielt immer Pad *n*.

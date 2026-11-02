@@ -60,7 +60,7 @@
 </header>
 
 <p>NEXORA Sampler ist ein Sampler mit 16 Pads, Step-Sequencer und Effekten, aufgebaut wie ein Hardware-Groovebox-Gerät.
-Du spielst Klänge auf Pads, baust daraus Beats, lädst eigene Lieder und Samples, formst den Sound mit Reglern und exportierst das Ergebnis als WAV- oder AIFF-Datei.</p>
+Du spielst Klänge auf Pads, baust daraus Beats mit bis zu 64 Schritten, nimmst Reglerbewegungen als Motion-Sequenz auf, reihst Patterns im Song-Modus aneinander, lädst eigene Lieder, zerlegst sie per Slice auf die Pads, samplest über Mikrofon oder Resampling und exportierst das Ergebnis als WAV- oder AIFF-Datei.</p>
 
 <div class="tip"><b>Mac:</b> Die Anleitung nennt die Windows-Tasten. Auf dem Mac gilt <kbd>⌘</kbd> statt <kbd>Strg</kbd> und <kbd>⌥</kbd> statt <kbd>Alt</kbd>. Alles andere ist gleich.</div>
 
@@ -75,7 +75,11 @@ Du spielst Klänge auf Pads, baust daraus Beats, lädst eigene Lieder und Sample
     <li><a href="#klang">Den Klang eines Pads formen</a></li>
     <li><a href="#sequencer">Beats bauen mit dem Sequencer</a></li>
     <li><a href="#aufnahme">Live einspielen</a></li>
+    <li><a href="#motion">Motion-Sequenz: Reglerbewegungen aufnehmen</a></li>
+    <li><a href="#song">Song-Modus: Patterns zu einem Song verbinden</a></li>
     <li><a href="#lieder">Eigene Lieder und Samples laden</a></li>
+    <li><a href="#slice">Slice: Loops und Songs auf Pads zerlegen</a></li>
+    <li><a href="#sampling">Selbst aufnehmen: Sampling und Resampling</a></li>
     <li><a href="#browser">Sample-Browser und Bibliothek</a></li>
     <li><a href="#touchpad">Das Touchpad</a></li>
     <li><a href="#master">Master-Effekte</a></li>
@@ -99,12 +103,12 @@ Du spielst Klänge auf Pads, baust daraus Beats, lädst eigene Lieder und Sample
   <tr><td><b>Display</b></td><td>Zeigt Tempo, aktuelles Pattern, das ausgewählte Pad mit Wellenform und jede Änderung, die du gerade machst.</td></tr>
   <tr><td><b>Transport</b></td><td><b class="ui">●</b> Aufnahme, <b class="ui">■</b> Stopp, <b class="ui">▶‖</b> Play/Pause, <b class="ui">Tap</b> Tempo antippen.</td></tr>
   <tr><td><b>Click · XY Latch · Master Fx · Learn</b></td><td>Metronom, Touchpad-Werte halten, Master-Effekte öffnen, MIDI-Learn.</td></tr>
-  <tr><td><b>Touchpad</b></td><td>Zwei Effekte gleichzeitig mit der Maus steuern (<a href="#touchpad">Kapitel 11</a>).</td></tr>
+  <tr><td><b>Touchpad</b></td><td>Zwei Effekte gleichzeitig mit der Maus steuern (<a href="#touchpad">Kapitel 15</a>).</td></tr>
   <tr><td><b>Tempo-Rad</b> und Navigation</td><td>Tempo (BPM), <b class="ui">‹ ›</b> vorheriges/nächstes Pattern, <b class="ui">Edit</b> Pad-Editor, <b class="ui">Exit</b> Bereich schließen, <b class="ui">Browse</b> Sample-Browser, <b class="ui">Kit</b> Kits &amp; Presets.</td></tr>
   <tr><td><b>Sample · Filter · Modulation · Amp/EG · Insert Fx</b></td><td>Die Klangregler. Sie wirken immer auf das <b>ausgewählte Pad</b> (lila umrandet).</td></tr>
   <tr><td><b>Tastenreihe</b></td><td>Pad wechseln, Spur stummschalten/löschen, Pad-Modus wählen, Sequencer und MIDI öffnen, Pattern-Bank und Patterns A–H.</td></tr>
   <tr><td><b>16 Pads</b></td><td>Zum Spielen, zum Programmieren von Schritten oder als Klaviatur, je nach Modus.</td></tr>
-  <tr><td><b>Untere Bereiche</b></td><td>Klappen mit <b class="ui">PAD EDIT</b>, <b class="ui">SEQUENCER</b>, <b class="ui">SAMPLE BROWSER</b>, <b class="ui">MASTER FX</b>, <b class="ui">KITS &amp; PRESETS</b> und <b class="ui">MIDI</b> auf. Ein Klick auf denselben Reiter oder <b class="ui">Exit</b> schließt sie wieder.</td></tr>
+  <tr><td><b>Untere Bereiche</b></td><td>Klappen mit <b class="ui">PAD EDIT</b>, <b class="ui">SEQUENCER</b>, <b class="ui">SONG &amp; MOTION</b>, <b class="ui">SAMPLING</b>, <b class="ui">SAMPLE BROWSER</b>, <b class="ui">MASTER FX</b>, <b class="ui">KITS &amp; PRESETS</b> und <b class="ui">MIDI</b> auf. Ein Klick auf denselben Reiter oder <b class="ui">Exit</b> schließt sie wieder.</td></tr>
 </table>
 
 <!-- ============================================================ -->
@@ -141,7 +145,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 <table>
   <tr><th>Knopf</th><th>Was die Pads dann tun</th></tr>
   <tr><td><b class="ui">Trigger</b></td><td>Normaler Modus: Jedes Pad spielt seinen Klang.</td></tr>
-  <tr><td><b class="ui">Sequencer</b></td><td>Die 16 Pads sind die <b>16 Schritte</b> der Spur des ausgewählten Pads. Ein Druck auf ein Pad setzt oder löscht den Schlag an dieser Stelle. Leuchtende Pads = gesetzte Schläge.</td></tr>
+  <tr><td><b class="ui">Sequencer</b></td><td>Die 16 Pads sind <b>16 Schritte</b> der Spur des ausgewählten Pads. Ein Druck auf ein Pad setzt oder löscht den Schlag an dieser Stelle. Leuchtende Pads = gesetzte Schläge. Bei längeren Patterns zeigen die Pads die gewählte Seite (Schritte 1–16, 17–32 …), umschalten mit <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd>.</td></tr>
   <tr><td><b class="ui">Keyboard</b></td><td>Die Pads werden zur <b>Klaviatur</b> und spielen den Klang des ausgewählten Pads in verschiedenen Tonhöhen. Untere Reihe = weiße Tasten (C bis C), obere Reihe = schwarze Tasten. Oktave wechseln: <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>.</td></tr>
 </table>
 <figure><img src="img/08-step-mode.jpg" alt="Sequencer-Modus"><figcaption>Sequencer-Modus: Die leuchtenden Pads zeigen, auf welchen der 16 Schritte die ausgewählte Spur spielt.</figcaption></figure>
@@ -208,7 +212,8 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
   <li>Es gibt 8 Patterns, <b>A bis H</b>. Mit den Knöpfen rechts neben den Pads wählst du A–D. <b class="ui">Bank A–D</b> schaltet auf E–H um. Tastatur: <kbd>Strg</kbd>+<kbd>1</kbd> … <kbd>Strg</kbd>+<kbd>8</kbd>.</li>
   <li><b>Wechsel am Taktende</b>: Beim Umschalten während der Wiedergabe springt NEXORA erst am Ende des Takts ins neue Pattern. So bleibt alles im Takt.</li>
   <li><b class="ui">Kopieren</b> / <b class="ui">Einfügen</b>: ein Pattern auf ein anderes übertragen, z. B. um eine Variation zu bauen. <b class="ui">Leeren</b> löscht das aktuelle Pattern.</li>
-  <li><b>Länge</b>: mit <b class="ui">–</b>/<b class="ui">+</b> 1 bis 16 Schritte.</li>
+  <li><b>Länge</b>: mit <b class="ui">–</b>/<b class="ui">+</b> 1 bis <b>64 Schritte</b> (4 Takte). <b class="ui">×2</b> verdoppelt die Länge.</li>
+  <li><b>Seiten</b>: Das Raster zeigt immer 16 Schritte. Mit den Knöpfen <b class="ui">1–16</b>, <b class="ui">17–32</b>, <b class="ui">33–48</b>, <b class="ui">49–64</b> wählst du die Seite. Ist <b>Seite folgt Wiedergabe</b> an, blättert die Ansicht beim Abspielen automatisch mit. Die gerade laufende Seite ist rosa unterstrichen.</li>
   <li><b class="ui">Pad Mute</b> schaltet die Spur des ausgewählten Pads stumm, <b class="ui">Pad Erase</b> löscht sie im aktuellen Pattern.</li>
   <li><b>Pattern-Presets</b>: einen Rhythmus unter einem Namen speichern und in anderen Projekten wieder laden.</li>
 </ul>
@@ -231,7 +236,37 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 <b class="ui">Pattern quantisieren</b> rückt nachträglich alle Schläge aufs Raster.</p>
 
 <!-- ============================================================ -->
-<h2 id="lieder"><span class="n">9</span>Eigene Lieder und Samples laden</h2>
+<h2 id="motion"><span class="n">9</span>Motion-Sequenz: Reglerbewegungen aufnehmen</h2>
+<figure><img src="img/11-song-motion.jpg" alt="Song und Motion"><figcaption>Bereich SONG &amp; MOTION: links die Song-Kette, rechts die Motion-Spuren des aktuellen Patterns.</figcaption></figure>
+<p>Wie beim Hardware-Groovebox: Drehst du während der Aufnahme an einem Regler, merkt sich NEXORA die Bewegung für jeden Schritt und spielt sie bei jedem Durchlauf wieder ab – z. B. ein Filter, der sich öffnet, ein Hall, der nur auf der Snare liegt, oder ein Pitch-Effekt am Taktende.</p>
+<ol class="steps">
+  <li><b class="ui">●</b> (Aufnahme) und <b class="ui">▶</b> drücken.</li>
+  <li>Einen Regler drehen, über das Touchpad fahren oder am MIDI-Controller drehen. Funktioniert mit allen Pad-Reglern und allen Master-Effekten.</li>
+  <li><b class="ui">●</b> erneut drücken. Ab jetzt wiederholt sich die Bewegung.</li>
+</ol>
+<ul>
+  <li>Regler mit einer Motion-Spur zeigen oben links einen <b>rosa Punkt</b>.</li>
+  <li>Im Bereich <b class="ui">SONG &amp; MOTION</b> siehst du alle Spuren des aktuellen Patterns als Balken (bis zu 24 je Pattern). <b class="ui">×</b> löscht eine Spur, <b class="ui">Alle löschen</b> alle. Alternativ: Rechtsklick auf den Regler → <i>Motion-Spur löschen</i>.</li>
+  <li><b>Wiedergabe</b>: <b class="ui">STUFEN</b> hält jeden Wert bis zum nächsten Schritt, <b class="ui">GLATT</b> blendet weich zwischen den Schritten über, <b class="ui">AUS</b> schaltet alle Motion-Spuren stumm.</li>
+  <li>Nach dem Stoppen gelten wieder die normalen Reglerwerte. Motion-Spuren werden mit dem Pattern gespeichert, kopiert und exportiert.</li>
+</ul>
+
+<h2 id="song"><span class="n">10</span>Song-Modus: Patterns zu einem Song verbinden</h2>
+<p>Im Song-Modus spielt NEXORA die Patterns automatisch in einer festen Reihenfolge – z. B. <code>A A B A C</code> für Intro, Strophe, Refrain.</p>
+<ol class="steps">
+  <li>Bereich <b class="ui">SONG &amp; MOTION</b> öffnen (<kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>7</kbd>).</li>
+  <li>Mit <b class="ui">+A</b> … <b class="ui">+H</b> Patterns an die Kette anhängen (bis zu 64 Einträge).</li>
+  <li><b>Song-Modus</b> einschalten (oder <kbd>Strg</kbd>+<kbd>G</kbd>) und <kbd>Leertaste</kbd> drücken.</li>
+</ol>
+<ul>
+  <li>Der laufende Eintrag leuchtet rosa, im Display steht z. B. <code>SONG 2/5</code>. Am Ende beginnt der Song wieder von vorn.</li>
+  <li>Klick auf einen Eintrag schaltet sein Pattern weiter (A → B → C …). Rechtsklick: verschieben, ein bestimmtes Pattern wählen oder entfernen.</li>
+  <li>Daneben stehen Anzahl der Einträge und Gesamtlänge in Minuten.</li>
+  <li>Beim Export mit <b>Pattern-Kette exportieren</b> wird genau diese Kette als ganzer Song in eine Datei gerendert.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="lieder"><span class="n">11</span>Eigene Lieder und Samples laden</h2>
 <p>Unterstützt werden <b>MP3, WAV, AIFF, FLAC, M4A und OGG</b>, bis 10 Minuten pro Datei.</p>
 <h3>Direkt auf ein Pad</h3>
 <ul>
@@ -249,7 +284,42 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 <p>Beim Speichern werden alle verwendeten Dateien mit ins Projekt kopiert. Deine Originaldateien bleiben unverändert.</p>
 
 <!-- ============================================================ -->
-<h2 id="browser"><span class="n">10</span>Sample-Browser und Bibliothek</h2>
+<h2 id="slice"><span class="n">12</span>Slice: Loops und Songs auf Pads zerlegen</h2>
+<figure><img src="img/14-slice.jpg" alt="Slice-Dialog"><figcaption>Der Slice-Dialog: rosa Linien zeigen, wo geschnitten wird und auf welchem Pad das Stück landet.</figcaption></figure>
+<p>Slice zerlegt ein Sample automatisch in Stücke und legt jedes Stück auf ein eigenes Pad – ideal für Drum-Loops (jeder Schlag ein Pad) oder Songs (jede Phrase ein Pad).</p>
+<ol class="steps">
+  <li>Sample oder Lied auf ein Pad laden und es auswählen. Optional mit Start/Ende im Pad-Editor den gewünschten Bereich eingrenzen.</li>
+  <li>Im <b class="ui">PAD EDIT</b> auf <b class="ui">Slice …</b> klicken (oder <kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>L</kbd>).</li>
+  <li><b>Modus</b> wählen:
+    <ul>
+      <li><b>Nach Anschlägen</b>: NEXORA erkennt die Schläge selbst. Mit <b>Empfindlichkeit</b> legst du fest, ob auch leise Schläge zählen.</li>
+      <li><b>Gleichmäßig</b>: 2, 4, 8 oder 16 gleich lange Stücke – perfekt für Loops im Takt.</li>
+    </ul></li>
+  <li><b>Ab Pad</b>: auf welchem Pad das erste Stück landet (die übrigen folgen der Reihe nach).</li>
+  <li><b>Pattern erzeugen</b>: setzt die Stücke so ins aktuelle Pattern, dass der Loop wieder genau so klingt wie vorher – nur kannst du ihn jetzt umbauen.</li>
+  <li><b class="ui">Slicen</b> klicken.</li>
+</ol>
+<div class="tip"><b>Tipp:</b> Nach dem Slicen die Schläge im Sequencer verschieben, doppeln oder weglassen – so entsteht aus einem fertigen Loop ein neuer Beat. Alle Slices verwenden dieselbe Datei, das Projekt wird dadurch nicht größer.</div>
+
+<h2 id="sampling"><span class="n">13</span>Selbst aufnehmen: Sampling und Resampling</h2>
+<figure><img src="img/12-sampling.jpg" alt="Sampling"><figcaption>Bereich SAMPLING: Quelle, Gerät, Startschwelle, Länge und Ziel-Pad.</figcaption></figure>
+<h3>Mit Mikrofon oder Line-In aufnehmen</h3>
+<ol class="steps">
+  <li>Bereich <b class="ui">SAMPLING</b> öffnen (<kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>8</kbd>), Quelle <b class="ui">Mikrofon / Line-In</b>.</li>
+  <li>Eingangsgerät wählen (z. B. eingebautes Mikrofon oder Audio-Interface). <b class="ui">Geräte suchen</b>, falls es fehlt.</li>
+  <li><b>Start</b>: <i>Sofort</i> oder <i>ab −40 dB</i> usw. – dann wartet NEXORA, bis ein Signal kommt, und schneidet die Stille davor weg.</li>
+  <li><b>Ziel</b>-Pad wählen und <b class="ui">● Aufnahme starten</b>. Die Pegelanzeige zeigt, ob Signal ankommt. <b class="ui">■ Stopp</b> beendet die Aufnahme, Stille am Ende wird entfernt.</li>
+</ol>
+<p>Beim ersten Mal fragt Windows bzw. macOS, ob NEXORA das Mikrofon benutzen darf – mit <b>Zulassen</b> bestätigen. <b>Mithören</b> gibt den Eingang über die Lautsprecher aus (mit Kopfhörern verwenden, sonst pfeift es).</p>
+<h3>Resampling: den eigenen Sound aufnehmen</h3>
+<ul>
+  <li>Quelle <b class="ui">Resampling (eigener Ausgang)</b>: nimmt alles auf, was NEXORA gerade spielt – inklusive Touchpad-Bewegungen, Motion und Effekten. Mit <b>Wiedergabe mitstarten</b> startet der Beat mit der Aufnahme.</li>
+  <li><b class="ui">Pattern → Pad</b> (rechts, oder <kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>R</kbd>): rendert das aktuelle Pattern genau einmal und nahtlos loopbar auf das Ziel-Pad. So machst du aus einem ganzen Beat einen einzigen Loop und hast die übrigen Pads wieder frei.</li>
+</ul>
+<p>Aufnahmen landen auf dem Ziel-Pad und werden beim Speichern als WAV ins Projekt kopiert.</p>
+
+<!-- ============================================================ -->
+<h2 id="browser"><span class="n">14</span>Sample-Browser und Bibliothek</h2>
 <figure><img src="img/04-browser.jpg" alt="Sample-Browser"><figcaption>Der Sample-Browser: links die Bibliotheken, rechts die Klänge mit Suche und Vorhören.</figcaption></figure>
 <ul>
   <li>Die <b>Werks-Bibliothek</b> enthält 151 Klänge in 13 Kategorien: Kicks, Snares, Claps, Hi-Hats, Becken, Toms, Percussion, 808/Bass, Synth/Keys, Akkorde, Pads, Vocal-Chops und FX.</li>
@@ -260,7 +330,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 </ul>
 
 <!-- ============================================================ -->
-<h2 id="touchpad"><span class="n">11</span>Das Touchpad</h2>
+<h2 id="touchpad"><span class="n">15</span>Das Touchpad</h2>
 <p>Das Touchpad links steuert zwei Regler gleichzeitig: einen mit der Waagerechten (X), einen mit der Senkrechten (Y). Standard: X = Master-Filter, Y = Hall.</p>
 <ul>
   <li>Mit gedrückter Maustaste über das Feld fahren, am besten während der Beat läuft.</li>
@@ -269,7 +339,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 </ul>
 
 <!-- ============================================================ -->
-<h2 id="master"><span class="n">12</span>Master-Effekte</h2>
+<h2 id="master"><span class="n">16</span>Master-Effekte</h2>
 <figure><img src="img/05-effects.jpg" alt="Master-Effekte"><figcaption>Die Master-Effekte wirken auf die Gesamtsumme aller Pads.</figcaption></figure>
 <p>Öffnen mit <b class="ui">Master Fx</b> oder dem Reiter <b class="ui">MASTER FX</b>. Alle Effekte wirken auf den Gesamtklang:</p>
 <ul>
@@ -284,7 +354,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 <p><b class="ui">FX zurücksetzen</b> stellt alles auf Standard. Einstellungen lassen sich als <b>FX-Preset</b> speichern und laden.</p>
 
 <!-- ============================================================ -->
-<h2 id="kits"><span class="n">13</span>Kits und Presets</h2>
+<h2 id="kits"><span class="n">17</span>Kits und Presets</h2>
 <figure><img src="img/06-kits.jpg" alt="Kits und Presets"><figcaption>Kits &amp; Presets: eigene Kits links, Werks-Kits rechts.</figcaption></figure>
 <ul>
   <li>Ein <b>Kit</b> ist die Belegung aller 16 Pads mit Klängen, Namen, Tasten und Pad-Einstellungen.</li>
@@ -296,7 +366,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 </ul>
 
 <!-- ============================================================ -->
-<h2 id="midi"><span class="n">14</span>MIDI-Controller</h2>
+<h2 id="midi"><span class="n">18</span>MIDI-Controller</h2>
 <figure><img src="img/07-midi.jpg" alt="MIDI-Einstellungen"><figcaption>MIDI: Eingänge, Kanal, Pad-Noten und CC-Zuordnungen.</figcaption></figure>
 <p>Schließe ein MIDI-Keyboard oder einen Pad-Controller per USB an und öffne <b class="ui">MIDI</b>.</p>
 <ul>
@@ -307,7 +377,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 </ul>
 
 <!-- ============================================================ -->
-<h2 id="speichern"><span class="n">15</span>Speichern und Öffnen</h2>
+<h2 id="speichern"><span class="n">19</span>Speichern und Öffnen</h2>
 <ul>
   <li><kbd>Strg</kbd>+<kbd>S</kbd> <b>Sichern</b>, <kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>S</kbd> <b>Sichern unter …</b>. Ein Projekt ist ein Ordner <code>Name.nexora</code> mit allen verwendeten Samples. Du kannst ihn also als Ganzes weitergeben oder sichern.</li>
   <li><kbd>Strg</kbd>+<kbd>O</kbd> <b>Projekt öffnen</b>: den Ordner <code>.nexora</code> oder die Datei <code>project.json</code> darin wählen.</li>
@@ -316,7 +386,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 </ul>
 
 <!-- ============================================================ -->
-<h2 id="export"><span class="n">16</span>Als Audiodatei exportieren</h2>
+<h2 id="export"><span class="n">20</span>Als Audiodatei exportieren</h2>
 <p><kbd>Strg</kbd>+<kbd>E</kbd> (Menü <b>Datei → Audio exportieren …</b>) speichert deinen Beat als Datei, z. B. zum Anhören am Handy oder zum Weiterbearbeiten in einem anderen Programm.</p>
 <table>
   <tr><th>Option</th><th>Bedeutung</th></tr>
@@ -331,7 +401,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 <p>Der Export klingt genau wie die Wiedergabe, inklusive aller Effekte.</p>
 
 <!-- ============================================================ -->
-<h2 id="einstellungen"><span class="n">17</span>Einstellungen</h2>
+<h2 id="einstellungen"><span class="n">21</span>Einstellungen</h2>
 <p><kbd>Strg</kbd>+<kbd>,</kbd> oder <b>Datei → Einstellungen …</b></p>
 <ul>
   <li><b>Audio</b>: Ausgabegerät (Lautsprecher, Kopfhörer, Audio-Interface) und Latenz. Niedrige Latenz = direkteres Spielgefühl, bei Knacksern höher stellen.</li>
@@ -341,7 +411,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 </ul>
 
 <!-- ============================================================ -->
-<h2 id="tasten"><span class="n">18</span>Alle Tastenkürzel</h2>
+<h2 id="tasten"><span class="n">22</span>Alle Tastenkürzel</h2>
 <table>
   <tr><th>Taste</th><th>Funktion</th></tr>
   <tr><td><kbd>Q</kbd>–<kbd>I</kbd>, <kbd>A</kbd>–<kbd>K</kbd></td><td>Pads 1–8 und 9–16</td></tr>
@@ -349,6 +419,10 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
   <tr><td><kbd>Strg</kbd>+<kbd>.</kbd></td><td>Pause</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>R</kbd> / <kbd>K</kbd> / <kbd>T</kbd></td><td>Aufnahme / Metronom / Tap-Tempo</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>1</kbd> … <kbd>8</kbd></td><td>Pattern A … H</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>G</kbd></td><td>Song-Modus an/aus</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>←</kbd> / <kbd>→</kbd></td><td>Vorherige / nächste Seite (je 16 Schritte)</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>L</kbd></td><td>Slice …</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>R</kbd></td><td>Aktuelles Pattern auf das ausgewählte Pad resamplen</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>N</kbd></td><td>Neues Projekt (leer oder mit Werks-Kit)</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>N</kbd></td><td>Neues leeres Projekt</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>O</kbd> / <kbd>S</kbd> / <kbd>Umschalt</kbd>+<kbd>S</kbd></td><td>Öffnen / Sichern / Sichern unter</td></tr>
@@ -357,7 +431,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
   <tr><td><kbd>Strg</kbd>+<kbd>,</kbd></td><td>Einstellungen</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>P</kbd> / <kbd>T</kbd> / <kbd>K</kbd></td><td>Pad-Modus Trigger / Sequencer / Keyboard</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></td><td>Keyboard-Modus: Oktave höher / tiefer</td></tr>
-  <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd> … <kbd>6</kbd></td><td>Pad-Editor, Sequencer, Sample-Browser, Master-Effekte, Kits &amp; Presets, MIDI</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd> … <kbd>8</kbd></td><td>Pad-Editor, Sequencer, Sample-Browser, Master-Effekte, Kits &amp; Presets, MIDI, Song &amp; Motion, Sampling</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>0</kbd></td><td>Unteren Bereich schließen</td></tr>
   <tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>M</kbd></td><td>MIDI-Learn</td></tr>
   <tr><td><kbd>Umschalt</kbd>+<kbd>Esc</kbd></td><td>Alle Noten aus (Notbremse, wenn etwas hängt)</td></tr>
@@ -365,7 +439,7 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
 </table>
 
 <!-- ============================================================ -->
-<h2 id="probleme"><span class="n">19</span>Probleme und Lösungen</h2>
+<h2 id="probleme"><span class="n">23</span>Probleme und Lösungen</h2>
 <table>
   <tr><th>Problem</th><th>Lösung</th></tr>
   <tr><td>Kein Ton</td><td>Einmal ins Fenster klicken oder eine Taste drücken. In den Einstellungen das richtige <b>Ausgabegerät</b> wählen. Im Windows-Lautstärkemixer prüfen, ob NEXORA stumm ist. <b>Volume</b> oben links aufdrehen, <b class="ui">Pad Mute</b> und <b>M</b>/<b>S</b> im Sequencer prüfen. Ist das Pad leer („EMPTY“)?</td></tr>
@@ -375,6 +449,8 @@ Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden
   <tr><td>Mac: „kann nicht geöffnet werden“</td><td>Rechtsklick auf die App → <b>Öffnen</b> → <b>Öffnen</b> bestätigen.</td></tr>
   <tr><td>Sample fehlt beim Öffnen eines Projekts</td><td>NEXORA nennt die fehlenden Dateien. Über den Sample-Browser neu zuweisen und das Projekt erneut sichern.</td></tr>
   <tr><td>Datei lässt sich nicht laden</td><td>Unterstützt: MP3, WAV, AIFF, FLAC, M4A, OGG, bis 10 Minuten. Längere Lieder vorher kürzen.</td></tr>
+  <tr><td>Aufnahme bleibt stumm</td><td>Mikrofon-Freigabe prüfen: Windows → Einstellungen → Datenschutz → Mikrofon („Desktop-Apps dürfen zugreifen“); Mac → Systemeinstellungen → Datenschutz &amp; Sicherheit → Mikrofon. Richtiges Eingangsgerät wählen; mit Startschwelle wartet NEXORA, bis das Signal laut genug ist.</td></tr>
+  <tr><td>Ein Regler bewegt sich „von selbst“</td><td>Er hat eine Motion-Spur (rosa Punkt). Im Bereich SONG &amp; MOTION löschen oder Wiedergabe auf AUS stellen.</td></tr>
   <tr><td>MIDI-Gerät wird nicht erkannt</td><td>Gerät vor dem Start einstecken oder <b class="ui">Geräte neu suchen</b>. In den Einstellungen prüfen, ob „MIDI-Eingang aktiv“ eingeschaltet ist.</td></tr>
 </table>
 
