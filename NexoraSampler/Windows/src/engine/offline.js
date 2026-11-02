@@ -16,6 +16,7 @@ export function renderOffline(req, progress) {
   e.setTempo(doc.bpm, doc.swing);
   e.setTrackStates(muteMask(doc.sequencer.trackMutes), muteMask(doc.sequencer.trackSolos));
   e.setMetronome(false);
+  e.setMotionMode(doc.sequencer.motionMode ?? 'hold');
   doc.sequencer.patterns.forEach((pat, slot) => e.setPattern(slot, patternSnapshot(pat)));
   let order = [];
   for (const slot of req.patternOrder ?? []) if (slot >= 0 && slot < PATTERN_SLOTS) for (let i = 0; i < Math.max(1, req.loops); i++) order.push(slot);

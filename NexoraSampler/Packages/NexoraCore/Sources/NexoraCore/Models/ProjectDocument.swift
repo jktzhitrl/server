@@ -107,6 +107,10 @@ public struct SequencerState: Codable, Equatable, Sendable {
     public var switchAtBarEnd: Bool = true
     public var trackMutes: [Bool] = Array(repeating: false, count: SequencerPattern.trackCount)
     public var trackSolos: [Bool] = Array(repeating: false, count: SequencerPattern.trackCount)
+    /// Wiedergabe der Motion-Spuren
+    public var motionMode: MotionMode = .hold
+    /// Song-Modus: Patterns laufen in der Reihenfolge von `ProjectDocument.patternChain`
+    public var songMode: Bool = false
 
     public init() {
         patterns = (0..<Self.patternSlots).map { SequencerPattern(name: "Pattern \(Self.slotName($0))") }
@@ -121,6 +125,8 @@ public struct SequencerState: Codable, Equatable, Sendable {
         switchAtBarEnd = c.value(.switchAtBarEnd, default: true)
         trackMutes = c.value(.trackMutes, default: [])
         trackSolos = c.value(.trackSolos, default: [])
+        motionMode = c.value(.motionMode, default: .hold)
+        songMode = c.value(.songMode, default: false)
         normalize()
     }
 
@@ -240,7 +246,7 @@ public struct ProjectDocument: Codable, Equatable, Sendable {
     public var xyPad: XYPadAssignment
     public var midi: MIDISettings
     public var export: ExportSettings
-    /// Reihenfolge der Patterns für den Ketten-Export (Slot-Indizes)
+    /// Reihenfolge der Patterns für Song-Modus und Ketten-Export (Slot-Indizes, max. 64)
     public var patternChain: [Int]
 
     public init(name: String = "Untitled") {
@@ -290,7 +296,7 @@ public struct ProjectDocument: Codable, Equatable, Sendable {
         pads = (0..<16).map { byIndex[$0] ?? PadConfig(index: $0, name: "PAD \($0 + 1)") }
         sequencer.normalize()
         midi.normalize()
-        patternChain = patternChain.filter { (0..<SequencerState.patternSlots).contains($0) }
+        patternChain = Array(patternChain.filter { (0..<SequencerState.patternSlots).contains($0) }.prefix(64))
         if patternChain.isEmpty { patternChain = [sequencer.currentPattern] }
     }
 

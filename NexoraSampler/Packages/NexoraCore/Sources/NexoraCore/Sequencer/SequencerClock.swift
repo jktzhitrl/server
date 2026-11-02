@@ -29,8 +29,19 @@ final class SequencerClock {
     private(set) var patterns: [PatternSnapshot?] = Array(repeating: nil, count: SequencerState.patternSlots)
     private(set) var currentSlot = 0
     private(set) var queuedSlot = -1
-    /// Startschritt des aktuell laufenden Patterns (für die Positionsanzeige)
+    /// Startschritt des aktuell (für die Planung) laufenden Patterns
     private(set) var patternStartStep = 0
+    /// Das Pattern vor dem letzten Wechsel: Die Planung läuft bis zu einem Schritt voraus,
+    /// hörbar ist das alte Pattern bis `switchStep`.
+    private var previousSlot = 0
+    private var previousStartStep = 0
+    private var switchStep = Int.min
+
+    /// Song-Modus: Kette der Pattern-Slots (nil = aus)
+    private(set) var song: SongSnapshot?
+    /// Aktueller Eintrag der Kette (−1 = beim nächsten Pattern-Ende mit dem ersten Eintrag beginnen)
+    private(set) var songIndex = 0
+    private var previousSongIndex = 0
 
     private var nextStepToQueue = 0
     private let events: UnsafeMutablePointer<SequencerEvent>
@@ -52,20 +63,40 @@ final class SequencerClock {
         return old
     }
 
+    /// Setzt oder entfernt die Song-Kette und gibt die alte zur Freigabe zurück.
+    func setSong(_ snapshot: SongSnapshot?) -> SongSnapshot? {
+        let old = song
+        song = snapshot
+        if let snapshot {
+            queuedSlot = -1
+            if state == .stopped {
+                songIndex = 0
+                currentSlot = snapshot.chain[0]
+            } else if old == nil || songIndex >= snapshot.chain.count || snapshot.chain[max(songIndex, 0)] != currentSlot {
+                songIndex = snapshot.chain.firstIndex(of: currentSlot) ?? -1
+            }
+        }
+        return old
+    }
+
     func selectPattern(_ slot: Int, immediately: Bool) {
         guard patterns.indices.contains(slot) else { return }
         if state != .playing || immediately {
+            markSwitch(at: state == .playing ? nextStepToQueue : Int(position.rounded(.down)))
             currentSlot = slot
             queuedSlot = -1
-            if state == .playing {
-                // Sofortiger Wechsel: Pattern beginnt am nächsten Schritt neu.
-                patternStartStep = nextStepToQueue
-            } else {
-                patternStartStep = Int(position.rounded(.down))
-            }
+            if let song, let i = song.chain.firstIndex(of: slot) { songIndex = i }
         } else {
             queuedSlot = slot == currentSlot ? -1 : slot
         }
+    }
+
+    private func markSwitch(at step: Int) {
+        previousSlot = currentSlot
+        previousStartStep = patternStartStep
+        previousSongIndex = songIndex
+        switchStep = step
+        patternStartStep = step
     }
 
     func play() {
@@ -73,8 +104,15 @@ final class SequencerClock {
             position = 0
             nextStepToQueue = 0
             patternStartStep = 0
+            switchStep = Int.min
             eventCount = 0
-            if queuedSlot >= 0 { currentSlot = queuedSlot; queuedSlot = -1 }
+            if let song {
+                songIndex = 0
+                currentSlot = song.chain[0]
+                queuedSlot = -1
+            } else if queuedSlot >= 0 {
+                currentSlot = queuedSlot; queuedSlot = -1
+            }
         }
         state = .playing
     }
@@ -89,7 +127,30 @@ final class SequencerClock {
         position = 0
         nextStepToQueue = 0
         patternStartStep = 0
+        switchStep = Int.min
         eventCount = 0
+        if let song { songIndex = 0; currentSlot = song.chain[0] }
+    }
+
+    /// Das an einer Position hörbare Pattern (Slot, Startschritt, Song-Eintrag).
+    @inline(__always)
+    func segment(at pos: Double) -> (slot: Int, start: Int, songIndex: Int) {
+        if pos < Double(switchStep) { return (previousSlot, previousStartStep, previousSongIndex) }
+        return (currentSlot, patternStartStep, songIndex)
+    }
+
+    @inline(__always)
+    func patternLength(slot: Int) -> Int { max(patterns[slot]?.length ?? 16, 1) }
+
+    /// Schritt im Pattern und Bruchteil an einer Position.
+    @inline(__always)
+    func location(at pos: Double) -> (slot: Int, step: Int, fraction: Double, length: Int) {
+        let seg = segment(at: pos)
+        let len = patternLength(slot: seg.slot)
+        let rel = pos - Double(seg.start)
+        let whole = floor(rel)
+        let step = ((Int(whole) % len) + len) % len
+        return (seg.slot, step, rel - whole, len)
     }
 
     // MARK: Zeitberechnung
@@ -104,14 +165,14 @@ final class SequencerClock {
         return (DSP.clamp(swing, 50, 75) - 50) / 50
     }
 
-    var currentPatternLength: Int { patterns[currentSlot]?.length ?? 16 }
+    var currentPatternLength: Int { patternLength(slot: currentSlot) }
+
+    /// Hörbares Pattern (für Anzeige und Aufnahme)
+    var audibleSlot: Int { segment(at: position).slot }
+    var audibleSongIndex: Int { segment(at: position).songIndex }
 
     /// Aktueller Schritt innerhalb des Patterns (für LED-Anzeige).
-    var displayStep: Int {
-        let len = max(currentPatternLength, 1)
-        let rel = Int(position.rounded(.down)) - patternStartStep
-        return ((rel % len) + len) % len
-    }
+    var displayStep: Int { location(at: position).step }
 
     // MARK: Planung
 
@@ -125,12 +186,26 @@ final class SequencerClock {
 
     private func queueStep(_ k: Int) {
         var len = max(currentPatternLength, 1)
-        if (k - patternStartStep) % len == 0, queuedSlot >= 0 {
-            currentSlot = queuedSlot
-            queuedSlot = -1
-            patternStartStep = k
-            len = max(currentPatternLength, 1)
+        if (k - patternStartStep) % len == 0 {
+            if let song {
+                // Song: am Ende jedes Patterns zum nächsten Ketteneintrag (am Ende wieder von vorn).
+                guard k > patternStartStep || songIndex < 0 else { return queueNotes(k, len: len) }
+                let next = songIndex + 1 >= song.chain.count ? 0 : songIndex + 1
+                markSwitch(at: k)
+                songIndex = next
+                currentSlot = song.chain[next]
+                len = max(currentPatternLength, 1)
+            } else if queuedSlot >= 0 {
+                markSwitch(at: k)
+                currentSlot = queuedSlot
+                queuedSlot = -1
+                len = max(currentPatternLength, 1)
+            }
         }
+        queueNotes(k, len: len)
+    }
+
+    private func queueNotes(_ k: Int, len: Int) {
         let stepInPattern = ((k - patternStartStep) % len + len) % len
         let swingDelay = Self.swingDelay(step: k, swing: swing)
         if metronome && stepInPattern % 4 == 0 {

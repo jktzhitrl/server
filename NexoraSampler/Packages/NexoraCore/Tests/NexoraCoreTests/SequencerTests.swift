@@ -218,7 +218,7 @@ final class SequencerTests: XCTestCase {
         p.gates = []
         p.normalize()
         XCTAssertEqual(p.steps.count, 16)
-        XCTAssertEqual(p.steps[0].count, 16)
+        XCTAssertEqual(p.steps[0].count, SequencerPattern.maxSteps)
         XCTAssertEqual(p.gates.count, 16)
         p.toggle(track: 3, step: 7)
         XCTAssertTrue(p[3, 7].active)

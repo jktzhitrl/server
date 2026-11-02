@@ -2,7 +2,7 @@
 // (siehe docs/PROJECT_FORMAT.md): Projekt = Ordner "Name.nexora" mit project.json + Samples/.
 import { bridge, join, basename, dirname, extname, stem, sanitize } from './bridge.js';
 import { encodeAudio } from '../engine/audiofile.js';
-import { normalizeProject, normalizePattern, defaultMaster, defaultPadSettings } from '../engine/model.js';
+import { normalizeProject, normalizePattern, defaultMaster, defaultPadSettings, compactProject, compactPattern } from '../engine/model.js';
 
 const iso = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
@@ -21,12 +21,20 @@ function sortedJSON(value) {
  */
 function packageFiles(pads, sources) {
   const files = [];
+  // Pads mit derselben Quelle (z. B. Slices eines Samples) teilen sich eine Datei im Paket.
+  const shared = new Map();
+  const keyOf = (src) => (src.type === 'file' ? `file:${src.path}` : src.type === 'bytes' ? src.bytes : src.sample);
   const out = pads.map((pad, i) => {
     const src = sources[i];
     const prefix = String(i + 1).padStart(2, '0') + '-';
     const copy = { ...pad };
     if (!src) { delete copy.sample; return copy; }
     const ref = { ...(pad.sample ?? {}) };
+    const known = shared.get(keyOf(src));
+    if (known) {
+      copy.sample = { ...ref, ...known };
+      return copy;
+    }
     if (src.type === 'file') {
       const name = `${prefix}${sanitize(stem(src.path))}.${extname(src.path) || 'wav'}`;
       files.push({ rel: `Samples/${name}`, source: src.path });
@@ -51,13 +59,15 @@ function packageFiles(pads, sources) {
       ref.fileSize = data.length;
     }
     copy.sample = ref;
+    const { packagePath, fileName, fileSize, frameCount, sampleRate, originalPath } = ref;
+    shared.set(keyOf(src), Object.fromEntries(Object.entries({ packagePath, fileName, fileSize, frameCount, sampleRate, originalPath }).filter(([, v]) => v !== undefined)));
     return copy;
   });
   return { pads: out, files };
 }
 
 export async function writeProject(target, project, sources) {
-  const doc = structuredClone(project);
+  const doc = structuredClone(compactProject(project));
   doc.modifiedAt = iso();
   doc.format = 'de.nexora.sampler.project';
   doc.formatVersion = 1;
@@ -140,7 +150,7 @@ export class PresetStore {
   }
 
   async savePattern(name, pattern, bpm, swing) {
-    await bridge.write(this.pathFor('pattern', name), sortedJSON({ format: 'de.nexora.sampler.pattern', formatVersion: 1, name, pattern: { ...pattern, name }, bpm, swing }));
+    await bridge.write(this.pathFor('pattern', name), sortedJSON({ format: 'de.nexora.sampler.pattern', formatVersion: 1, name, pattern: { ...compactPattern(pattern), name }, bpm, swing }));
   }
 
   async loadPattern(info) {

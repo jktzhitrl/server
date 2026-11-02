@@ -27,9 +27,30 @@ enum SamplePackager {
         let samplesURL = folder.appendingPathComponent(samplesFolder, isDirectory: true)
         try fm.createDirectory(at: samplesURL, withIntermediateDirectories: true)
         var result = pads
+        // Pads mit derselben Quelle (z. B. Slices eines Samples) teilen sich eine Datei im Paket.
+        var sharedFiles: [String: SampleReference] = [:]
+        func key(_ source: PadSampleSource) -> String? {
+            switch source {
+            case .none: return nil
+            case .file(let url): return "file:" + url.standardizedFileURL.path
+            case .buffer(let b): return "buffer:" + b.id.uuidString
+            }
+        }
         for i in result.indices {
             let source = sources.indices.contains(i) ? sources[i] : .none
             let prefix = String(format: "%02d-", i + 1)
+            if let k = key(source), let known = sharedFiles[k] {
+                var ref = result[i].sample ?? known
+                ref.packagePath = known.packagePath
+                ref.fileName = known.fileName
+                ref.fileSize = known.fileSize
+                ref.frameCount = known.frameCount ?? ref.frameCount
+                ref.sampleRate = known.sampleRate ?? ref.sampleRate
+                if ref.originalPath == nil { ref.originalPath = known.originalPath }
+                result[i].sample = ref
+                continue
+            }
+            defer { if let k = key(source), let ref = result[i].sample { sharedFiles[k] = ref } }
             switch source {
             case .none:
                 result[i].sample = nil

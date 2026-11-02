@@ -6,7 +6,7 @@ import {
   clamp, semitonesToRatio, balanceGains, hermite, distort, SmoothedValue, StateVariableFilter, ADSREnvelope,
   LFO, Bitcrusher, Compressor, ThreeBandEQ, StereoDelay, Reverb, VibratoProcessor
 } from './dsp.js';
-import { defaultPadSettings, defaultMaster, effectiveDelaySeconds, swingDelay, TRACKS, MAX_STEPS, PATTERN_SLOTS } from './model.js';
+import { defaultPadSettings, defaultMaster, effectiveDelaySeconds, swingDelay, fillMotion, PARAMS, TRACKS, MAX_STEPS, PATTERN_SLOTS, SONG_MAX_LENGTH } from './model.js';
 
 export const PAD_COUNT = 16;
 export const MAX_POLYPHONY = 64;
@@ -51,36 +51,71 @@ class SequencerClock {
     this.muteMask = 0; this.soloMask = 0; this.metronome = false;
     this.patterns = new Array(PATTERN_SLOTS).fill(null);
     this.currentSlot = 0; this.queuedSlot = -1; this.patternStartStep = 0; this.nextStepToQueue = 0;
+    // Die Planung läuft bis zu einem Schritt voraus; hörbar ist das alte Pattern bis switchStep.
+    this.previousSlot = 0; this.previousStartStep = 0; this.previousSongIndex = 0; this.switchStep = -Infinity;
+    /** Song-Modus: Kette der Slots oder null */
+    this.song = null; this.songIndex = 0;
     this.capacity = 1024;
     this.evTime = new Float64Array(this.capacity); this.evKind = new Uint8Array(this.capacity);
     this.evPad = new Int8Array(this.capacity); this.evVel = new Float32Array(this.capacity);
     this.count = 0;
+    this.loc = { slot: 0, step: 0, fraction: 0, length: 16, songIndex: 0 };
+  }
+  _markSwitch(step) {
+    this.previousSlot = this.currentSlot; this.previousStartStep = this.patternStartStep;
+    this.previousSongIndex = this.songIndex; this.switchStep = step; this.patternStartStep = step;
+  }
+  setSong(chain) {
+    const old = this.song;
+    this.song = chain && chain.length ? chain : null;
+    if (this.song) {
+      this.queuedSlot = -1;
+      if (this.state === 'stopped') { this.songIndex = 0; this.currentSlot = this.song[0]; }
+      else if (!old || this.songIndex >= this.song.length || this.song[Math.max(this.songIndex, 0)] !== this.currentSlot) {
+        this.songIndex = this.song.indexOf(this.currentSlot);
+      }
+    }
   }
   selectPattern(slot, immediately) {
     if (slot < 0 || slot >= PATTERN_SLOTS) return;
     if (this.state !== 'playing' || immediately) {
+      this._markSwitch(this.state === 'playing' ? this.nextStepToQueue : Math.floor(this.position));
       this.currentSlot = slot; this.queuedSlot = -1;
-      this.patternStartStep = this.state === 'playing' ? this.nextStepToQueue : Math.floor(this.position);
+      if (this.song) { const i = this.song.indexOf(slot); if (i >= 0) this.songIndex = i; }
     } else {
       this.queuedSlot = slot === this.currentSlot ? -1 : slot;
     }
   }
   play() {
     if (this.state === 'stopped') {
-      this.position = 0; this.nextStepToQueue = 0; this.patternStartStep = 0; this.count = 0;
-      if (this.queuedSlot >= 0) { this.currentSlot = this.queuedSlot; this.queuedSlot = -1; }
+      this.position = 0; this.nextStepToQueue = 0; this.patternStartStep = 0; this.switchStep = -Infinity; this.count = 0;
+      if (this.song) { this.songIndex = 0; this.currentSlot = this.song[0]; this.queuedSlot = -1; }
+      else if (this.queuedSlot >= 0) { this.currentSlot = this.queuedSlot; this.queuedSlot = -1; }
     }
     this.state = 'playing';
   }
   pause() { if (this.state === 'playing') this.state = 'paused'; }
-  stop() { this.state = 'stopped'; this.position = 0; this.nextStepToQueue = 0; this.patternStartStep = 0; this.count = 0; }
-  stepsPerSample(sr) { return (this.bpm / 60) * 4 / sr; }
-  get currentLength() { return this.patterns[this.currentSlot]?.length ?? 16; }
-  get displayStep() {
-    const len = Math.max(this.currentLength, 1);
-    const rel = Math.floor(this.position) - this.patternStartStep;
-    return ((rel % len) + len) % len;
+  stop() {
+    this.state = 'stopped'; this.position = 0; this.nextStepToQueue = 0; this.patternStartStep = 0; this.switchStep = -Infinity; this.count = 0;
+    if (this.song) { this.songIndex = 0; this.currentSlot = this.song[0]; }
   }
+  patternLength(slot) { return Math.max(this.patterns[slot]?.length ?? 16, 1); }
+  /** Hörbares Pattern, Schritt und Bruchteil an einer Position (ohne Allokation). */
+  locate(pos) {
+    const old = pos < this.switchStep;
+    const slot = old ? this.previousSlot : this.currentSlot;
+    const start = old ? this.previousStartStep : this.patternStartStep;
+    const len = this.patternLength(slot);
+    const rel = pos - start;
+    const whole = Math.floor(rel);
+    const l = this.loc;
+    l.slot = slot; l.length = len; l.step = ((whole % len) + len) % len; l.fraction = rel - whole;
+    l.songIndex = old ? this.previousSongIndex : this.songIndex;
+    return l;
+  }
+  stepsPerSample(sr) { return (this.bpm / 60) * 4 / sr; }
+  get currentLength() { return this.patternLength(this.currentSlot); }
+  get displayStep() { return this.locate(this.position).step; }
   schedule(horizon) {
     while (this.nextStepToQueue - 0.5 < horizon) { this._queueStep(this.nextStepToQueue); this.nextStepToQueue++; }
   }
@@ -90,10 +125,21 @@ class SequencerClock {
     this.evTime[i] = time; this.evKind[i] = kind; this.evPad[i] = pad; this.evVel[i] = vel;
   }
   _queueStep(k) {
-    let len = Math.max(this.currentLength, 1);
-    if ((k - this.patternStartStep) % len === 0 && this.queuedSlot >= 0) {
-      this.currentSlot = this.queuedSlot; this.queuedSlot = -1; this.patternStartStep = k;
-      len = Math.max(this.currentLength, 1);
+    let len = this.currentLength;
+    if ((k - this.patternStartStep) % len === 0) {
+      if (this.song) {
+        // Song: am Ende jedes Patterns zum nächsten Ketteneintrag (am Ende wieder von vorn).
+        if (k > this.patternStartStep || this.songIndex < 0) {
+          const next = this.songIndex + 1 >= this.song.length ? 0 : this.songIndex + 1;
+          this._markSwitch(k);
+          this.songIndex = next; this.currentSlot = this.song[next];
+          len = this.currentLength;
+        }
+      } else if (this.queuedSlot >= 0) {
+        this._markSwitch(k);
+        this.currentSlot = this.queuedSlot; this.queuedSlot = -1;
+        len = this.currentLength;
+      }
     }
     const sp = (((k - this.patternStartStep) % len) + len) % len;
     const sd = swingDelay(k, this.swing);
@@ -144,14 +190,26 @@ class SequencerClock {
   advance(steps) { if (this.state === 'playing') this.position += steps; }
 }
 
-/** Kompakte Pattern-Kopie für den Audio-Thread. */
+/** Kompakte Pattern-Kopie für den Audio-Thread (inkl. vorberechneter Motion-Spuren). */
 export function patternSnapshot(p) {
   const steps = new Array(TRACKS * MAX_STEPS);
   for (let t = 0; t < TRACKS; t++) for (let s = 0; s < MAX_STEPS; s++) {
     const st = p.steps[t][s];
     steps[t * MAX_STEPS + s] = { active: !!st.active, velocity: st.velocity, offset: st.offset };
   }
-  return { length: Math.max(1, Math.min(p.length, MAX_STEPS)), steps, gates: p.gates.slice(0, TRACKS) };
+  const length = Math.max(1, Math.min(p.length, MAX_STEPS));
+  const motion = [];
+  let motionPadMask = 0, hasMasterMotion = false;
+  for (const lane of p.motion ?? []) {
+    const spec = PARAMS[lane.parameter];
+    if (!spec || !(spec.pad || spec.master)) continue;
+    const { hold, smooth } = fillMotion(lane.values.slice(0, length));
+    if (!hold.length) continue;
+    const pad = spec.pad ? lane.pad : -1;
+    motion.push({ key: spec.pad ?? spec.master, pad, hold: Float64Array.from(hold), smooth: Float64Array.from(smooth), last: NaN });
+    if (pad >= 0) motionPadMask |= 1 << pad; else hasMasterMotion = true;
+  }
+  return { length, steps, gates: p.gates.slice(0, TRACKS), motion, motionPadMask, hasMasterMotion };
 }
 
 export class SamplerEngine {
@@ -160,7 +218,9 @@ export class SamplerEngine {
     this.voices = Array.from({ length: PHYSICAL_VOICES }, () => new Voice());
     this.previewVoice = new Voice();
     this.voiceCounter = 0;
+    /** Wirksame Pad-Einstellungen (inkl. Motion) und die von der Oberfläche gesetzten Grundwerte */
     this.padSettings = Array.from({ length: PAD_COUNT }, () => defaultPadSettings());
+    this.basePadSettings = Array.from({ length: PAD_COUNT }, () => defaultPadSettings());
     this.padSamples = new Array(PAD_COUNT).fill(null);
     this.padLevels = new Float32Array(PAD_COUNT + 1);
     this.padTriggers = new Uint32Array(PAD_COUNT);
@@ -168,6 +228,10 @@ export class SamplerEngine {
     this.previewSettings = { ...defaultPadSettings(), volume: 1, reverbSend: 0, delaySend: 0, velocitySensitivity: 0, release: 0.01 };
     this.previewGain = 1;
     this.master = defaultMaster();
+    this.baseMaster = defaultMaster();
+    this.motionMaster = defaultMaster();
+    this.motionMode = 'hold';
+    this.motionTouchedPads = 0; this.motionTouchedMaster = false;
     this.engineSettings = { polyphony: 32, stealMode: 'oldest' };
     this.isRecording = false;
     const buf = () => new Float32Array(MAX_CHUNK);
@@ -197,7 +261,7 @@ export class SamplerEngine {
     this.recordedHits = [];
     this.status = {
       currentStep: 0, transport: 'stopped', activeVoices: 0, peakL: 0, peakR: 0, currentPattern: 0, queuedPattern: -1,
-      position: 0, gainReduction: 0, padLevels: new Float32Array(PAD_COUNT + 1), padTriggers: new Uint32Array(PAD_COUNT)
+      position: 0, gainReduction: 0, songIndex: -1, padLevels: new Float32Array(PAD_COUNT + 1), padTriggers: new Uint32Array(PAD_COUNT)
     };
     this.applyMaster(this.master);
   }
@@ -212,8 +276,21 @@ export class SamplerEngine {
   noteOff(pad) { this._releasePad(pad, false); }
   allNotesOff() { for (const v of this.voices) if (v.active) this._beginFade(v, 0.01); }
   setSample(pad, sample) { if (pad >= 0 && pad < PAD_COUNT) this.padSamples[pad] = sample; }
-  setPadSettings(pad, settings) { if (pad >= 0 && pad < PAD_COUNT) this.padSettings[pad] = { ...defaultPadSettings(), ...settings }; }
-  setMaster(m) { this.applyMaster({ ...defaultMaster(), ...m }); }
+  setPadSettings(pad, settings) {
+    if (pad < 0 || pad >= PAD_COUNT) return;
+    this.basePadSettings[pad] = { ...defaultPadSettings(), ...settings };
+    this.padSettings[pad] = { ...this.basePadSettings[pad] };
+  }
+  setMaster(m) { this.baseMaster = { ...defaultMaster(), ...m }; this.applyMaster(this.baseMaster); }
+  /** Song-Modus: Kette der Slots (Array) oder null */
+  setSong(chain) {
+    const c = Array.isArray(chain) ? chain.filter((x) => Number.isInteger(x) && x >= 0 && x < PATTERN_SLOTS).slice(0, SONG_MAX_LENGTH) : null;
+    this.seq.setSong(c && c.length ? c : null);
+  }
+  setMotionMode(mode) {
+    this.motionMode = ['off', 'hold', 'smooth'].includes(mode) ? mode : 'hold';
+    if (this.motionMode === 'off') this._restoreMotion(true, 0, false);
+  }
   setEngineSettings(s) {
     this.engineSettings = { polyphony: clamp(s.polyphony | 0, 1, MAX_POLYPHONY), stealMode: s.stealMode ?? 'oldest' };
     this._enforcePolyphony();
@@ -224,8 +301,8 @@ export class SamplerEngine {
   setTrackStates(mutes, solos) { this.seq.muteMask = mutes; this.seq.soloMask = solos; }
   transport(cmd) {
     if (cmd === 'play') this.seq.play();
-    else if (cmd === 'pause') { this.seq.pause(); this._releaseSequencerVoices(); }
-    else if (cmd === 'stop') { this.seq.stop(); this._releaseSequencerVoices(); }
+    else if (cmd === 'pause') { this.seq.pause(); this._releaseSequencerVoices(); this._restoreMotion(true, 0, false); }
+    else if (cmd === 'stop') { this.seq.stop(); this._releaseSequencerVoices(); this._restoreMotion(true, 0, false); }
   }
   setRecording(on) { this.isRecording = !!on; }
   setMetronome(on) { this.seq.metronome = !!on; }
@@ -261,6 +338,8 @@ export class SamplerEngine {
       case 'setRecording': return this.setRecording(m.on);
       case 'setMetronome': return this.setMetronome(m.on);
       case 'preview': return this.preview(m.sample, m.gain);
+      case 'setSong': return this.setSong(m.chain);
+      case 'setMotionMode': return this.setMotionMode(m.mode);
     }
   }
 
@@ -294,10 +373,15 @@ export class SamplerEngine {
       const sps = seq.stepsPerSample(this.sampleRate);
       if (seq.state === 'playing') {
         seq.schedule(seq.position + 1);
+        const motionActive = this._applyMotion();
         while (seq.popDue(seq.position, this.ev)) this._handleSeqEvent(this.ev);
         const next = seq.nextEventTime();
         if (next !== null) chunk = Math.min(chunk, Math.max(1, Math.ceil((next - seq.position) / sps)));
         chunk = Math.min(chunk, Math.max(1, Math.floor(0.5 / sps)));
+        if (motionActive) {
+          if (this.motionMode === 'smooth') chunk = Math.min(chunk, 64);
+          else chunk = Math.min(chunk, Math.max(1, Math.ceil((Math.floor(seq.position) + 1 - seq.position) / sps)));
+        }
       } else {
         while (seq.popDue(Infinity, this.ev)) if (this.ev.kind === 1) this._handleSeqEvent(this.ev);
       }
@@ -515,7 +599,9 @@ export class SamplerEngine {
     st.activeVoices = active;
     st.transport = this.seq.state;
     st.currentStep = this.seq.displayStep;
-    st.currentPattern = this.seq.currentSlot;
+    const loc = this.seq.locate(this.seq.position);
+    st.currentPattern = loc.slot;
+    st.songIndex = this.seq.song ? loc.songIndex : -1;
     st.queuedPattern = this.seq.queuedSlot;
     st.position = this.seq.position;
     st.gainReduction = this.comp.gr;
@@ -532,11 +618,61 @@ export class SamplerEngine {
   _recordHit(pad, velocity) {
     const pos = this.seq.position;
     this.lastManualHit[pad] = pos;
-    const len = Math.max(this.seq.currentLength, 1);
-    const rel = pos - this.seq.patternStartStep;
-    const inPattern = rel - Math.floor(rel / len) * len;
+    const loc = this.seq.locate(pos);
     if (this.recordedHits.length < 256) {
-      this.recordedHits.push({ pad, velocity, slot: this.seq.currentSlot, positionInPattern: inPattern, patternLength: len });
+      this.recordedHits.push({ pad, velocity, slot: loc.slot, positionInPattern: loc.step + loc.fraction, patternLength: loc.length });
+    }
+  }
+
+  // ------------------------------------------------------------ Motion-Sequenz
+
+  /** Wendet die Motion-Spuren des hörbaren Patterns an; true, wenn Spuren aktiv sind. */
+  _applyMotion() {
+    const loc = this.seq.locate(this.seq.position);
+    const p = this.seq.patterns[loc.slot];
+    if (this.motionMode === 'off' || !p || !p.motion || !p.motion.length) {
+      if (this.motionTouchedPads || this.motionTouchedMaster) this._restoreMotion(true, 0, false);
+      return false;
+    }
+    if ((this.motionTouchedPads & ~p.motionPadMask) || (this.motionTouchedMaster && !p.hasMasterMotion)) {
+      this._restoreMotion(false, p.motionPadMask, p.hasMasterMotion);
+    }
+    const smooth = this.motionMode === 'smooth';
+    let masterChanged = false;
+    const mm = this.motionMaster;
+    if (p.hasMasterMotion) Object.assign(mm, this.baseMaster);
+    for (const tr of p.motion) {
+      if (loc.step >= tr.hold.length) continue;
+      let v;
+      if (smooth) {
+        const a = tr.smooth[loc.step], b = tr.smooth[(loc.step + 1) % tr.smooth.length];
+        v = a + (b - a) * loc.fraction;
+      } else v = tr.hold[loc.step];
+      if (tr.pad >= 0) {
+        this.padSettings[tr.pad][tr.key] = v;
+        this.motionTouchedPads |= 1 << tr.pad;
+      } else {
+        mm[tr.key] = v;
+        if (tr.last !== v || this.master !== mm) masterChanged = true;
+        tr.last = v;
+      }
+    }
+    if (p.hasMasterMotion) {
+      if (masterChanged) this.applyMaster(mm);
+      this.motionTouchedMaster = true;
+    }
+    return true;
+  }
+
+  _restoreMotion(all, keepPads, keepMaster) {
+    const restore = all ? this.motionTouchedPads : this.motionTouchedPads & ~keepPads;
+    if (restore) {
+      for (let p = 0; p < PAD_COUNT; p++) if (restore & (1 << p)) Object.assign(this.padSettings[p], this.basePadSettings[p]);
+      this.motionTouchedPads &= ~restore;
+    }
+    if (this.motionTouchedMaster && (all || !keepMaster)) {
+      this.applyMaster(this.baseMaster);
+      this.motionTouchedMaster = false;
     }
   }
 
@@ -661,7 +797,7 @@ export class SamplerEngine {
   }
 
   get sequencerPosition() { return this.seq.position; }
-  get sequencerSlot() { return this.seq.currentSlot; }
+  get sequencerSlot() { return this.seq.locate(this.seq.position).slot; }
 }
 
 /** Hilfsfunktion: Sample-Objekt aus Kanaldaten. */

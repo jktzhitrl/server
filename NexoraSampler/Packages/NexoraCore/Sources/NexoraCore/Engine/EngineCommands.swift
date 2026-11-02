@@ -24,6 +24,9 @@ public enum EngineCommand {
     case setRecording(Bool)
     case setMetronome(Bool)
     case preview(sample: SampleBuffer?, gain: Float)
+    /// Song-Modus: Kette der Patterns oder `nil` (aus)
+    case setSong(SongSnapshot?)
+    case setMotionMode(MotionMode)
 }
 
 /// Rückmeldungen der Engine an die Benutzeroberfläche.

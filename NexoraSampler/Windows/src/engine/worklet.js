@@ -26,7 +26,7 @@ class NexoraEngineProcessor extends AudioWorkletProcessor {
       this.port.postMessage({
         type: 'status', currentStep: s.currentStep, transport: s.transport, activeVoices: s.activeVoices,
         peakL: s.peakL, peakR: s.peakR, currentPattern: s.currentPattern, queuedPattern: s.queuedPattern,
-        gainReduction: s.gainReduction, padLevels: Array.from(s.padLevels), padTriggers: Array.from(s.padTriggers), hits
+        gainReduction: s.gainReduction, songIndex: s.songIndex, position: s.position, padLevels: Array.from(s.padLevels), padTriggers: Array.from(s.padTriggers), hits
       });
     }
     return true;

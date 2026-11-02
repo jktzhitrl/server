@@ -22,7 +22,10 @@ public final class SamplerEngine: @unchecked Sendable {
     private var voiceCounter: UInt64 = 0
 
     // Pad-Zustand (nur im Audio-Thread verändert)
+    /// Wirksame Pad-Einstellungen (inkl. Motion-Sequenz)
     private let padSettings: UnsafeMutablePointer<PadSettings>
+    /// Pad-Einstellungen, wie sie von der Oberfläche gesetzt wurden (ohne Motion)
+    private let basePadSettings: UnsafeMutablePointer<PadSettings>
     private let padSamples: UnsafeMutablePointer<SampleBuffer?>
     private let padLevels: UnsafeMutablePointer<Float>
     private let padTriggers: UnsafeMutablePointer<Float>
@@ -31,6 +34,11 @@ public final class SamplerEngine: @unchecked Sendable {
     private var previewGain: Float = 1
 
     private var master = MasterSettings()
+    private var baseMaster = MasterSettings()
+    private var motionMode: MotionMode = .hold
+    /// Pads bzw. Master, deren Werte gerade von der Motion-Sequenz überschrieben sind
+    private var motionTouchedPads: UInt16 = 0
+    private var motionTouchedMaster = false
     private var engineSettings = EngineSettings()
     private var isRecording = false
 
@@ -81,6 +89,8 @@ public final class SamplerEngine: @unchecked Sendable {
         voices.initialize(repeating: Voice(), count: vc)
         padSettings = .allocate(capacity: Self.padCount)
         padSettings.initialize(repeating: PadSettings(), count: Self.padCount)
+        basePadSettings = .allocate(capacity: Self.padCount)
+        basePadSettings.initialize(repeating: PadSettings(), count: Self.padCount)
         padSamples = .allocate(capacity: Self.padCount)
         padSamples.initialize(repeating: nil, count: Self.padCount)
         padLevels = .allocate(capacity: Self.padCount + 1)
@@ -124,6 +134,8 @@ public final class SamplerEngine: @unchecked Sendable {
         voices.deallocate()
         padSettings.deinitialize(count: Self.padCount)
         padSettings.deallocate()
+        basePadSettings.deinitialize(count: Self.padCount)
+        basePadSettings.deallocate()
         padSamples.deinitialize(count: Self.padCount)
         padSamples.deallocate()
         padLevels.deallocate()
@@ -153,7 +165,7 @@ public final class SamplerEngine: @unchecked Sendable {
 
     /// Position des Sequencers in Schritten. Nur im Offline-Betrieb (gleicher Thread) verwenden.
     public var sequencerPosition: Double { sequencer.position }
-    public var sequencerSlot: Int { sequencer.currentSlot }
+    public var sequencerSlot: Int { sequencer.audibleSlot }
 
     // MARK: - Rendering
 
@@ -178,12 +190,22 @@ public final class SamplerEngine: @unchecked Sendable {
             let sps = sequencer.stepsPerSample(sampleRate: sampleRate)
             if sequencer.state == .playing {
                 sequencer.schedule(until: sequencer.position + 1.0, isRecording: isRecording)
+                let motionActive = applyMotion()
                 while let e = sequencer.popDueEvent(at: sequencer.position) { handleSequencerEvent(e) }
                 if let next = sequencer.nextEventTime() {
                     let frames = Int(((next - sequencer.position) / sps).rounded(.up))
                     chunk = min(chunk, max(1, frames))
                 }
                 chunk = min(chunk, max(1, Int(0.5 / sps)))
+                if motionActive {
+                    if motionMode == .smooth {
+                        chunk = min(chunk, 64)
+                    } else {
+                        // Stufen wechseln exakt an der Schrittgrenze.
+                        let toNext = (floor(sequencer.position) + 1 - sequencer.position) / sps
+                        chunk = min(chunk, max(1, Int(toNext.rounded(.up))))
+                    }
+                }
             } else {
                 // Auch ohne Wiedergabe müssen fällige Note-Offs (nach Stop) verarbeitet werden.
                 while let e = sequencer.popDueEvent(at: .infinity) {
@@ -566,7 +588,8 @@ public final class SamplerEngine: @unchecked Sendable {
         status.write(.activeVoices, Float(active))
         status.write(.transport, Float(sequencer.state.rawValue))
         status.write(.currentStep, Float(sequencer.displayStep))
-        status.write(.currentPattern, Float(sequencer.currentSlot))
+        status.write(.currentPattern, Float(sequencer.audibleSlot))
+        status.write(.songIndex, Float(sequencer.song == nil ? -1 : sequencer.audibleSongIndex))
         status.write(.queuedPattern, Float(sequencer.queuedSlot))
         status.write(.positionSteps, Float(sequencer.position))
         status.write(.recording, isRecording ? 1 : 0)
@@ -611,9 +634,16 @@ public final class SamplerEngine: @unchecked Sendable {
             padSamples[pad] = sample
         case let .setPadSettings(pad, settings):
             guard (0..<Self.padCount).contains(pad) else { return }
+            basePadSettings[pad] = settings
             padSettings[pad] = settings
         case let .setMaster(settings):
+            baseMaster = settings
             applyMaster(settings)
+        case let .setSong(song):
+            if let old = sequencer.setSong(song) { _ = garbage.tryPush(old) }
+        case let .setMotionMode(mode):
+            motionMode = mode
+            if mode == .off { restoreMotion(all: true) }
         case let .setEngineSettings(settings):
             engineSettings = settings
             engineSettings.polyphony = DSP.clamp(settings.polyphony, 1, EngineSettings.maximumPolyphony)
@@ -634,9 +664,11 @@ public final class SamplerEngine: @unchecked Sendable {
             case .pause:
                 sequencer.pause()
                 releaseSequencerVoices()
+                restoreMotion(all: true)
             case .stop:
                 sequencer.stop()
                 releaseSequencerVoices()
+                restoreMotion(all: true)
             }
         case let .setRecording(on):
             isRecording = on
@@ -673,11 +705,56 @@ public final class SamplerEngine: @unchecked Sendable {
     private func recordHit(pad: Int, velocity: Float) {
         let pos = sequencer.position
         lastManualHit[pad] = pos
-        let len = max(sequencer.currentPatternLength, 1)
-        let rel = pos - Double(sequencer.patternStartStep)
-        let inPattern = rel - floor(rel / Double(len)) * Double(len)
-        _ = events.tryPush(.recordedHit(pad: pad, velocity: velocity, slot: sequencer.currentSlot,
-                                        positionInPattern: inPattern, patternLength: len))
+        let loc = sequencer.location(at: pos)
+        _ = events.tryPush(.recordedHit(pad: pad, velocity: velocity, slot: loc.slot,
+                                        positionInPattern: Double(loc.step) + loc.fraction, patternLength: loc.length))
+    }
+
+    // MARK: - Motion-Sequenz
+
+    /// Wendet die Motion-Spuren des hörbaren Patterns an der aktuellen Position an.
+    /// - Returns: `true`, wenn Motion-Spuren aktiv sind.
+    private func applyMotion() -> Bool {
+        let loc = sequencer.location(at: sequencer.position)
+        guard motionMode != .off, let pattern = sequencer.patterns[loc.slot], pattern.hasMotion else {
+            if motionTouchedPads != 0 || motionTouchedMaster { restoreMotion(all: true) }
+            return false
+        }
+        // Pads/Master ohne Spur in diesem Pattern auf ihre Grundwerte zurücksetzen
+        if motionTouchedPads & ~pattern.motionPadMask != 0 || (motionTouchedMaster && !pattern.hasMasterMotion) {
+            restoreMotion(all: false, keepPads: pattern.motionPadMask, keepMaster: pattern.hasMasterMotion)
+        }
+        var newMaster = baseMaster
+        var masterChanged = false
+        for track in pattern.motion where loc.step < track.hold.count {
+            let v = track.value(step: loc.step, fraction: loc.fraction, mode: motionMode)
+            if let kp = track.padKeyPath, track.pad >= 0 {
+                padSettings[track.pad][keyPath: kp] = v
+                motionTouchedPads |= UInt16(1) << UInt16(track.pad)
+            } else if let kp = track.masterKeyPath {
+                newMaster[keyPath: kp] = v
+                masterChanged = true
+            }
+        }
+        if masterChanged {
+            if newMaster != master { applyMaster(newMaster) }
+            motionTouchedMaster = true
+        }
+        return true
+    }
+
+    private func restoreMotion(all: Bool, keepPads: UInt16 = 0, keepMaster: Bool = false) {
+        let restore = all ? motionTouchedPads : motionTouchedPads & ~keepPads
+        if restore != 0 {
+            for p in 0..<Self.padCount where restore & (UInt16(1) << UInt16(p)) != 0 {
+                padSettings[p] = basePadSettings[p]
+            }
+            motionTouchedPads &= ~restore
+        }
+        if motionTouchedMaster && (all || !keepMaster) {
+            applyMaster(baseMaster)
+            motionTouchedMaster = false
+        }
     }
 
     private func handleSequencerEvent(_ e: SequencerEvent) {

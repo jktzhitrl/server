@@ -5,7 +5,11 @@ import { clamp } from './dsp.js';
 
 export const PAD_COUNT = 16;
 export const PATTERN_SLOTS = 8;
-export const MAX_STEPS = 16;
+export const MAX_STEPS = 64;
+export const STEPS_PER_PAGE = 16;
+export const PAGE_COUNT = MAX_STEPS / STEPS_PER_PAGE;
+export const MOTION_MAX_LANES = 24;
+export const SONG_MAX_LENGTH = 64;
 export const TRACKS = 16;
 export const FORMAT_VERSION = 1;
 
@@ -57,8 +61,29 @@ export function newPattern(name, length = 16) {
   return {
     id: uuid(), name, length: clamp(length, 1, MAX_STEPS),
     steps: Array.from({ length: TRACKS }, () => Array.from({ length: MAX_STEPS }, () => newStep())),
-    gates: Array(TRACKS).fill(1)
+    gates: Array(TRACKS).fill(1),
+    motion: []
   };
+}
+
+export const MOTION_MODES = { off: 'AUS', hold: 'STUFEN', smooth: 'GLATT' };
+
+/** Nur Pad- und Master-Parameter lassen sich als Motion aufzeichnen (Tempo/Swing nicht). */
+export const canRecordMotion = (id) => !!(PARAMS[id]?.pad || PARAMS[id]?.master);
+
+export function newMotionLane(parameter, pad) {
+  return { parameter, pad: PARAMS[parameter]?.pad ? clamp(pad | 0, 0, 15) : -1, values: Array(MAX_STEPS).fill(null) };
+}
+
+function normalizeMotionLane(l) {
+  if (!l || !canRecordMotion(l.parameter)) return null;
+  const spec = PARAMS[l.parameter];
+  const lane = newMotionLane(l.parameter, Number(l.pad ?? -1));
+  for (let i = 0; i < MAX_STEPS; i++) {
+    const v = l.values?.[i];
+    lane.values[i] = v == null || !Number.isFinite(Number(v)) ? null : clamp(Number(v), spec.min, spec.max);
+  }
+  return lane;
 }
 
 export function normalizePattern(p) {
@@ -72,7 +97,102 @@ export function normalizePattern(p) {
     const g = Number(p?.gates?.[t]);
     out.gates[t] = Number.isFinite(g) ? clamp(g, 0.05, 16) : 1;
   }
+  const seen = new Set();
+  for (const raw of Array.isArray(p?.motion) ? p.motion : []) {
+    const lane = normalizeMotionLane(raw);
+    if (!lane) continue;
+    const key = `${lane.parameter}#${lane.pad}`;
+    if (seen.has(key) || out.motion.length >= MOTION_MAX_LANES) continue;
+    seen.add(key);
+    out.motion.push(lane);
+  }
   return out;
+}
+
+/** Anzahl der zu speichernden Schritte: Länge bzw. letzter aktiver Schritt, auf ganze Seiten gerundet. */
+export function storedStepCount(p) {
+  let last = p.length - 1;
+  for (const track of p.steps) for (let i = track.length - 1; i > last; i--) if (track[i].active) { last = i; break; }
+  const pages = Math.floor((last + STEPS_PER_PAGE) / STEPS_PER_PAGE);
+  return Math.min(MAX_STEPS, Math.max(1, pages) * STEPS_PER_PAGE);
+}
+
+/** Kompakte Form zum Speichern – identisch zur Kodierung im Swift-Kern. */
+export function compactPattern(p) {
+  const n = storedStepCount(p);
+  const out = { id: p.id, name: p.name, length: p.length, steps: p.steps.map((t) => t.slice(0, n)), gates: p.gates };
+  if (p.motion?.length) {
+    out.motion = p.motion.map((l) => {
+      let last = -1;
+      l.values.forEach((v, i) => { if (v != null) last = i; });
+      return { parameter: l.parameter, pad: l.pad, values: l.values.slice(0, last + 1) };
+    });
+  }
+  return out;
+}
+
+export function compactProject(project) {
+  return { ...project, sequencer: { ...project.sequencer, patterns: project.sequencer.patterns.map(compactPattern) } };
+}
+
+export function motionLaneIndex(pattern, parameter, pad) {
+  const p = PARAMS[parameter]?.pad ? pad : -1;
+  return pattern.motion.findIndex((l) => l.parameter === parameter && l.pad === p);
+}
+
+export const hasMotion = (pattern, parameter, pad) => motionLaneIndex(pattern, parameter, pad) >= 0;
+
+/**
+ * Zeichnet einen Motion-Wert auf. Liegt `fromStep` vor `step` (gleicher Durchlauf), werden die
+ * Schritte dazwischen linear aufgefüllt. Liefert false, wenn keine Spur mehr frei ist.
+ */
+export function recordMotion(pattern, parameter, pad, step, value, fromStep = null, fromValue = null) {
+  if (!canRecordMotion(parameter) || step < 0 || step >= MAX_STEPS) return false;
+  let i = motionLaneIndex(pattern, parameter, pad);
+  if (i < 0) {
+    if (pattern.motion.length >= MOTION_MAX_LANES) return false;
+    pattern.motion.push(newMotionLane(parameter, pad));
+    i = pattern.motion.length - 1;
+  }
+  const spec = PARAMS[parameter];
+  const v = clamp(value, spec.min, spec.max);
+  const lane = pattern.motion[i];
+  if (fromStep != null && fromValue != null && fromStep < step && step - fromStep <= MAX_STEPS / 2) {
+    for (let s = fromStep + 1; s < step; s++) lane.values[s] = fromValue + ((v - fromValue) * (s - fromStep)) / (step - fromStep);
+  }
+  lane.values[step] = v;
+  return true;
+}
+
+export function removeMotion(pattern, parameter, pad) {
+  const i = motionLaneIndex(pattern, parameter, pad);
+  if (i >= 0) pattern.motion.splice(i, 1);
+}
+
+export const motionLaneName = (l) => (l.pad >= 0 ? `PAD ${String(l.pad + 1).padStart(2, '0')} ${PARAMS[l.parameter].short}` : `MASTER ${PARAMS[l.parameter].short}`);
+
+/** Füllt Lücken einer Motion-Spur zyklisch auf: Stufen (`hold`) bzw. linear (`smooth`). */
+export function fillMotion(values) {
+  const n = values.length;
+  const defined = [];
+  values.forEach((v, i) => { if (v != null) defined.push(i); });
+  if (!defined.length) return { hold: [], smooth: [] };
+  const hold = new Array(n), smooth = new Array(n);
+  for (let s = 0; s < n; s++) {
+    let prev = defined[defined.length - 1];
+    for (const d of defined) if (d <= s) prev = d;
+    let next = defined[0];
+    for (const d of defined) if (d > s) { next = d; break; }
+    const pv = values[prev], nv = values[next];
+    hold[s] = pv;
+    if (prev === s || prev === next) smooth[s] = pv;
+    else {
+      const span = ((next - prev) % n + n) % n;
+      const pos = ((s - prev) % n + n) % n;
+      smooth[s] = pv + ((nv - pv) * pos) / Math.max(span, 1);
+    }
+  }
+  return { hold, smooth };
 }
 
 export const DEFAULT_KEYS = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k'];
@@ -97,7 +217,8 @@ export function newProject(name = 'Untitled') {
     sequencer: {
       patterns: Array.from({ length: PATTERN_SLOTS }, (_, i) => newPattern(`Pattern ${slotName(i)}`)),
       currentPattern: 0, quantize: 'sixteenth', metronome: false, switchAtBarEnd: true,
-      trackMutes: Array(16).fill(false), trackSolos: Array(16).fill(false)
+      trackMutes: Array(16).fill(false), trackSolos: Array(16).fill(false),
+      motionMode: 'hold', songMode: false
     },
     xyPad: { xParameter: 'masterFilterCutoff', yParameter: 'reverbMix' },
     midi: defaultMIDI(),
@@ -148,14 +269,16 @@ export function normalizeProject(raw) {
     metronome: !!seq.metronome,
     switchAtBarEnd: seq.switchAtBarEnd !== false,
     trackMutes: Array.from({ length: 16 }, (_, i) => !!seq.trackMutes?.[i]),
-    trackSolos: Array.from({ length: 16 }, (_, i) => !!seq.trackSolos?.[i])
+    trackSolos: Array.from({ length: 16 }, (_, i) => !!seq.trackSolos?.[i]),
+    motionMode: Object.keys(MOTION_MODES).includes(seq.motionMode) ? seq.motionMode : 'hold',
+    songMode: !!seq.songMode
   };
   p.xyPad = merge(base.xyPad, raw?.xyPad);
   p.midi = merge(defaultMIDI(), raw?.midi);
   p.midi.padNotes = Array.from({ length: 16 }, (_, i) => clamp(Number(p.midi.padNotes?.[i] ?? 36 + i), -1, 127));
   p.midi.ccMappings = (Array.isArray(p.midi.ccMappings) ? p.midi.ccMappings : []).filter((m) => PARAMS[m?.parameter]);
   p.export = merge(defaultExport(), raw?.export);
-  p.patternChain = (Array.isArray(raw?.patternChain) ? raw.patternChain : [0]).filter((s) => s >= 0 && s < PATTERN_SLOTS);
+  p.patternChain = (Array.isArray(raw?.patternChain) ? raw.patternChain : [0]).filter((s) => Number.isInteger(s) && s >= 0 && s < PATTERN_SLOTS).slice(0, SONG_MAX_LENGTH);
   if (!p.patternChain.length) p.patternChain = [p.sequencer.currentPattern];
   return p;
 }

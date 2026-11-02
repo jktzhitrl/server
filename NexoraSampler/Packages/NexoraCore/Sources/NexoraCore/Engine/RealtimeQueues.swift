@@ -120,7 +120,7 @@ final class RealtimeRing<Element> {
 public final class EngineStatus: @unchecked Sendable {
     enum Slot: Int {
         case currentStep = 0, transport, activeVoices, peakLeft, peakRight
-        case currentPattern, queuedPattern, positionSteps, gainReduction, load, recording
+        case currentPattern, queuedPattern, positionSteps, gainReduction, load, recording, songIndex
     }
     static let padLevelBase = 16
     static let padTriggerBase = 40
@@ -132,6 +132,7 @@ public final class EngineStatus: @unchecked Sendable {
         storage = .allocate(capacity: Self.size)
         storage.initialize(repeating: 0, count: Self.size)
         storage[Slot.queuedPattern.rawValue] = -1
+        storage[Slot.songIndex.rawValue] = -1
     }
 
     deinit { storage.deallocate() }
@@ -147,6 +148,8 @@ public final class EngineStatus: @unchecked Sendable {
     public var currentPattern: Int { Int(read(.currentPattern)) }
     /// -1 = kein Wechsel vorgemerkt
     public var queuedPattern: Int { Int(read(.queuedPattern)) }
+    /// Eintrag der Song-Kette, der gerade läuft (−1 = Song-Modus aus)
+    public var songIndex: Int { Int(read(.songIndex)) }
     public var positionInSteps: Double { Double(read(.positionSteps)) }
     public var gainReductionDb: Float { read(.gainReduction) }
     /// Anteil der verfügbaren Renderzeit (0 ... 1)

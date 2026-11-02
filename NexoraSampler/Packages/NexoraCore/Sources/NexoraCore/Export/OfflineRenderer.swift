@@ -49,6 +49,7 @@ public enum OfflineRenderer {
         engine.send(.setTempo(bpm: doc.bpm, swing: doc.swing))
         engine.send(.setTrackStates(mutes: doc.sequencer.muteMask, solos: doc.sequencer.soloMask))
         engine.send(.setMetronome(false))
+        engine.send(.setMotionMode(doc.sequencer.motionMode))
         for (slot, pattern) in doc.sequencer.patterns.enumerated() {
             engine.send(.setPattern(slot: slot, pattern: PatternSnapshot(pattern)))
         }
@@ -138,6 +139,11 @@ public enum OfflineRenderer {
         }
         engine.drainGarbage()
         return Result(left: left, right: right, sampleRate: request.sampleRate)
+    }
+
+    /// Macht aus einem Render-Ergebnis ein Sample (Resampling).
+    public static func sampleBuffer(from result: Result, name: String) -> SampleBuffer {
+        SampleBuffer(name: name, sampleRate: result.sampleRate, channels: [result.left, result.right])
     }
 
     /// Normalisiert auf −0,3 dBFS.
