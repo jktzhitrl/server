@@ -8,6 +8,8 @@ public enum TransportCommand: Sendable {
 /// des nächsten Audio-Blocks im Audio-Thread ausgeführt.
 public enum EngineCommand {
     case noteOn(pad: Int, velocity: Float)
+    /// Note mit Transposition in Halbtönen (Keyboard-Modus der Pads)
+    case noteOnTransposed(pad: Int, velocity: Float, semitones: Double)
     case noteOff(pad: Int)
     case allNotesOff
     case setSample(pad: Int, sample: SampleBuffer?)

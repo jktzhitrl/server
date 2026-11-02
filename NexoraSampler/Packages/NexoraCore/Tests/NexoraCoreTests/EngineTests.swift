@@ -321,6 +321,42 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(out.left[19_500], 0.2, accuracy: 0.02, "Nur noch die neue Stimme")
     }
 
+    func testTransposedNoteChangesPitch() {
+        let e = engine(with: dcSample(frames: 2000))
+        e.send(.noteOnTransposed(pad: 0, velocity: 1, semitones: 12))
+        XCTAssertEqual(Double(lastNonZero(renderEngine(e, frames: 4000).left)), 1000, accuracy: 4, "+12 Halbtöne = halbe Dauer")
+        e.send(.noteOnTransposed(pad: 0, velocity: 1, semitones: -12))
+        XCTAssertEqual(Double(lastNonZero(renderEngine(e, frames: 8000).left)), 4000, accuracy: 6)
+    }
+
+    func testFilterEnvelopeOpensFilter() {
+        // LP bei 100 Hz auf 5-kHz-Sinus: ohne EG fast stumm, mit EG Int offen während der Hüllkurve.
+        let sine = SampleBuffer(name: "S", sampleRate: sr, channels: [TestAudio.sine(frequency: 5_000, seconds: 0.5)])
+        var closed = neutralPadSettings()
+        closed.filterMode = .lowPass
+        closed.cutoff = 100
+        let a = engine(with: sine, settings: closed)
+        a.send(.noteOn(pad: 0, velocity: 1))
+        let quiet = TestAudio.rms(renderEngine(a, frames: 6000).left[1000...])
+        var open = closed
+        open.filterEnvAmount = 1
+        let b = engine(with: sine, settings: open)
+        b.send(.noteOn(pad: 0, velocity: 1))
+        let loud = TestAudio.rms(renderEngine(b, frames: 6000).left[1000...])
+        XCTAssertGreaterThan(loud, quiet * 10)
+    }
+
+    func testInsertFXBypass() {
+        let sine = SampleBuffer(name: "S", sampleRate: sr, channels: [TestAudio.sine(frequency: 200, seconds: 0.3, amplitude: 0.4)])
+        var s = neutralPadSettings()
+        s.crushBits = 2
+        s.insertFXOn = false
+        let e = engine(with: sine, settings: s)
+        e.send(.noteOn(pad: 0, velocity: 1))
+        let out = renderEngine(e, frames: 6000).left[2000..<5000]
+        XCTAssertGreaterThan(Set(out.map { ($0 * 1000).rounded() }).count, 100, "Bitcrusher ist umgangen")
+    }
+
     func testSampleRateConversionOnPlayback() {
         // 22,05-kHz-Sample spielt in einer 44,1-kHz-Engine mit korrekter Dauer.
         let sample = SampleBuffer(name: "Low", sampleRate: 22_050, channels: [TestAudio.constant(0.5, frames: 1000)])

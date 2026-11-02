@@ -10,6 +10,8 @@ enum PadMode: String, CaseIterable {
     case play
     /// Pads schalten die 16 Schritte der ausgewählten Spur (Step-Programmierung wie bei Hardware)
     case step
+    /// Pads spielen das ausgewählte Sample chromatisch (untere Reihe weiße, obere Reihe schwarze Tasten)
+    case keyboard
 }
 
 /// Ausklappbarer Bereich unterhalb des Instruments.
@@ -73,6 +75,10 @@ final class SamplerController {
     /// Pad, dessen MIDI-Note per Learn zugewiesen wird
     var noteLearnPad: Int?
     var xyLatch = true
+    /// Pattern-Bank der vier Pattern-Tasten (0 = A–D, 1 = E–H)
+    var patternBank = 0
+    /// Oktavlage im Keyboard-Modus
+    var keyboardOctave = 0
     var projectURL: URL?
     var isDirty = false
     var notice: UserNotice?
@@ -98,6 +104,8 @@ final class SamplerController {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var keyMonitor: Any?
     @ObservationIgnored private var heldKeys: [UInt16: Int] = [:]
+    /// Im Keyboard-Modus gehaltene Pads (für Note-Off)
+    @ObservationIgnored var keyboardHeldPads: Set<Int> = []
     @ObservationIgnored var patternClipboard: SequencerPattern?
     @ObservationIgnored var tapTimes: [Date] = []
     @ObservationIgnored var previewTask: Task<Void, Never>?

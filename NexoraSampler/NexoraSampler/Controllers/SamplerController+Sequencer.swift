@@ -64,6 +64,7 @@ extension SamplerController {
 
     func selectPattern(_ slot: Int) {
         guard (0..<SequencerState.patternSlots).contains(slot) else { return }
+        patternBank = slot / 4
         let immediate = meters.transport != .playing || !project.sequencer.switchAtBarEnd
         host.send(.selectPattern(slot: slot, immediately: immediate))
         if immediate {
@@ -73,6 +74,13 @@ extension SamplerController {
             showLCD("NEXT PATTERN", "\(SequencerState.slotName(slot)) AT BAR END")
         }
         markDirty()
+    }
+
+    func stepPattern(by delta: Int) {
+        let n = SequencerState.patternSlots
+        let slot = ((project.sequencer.currentPattern + delta) % n + n) % n
+        patternBank = slot / 4
+        selectPattern(slot)
     }
 
     func toggleStep(track: Int, step: Int) {

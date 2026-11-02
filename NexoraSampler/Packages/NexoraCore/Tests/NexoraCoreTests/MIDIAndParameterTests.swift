@@ -126,8 +126,8 @@ final class MIDIAndParameterTests: XCTestCase {
     }
 
     func testDefaultKeyboardLayout() {
-        XCTAssertEqual(PadConfig.defaultKey(for: 0), "z")
-        XCTAssertEqual(PadConfig.defaultKey(for: 12), "1")
+        XCTAssertEqual(PadConfig.defaultKey(for: 0), "q")
+        XCTAssertEqual(PadConfig.defaultKey(for: 8), "a")
         XCTAssertEqual(Set(PadConfig.defaultKeys).count, 16)
     }
 }

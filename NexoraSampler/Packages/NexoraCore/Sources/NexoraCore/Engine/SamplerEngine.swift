@@ -232,7 +232,7 @@ public final class SamplerEngine: @unchecked Sendable {
         let looping = s.playMode == .loop && !v.isPreview
         let stretch = s.pitchMode == .timeStretch && !v.isPreview
         let srRatio = sample.sampleRate / sr
-        let baseSemitones = s.pitch + s.fineTune / 100
+        let baseSemitones = s.pitch + s.fineTune / 100 + v.transpose
         let speed = DSP.clamp(s.speed, 0.25, 4)
 
         var pitchRatio = DSP.semitonesToRatio(baseSemitones)
@@ -246,6 +246,9 @@ public final class SamplerEngine: @unchecked Sendable {
         let lfoActive = s.lfoTarget != .off && lfoDepth > 0.0001
         let baseCutoff = Float(s.cutoff)
         let resonance = Float(s.resonance)
+        let envAmount = Float(DSP.clamp(s.filterEnvAmount, -1, 1))
+        let filterEnvActive = s.filterMode != .off && abs(envAmount) > 0.0001
+        var lfoCutoffOctaves: Float = 0
         v.filter.mode = s.filterMode
         if s.filterMode != .off {
             v.filter.setParameters(cutoff: baseCutoff, resonance: resonance, sampleRate: Float(sr))
@@ -257,9 +260,9 @@ public final class SamplerEngine: @unchecked Sendable {
         var tremolo: Float = 1
         let revSend = Float(s.reverbSend)
         let dlySend = Float(s.delaySend)
-        let drive = Float(s.drive)
-        let bits = Float(s.crushBits)
-        let downsample = Float(s.crushDownsample)
+        let drive: Float = s.insertFXOn ? Float(s.drive) : 0
+        let bits: Float = s.insertFXOn ? Float(s.crushBits) : 16
+        let downsample: Float = s.insertFXOn ? Float(s.crushDownsample) : 1
         let crushActive = bits < 15.99 || downsample > 1.001
         let filterActive = s.filterMode != .off
         let endFadeFrames = 48.0
@@ -286,8 +289,9 @@ public final class SamplerEngine: @unchecked Sendable {
                 case .volume:
                     tremolo = 1 - lfoDepth * (0.5 + 0.5 * raw)
                 case .cutoff:
-                    if filterActive {
-                        let c = baseCutoff * exp2f(raw * lfoDepth * 3)
+                    lfoCutoffOctaves = raw * lfoDepth * 3
+                    if filterActive && !filterEnvActive {
+                        let c = baseCutoff * exp2f(lfoCutoffOctaves)
                         v.filter.setParameters(cutoff: c, resonance: resonance, sampleRate: Float(sr))
                     }
                 case .pan:
@@ -295,6 +299,11 @@ public final class SamplerEngine: @unchecked Sendable {
                 case .off:
                     break
                 }
+            }
+
+            if filterEnvActive && (i & 15) == 0 {
+                let octaves = lfoCutoffOctaves + envAmount * v.envelope.level * 6
+                v.filter.setParameters(cutoff: min(baseCutoff * exp2f(octaves), 20_000), resonance: resonance, sampleRate: Float(sr))
             }
 
             var l: Float = 0, r: Float = 0
@@ -590,6 +599,8 @@ public final class SamplerEngine: @unchecked Sendable {
                 recordHit(pad: pad, velocity: velocity)
             }
             startVoice(pad: pad, velocity: velocity, fromSequencer: false)
+        case let .noteOnTransposed(pad, velocity, semitones):
+            startVoice(pad: pad, velocity: velocity, fromSequencer: false, transpose: semitones)
         case let .noteOff(pad):
             releasePad(pad, fromSequencer: false)
         case .allNotesOff:
@@ -686,7 +697,7 @@ public final class SamplerEngine: @unchecked Sendable {
 
     // MARK: - Stimmenverwaltung
 
-    private func startVoice(pad: Int, velocity: Float, fromSequencer: Bool) {
+    private func startVoice(pad: Int, velocity: Float, fromSequencer: Bool, transpose: Double = 0) {
         guard (0..<Self.padCount).contains(pad), let sample = padSamples[pad] else { return }
         let s = padSettings[pad]
 
@@ -731,6 +742,7 @@ public final class SamplerEngine: @unchecked Sendable {
         v.sample = sample
         v.age = voiceCounter
         v.fromSequencer = fromSequencer
+        v.transpose = DSP.clamp(transpose, -48, 48)
         let frames = Double(sample.frameCount)
         let regionStart = DSP.clamp(s.start, 0, 1) * frames
         let regionEnd = max(DSP.clamp(s.end, 0, 1) * frames, regionStart + 2)

@@ -16,7 +16,7 @@ struct NexoraSamplerApp: App {
                 }
                 .frame(minWidth: 960, minHeight: 520)
         }
-        .defaultSize(width: 1400, height: 780)
+        .defaultSize(width: 1400, height: 820)
         .windowStyle(.hiddenTitleBar)
         .commands { AppCommands(controller: controller) }
 
@@ -70,10 +70,16 @@ struct AppCommands: Commands {
             }
         }
         CommandMenu("Pads") {
-            Button("Spielmodus") { controller.padMode = .play }
+            Button("Trigger-Modus (Pads spielen)") { controller.setPadMode(.play) }
                 .keyboardShortcut("p", modifiers: [.command, .option])
-            Button("Step-Modus") { controller.padMode = .step }
+            Button("Sequencer-Modus (Pads = Schritte)") { controller.setPadMode(.step) }
                 .keyboardShortcut("t", modifiers: [.command, .option])
+            Button("Keyboard-Modus (chromatisch)") { controller.setPadMode(.keyboard) }
+                .keyboardShortcut("k", modifiers: [.command, .option])
+            Button("Keyboard: Oktave höher") { controller.keyboardOctave = min(controller.keyboardOctave + 1, 3) }
+                .keyboardShortcut(.upArrow, modifiers: [.command, .option])
+            Button("Keyboard: Oktave tiefer") { controller.keyboardOctave = max(controller.keyboardOctave - 1, -3) }
+                .keyboardShortcut(.downArrow, modifiers: [.command, .option])
             Divider()
             Button("Pad-Editor") { controller.drawer = .editor }
                 .keyboardShortcut("1", modifiers: [.command, .option])

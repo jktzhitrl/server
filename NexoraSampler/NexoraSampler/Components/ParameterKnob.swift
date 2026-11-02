@@ -10,7 +10,9 @@ struct ParameterKnob: View {
     /// Fester Pad-Bezug; `nil` = ausgewähltes Pad
     var pad: Int?
     var size: CGFloat = 38
-    var labelColor: Color = Nexora.Colors.labelDark
+    var labelColor: Color = Nexora.Colors.bodyLabel
+    var style: KnobView.Style = .standard
+    var showsValue = true
 
     var body: some View {
         let target = pad ?? controller.selectedPad
@@ -21,7 +23,9 @@ struct ParameterKnob: View {
             defaultValue: spec.defaultNormalized,
             valueText: spec.format(controller.project.value(of: id, pad: target)),
             size: size,
+            style: style,
             labelColor: labelColor,
+            showsValue: showsValue,
             isLearning: controller.midiLearnActive && controller.learnTarget == id,
             hasMapping: controller.project.midi.mapping(for: id) != nil,
             onChange: { controller.setParameter(id, normalized: $0, pad: pad) },

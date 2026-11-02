@@ -6,7 +6,7 @@ public enum ParameterID: String, Codable, CaseIterable, Sendable {
     // Pad
     case padVolume, padPan, padPitch, padFineTune, padSpeed, padStart, padEnd
     case padAttack, padDecay, padSustain, padRelease
-    case padCutoff, padResonance
+    case padCutoff, padResonance, padFilterEnv
     case padLFORate, padLFODepth
     case padDrive, padCrushBits, padCrushRate
     case padReverbSend, padDelaySend, padVelocitySensitivity
@@ -131,6 +131,7 @@ public struct ParameterSpec: Sendable {
         case .padRelease: return .init(id, "Release", "RELEASE", 0.002, 8, 0.08, .exponential, .seconds)
         case .padCutoff: return .init(id, "Pad Filter Cutoff", "CUTOFF", 20, 20_000, 18_000, .exponential, .hertz)
         case .padResonance: return .init(id, "Pad Resonance", "RESO", 0, 1, 0.1, .linear, .percent)
+        case .padFilterEnv: return .init(id, "Filter EG Intensity", "EG INT", -1, 1, 0, .linear, .percent)
         case .padLFORate: return .init(id, "Pad LFO Rate", "LFO RATE", 0.05, 30, 4, .exponential, .hertz)
         case .padLFODepth: return .init(id, "Pad LFO Depth", "LFO AMT", 0, 1, 0, .linear, .percent)
         case .padDrive: return .init(id, "Pad Drive", "DRIVE", 0, 1, 0, .linear, .percent)
@@ -186,6 +187,7 @@ extension ParameterID {
         case .padRelease: return \.release
         case .padCutoff: return \.cutoff
         case .padResonance: return \.resonance
+        case .padFilterEnv: return \.filterEnvAmount
         case .padLFORate: return \.lfoRate
         case .padLFODepth: return \.lfoDepth
         case .padDrive: return \.drive

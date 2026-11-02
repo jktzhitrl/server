@@ -23,16 +23,10 @@ struct XYPadView: View {
                 axisMenu(axis: .x, current: xID)
                 axisMenu(axis: .y, current: yID)
                 Spacer()
-                Button {
-                    controller.xyLatch.toggle()
-                } label: {
-                    HStack(spacing: 4) {
-                        LEDView(isOn: controller.xyLatch, color: Nexora.Colors.turquoise, size: 5)
-                        PanelLabel(text: "Latch", size: 8)
-                    }
-                }
-                .buttonStyle(.plain)
-                .help("Latch an: Werte bleiben nach dem Loslassen. Aus: Werte springen zurück.")
+                Text("TOUCH PAD")
+                    .font(Nexora.Fonts.label(8))
+                    .tracking(1.2)
+                    .foregroundStyle(Nexora.Colors.bodyLabelMuted)
             }
             GeometryReader { geo in
                 let size = geo.size

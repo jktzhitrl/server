@@ -10,7 +10,7 @@ struct SettingsView: View {
             ProjectSettingsTab()
                 .tabItem { Label("Projekt", systemImage: "slider.horizontal.3") }
             PadSettingsTab()
-                .tabItem { Label("Pads", systemImage: "square.grid.4x3.fill") }
+                .tabItem { Label("Bedienung", systemImage: "square.grid.4x3.fill") }
             LibrarySettingsTab()
                 .tabItem { Label("Bibliothek", systemImage: "folder.fill") }
         }
@@ -96,6 +96,7 @@ private struct ProjectSettingsTab: View {
 }
 
 private struct PadSettingsTab: View {
+    @AppStorage(NexoraTheme.storageKey) private var themeRaw = NexoraTheme.crimson.rawValue
     @AppStorage(PrefKey.velocityFromPosition) private var velocityFromPosition = true
     @AppStorage(PrefKey.keyboardVelocity) private var keyboardVelocity = 0.85
     @AppStorage(PrefKey.selectPadOnHit) private var selectOnHit = true
@@ -104,6 +105,11 @@ private struct PadSettingsTab: View {
 
     var body: some View {
         Form {
+            Picker("Gehäusefarbe", selection: $themeRaw) {
+                ForEach(NexoraTheme.allCases) { theme in
+                    Text(theme.title).tag(theme.rawValue)
+                }
+            }
             Toggle("Anschlagstärke über Klickposition (oben = laut)", isOn: $velocityFromPosition)
             LabeledContent("Anschlagstärke Tastatur") {
                 HStack {
@@ -117,7 +123,7 @@ private struct PadSettingsTab: View {
                 controller.refreshMIDIRouting()
             }))
             Section("Tastenbelegung") {
-                Text("1 2 3 4 / Q W E R / A S D F / Z X C V spielen die Pads 13–16 / 9–12 / 5–8 / 1–4. Leertaste: Play/Stop. Tasten können im Pad-Editor geändert werden.")
+                Text("Q W E R T Y U I spielen die Pads 1–8 (obere Reihe), A S D F G H J K die Pads 9–16 (untere Reihe). Leertaste: Play/Stop. Tasten können im Pad-Editor geändert werden.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -59,13 +59,11 @@ public struct PadConfig: Codable, Equatable, Sendable {
         keyboardKey = c.value(.keyboardKey, default: PadConfig.defaultKey(for: index))
     }
 
-    /// Standard-Tastenbelegung im 4×4-Raster (Pad 1 unten links, wie bei Hardware-Samplern):
-    /// Reihe oben `1 2 3 4` = Pads 13–16, `Q W E R` = 9–12, `A S D F` = 5–8, `Z X C V` = 1–4.
+    /// Standard-Tastenbelegung passend zum 2×8-Pad-Feld:
+    /// obere Pad-Reihe (Pads 1–8) = `Q W E R T Y U I`, untere Reihe (Pads 9–16) = `A S D F G H J K`.
     public static let defaultKeys: [String] = [
-        "z", "x", "c", "v",
-        "a", "s", "d", "f",
-        "q", "w", "e", "r",
-        "1", "2", "3", "4"
+        "q", "w", "e", "r", "t", "y", "u", "i",
+        "a", "s", "d", "f", "g", "h", "j", "k"
     ]
 
     public static func defaultKey(for index: Int) -> String {

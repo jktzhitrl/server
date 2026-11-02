@@ -32,6 +32,8 @@ struct Voice {
     var released = false
     /// Letzter Ausgangspegel (Hüllkurve × Verstärkung) für Anzeige und "quietest"-Stealing
     var level: Float = 0
+    /// Zusätzliche Transposition (Keyboard-Modus) in Halbtönen
+    var transpose: Double = 0
 
     var isFading: Bool { fadeStep > 0 }
 }

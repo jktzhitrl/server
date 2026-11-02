@@ -13,12 +13,60 @@ extension SamplerController {
             if AppPreferences.selectPadOnHit && selectedPad != pad { selectedPad = pad }
         case .step:
             toggleStep(track: selectedPad, step: pad)
+        case .keyboard:
+            guard let semi = Self.keyboardSemitone(forPad: pad) else { return }
+            keyboardHeldPads.insert(pad)
+            host.send(.noteOnTransposed(pad: selectedPad, velocity: velocity, semitones: Double(semi + keyboardOctave * 12)))
         }
     }
 
     func padUp(_ pad: Int) {
-        guard padMode == .play else { return }
-        host.send(.noteOff(pad: pad))
+        switch padMode {
+        case .play:
+            host.send(.noteOff(pad: pad))
+        case .keyboard:
+            keyboardHeldPads.remove(pad)
+            if keyboardHeldPads.isEmpty { host.send(.noteOff(pad: selectedPad)) }
+        case .step:
+            break
+        }
+    }
+
+    /// Keyboard-Modus: untere Reihe (Pads 9–16) = weiße Tasten C … C', obere Reihe (Pads 1–8) = schwarze Tasten.
+    nonisolated static func keyboardSemitone(forPad pad: Int) -> Int? {
+        let white = [0, 2, 4, 5, 7, 9, 11, 12]
+        let black: [Int?] = [nil, 1, 3, nil, 6, 8, 10, nil]
+        if pad >= 8 && pad < 16 { return white[pad - 8] }
+        if pad >= 0 && pad < 8 { return black[pad] }
+        return nil
+    }
+
+    func setPadMode(_ mode: PadMode) {
+        if padMode == .keyboard && mode != .keyboard {
+            keyboardHeldPads.removeAll()
+            host.send(.noteOff(pad: selectedPad))
+        }
+        padMode = mode
+        switch mode {
+        case .play: showLCD("MODE", "TRIGGER", seconds: 1)
+        case .step: showLCD("MODE", String(format: "SEQUENCER · PAD %02d", selectedPad + 1), seconds: 1.2)
+        case .keyboard: showLCD("KEYBOARD", "\(project.pads[selectedPad].name) · OCT \(keyboardOctave)", seconds: 1.2)
+        }
+    }
+
+    func toggleDrawer(_ panel: DrawerPanel) {
+        drawer = drawer == panel ? nil : panel
+    }
+
+    /// „Exit“: schließt zuerst den Bereich, dann MIDI-Learn, dann Sondermodi der Pads.
+    func exitAction() {
+        if drawer != nil {
+            drawer = nil
+        } else if midiLearnActive {
+            toggleMIDILearn()
+        } else if padMode != .play {
+            setPadMode(.play)
+        }
     }
 
     func selectPad(_ pad: Int) {

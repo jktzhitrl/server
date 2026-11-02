@@ -83,6 +83,8 @@ public struct PadSettings: Codable, Equatable, Sendable {
     public var cutoff: Double = 18_000
     /// 0 ... 1
     public var resonance: Double = 0.1
+    /// Hüllkurven-Modulation des Filters (EG Int), −1 ... 1 = ±6 Oktaven
+    public var filterEnvAmount: Double = 0
 
     /// Hz
     public var lfoRate: Double = 4
@@ -91,6 +93,8 @@ public struct PadSettings: Codable, Equatable, Sendable {
     public var lfoShape: LFOShape = .sine
     public var lfoTarget: PadLFOTarget = .off
 
+    /// Insert-Effekte (Drive, Bitcrusher) aktiv
+    public var insertFXOn: Bool = true
     /// 0 ... 1
     public var drive: Double = 0
     /// 1 ... 16
@@ -131,6 +135,8 @@ public struct PadSettings: Codable, Equatable, Sendable {
         filterMode = c.value(.filterMode, default: d.filterMode)
         cutoff = c.value(.cutoff, default: d.cutoff)
         resonance = c.value(.resonance, default: d.resonance)
+        filterEnvAmount = c.value(.filterEnvAmount, default: d.filterEnvAmount)
+        insertFXOn = c.value(.insertFXOn, default: d.insertFXOn)
         lfoRate = c.value(.lfoRate, default: d.lfoRate)
         lfoDepth = c.value(.lfoDepth, default: d.lfoDepth)
         lfoShape = c.value(.lfoShape, default: d.lfoShape)

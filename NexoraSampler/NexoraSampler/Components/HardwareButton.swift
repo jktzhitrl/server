@@ -19,7 +19,7 @@ struct HardwareButton: View {
     var width: CGFloat = 64
     var height: CGFloat = 24
     var showsLED = true
-    var labelColor: Color = Nexora.Colors.labelDark
+    var labelColor: Color = Nexora.Colors.bodyLabel
     var help: String?
     let action: () -> Void
 
@@ -47,6 +47,59 @@ struct HardwareButton: View {
             PanelLabel(text: title, color: labelColor, size: 8)
         }
         .help(help ?? title)
+    }
+}
+
+/// Gummi-Taste mit aufgedruckter Beschriftung, die bei Aktivierung farbig leuchtet
+/// (wie bei Hardware-Grooveboxen).
+struct FaceButton: View {
+    let title: String
+    var symbol: String?
+    var isLit = false
+    var litColor: Color = Nexora.Colors.ledRed
+    /// Volle Hintergrundbeleuchtung (z. B. Play) statt leuchtender Kontur
+    var fillWhenLit = false
+    var width: CGFloat = 70
+    var height: CGFloat = 26
+    var fontSize: CGFloat = 10.5
+    var help: String?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(LinearGradient(colors: fillWhenLit && isLit
+                                         ? [litColor.opacity(0.95), litColor.opacity(0.65)]
+                                         : [Nexora.Colors.buttonTop, Nexora.Colors.buttonBottom],
+                                         startPoint: .top, endPoint: .bottom))
+                if isLit && !fillWhenLit {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(litColor.opacity(0.16))
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .strokeBorder(litColor.opacity(0.95), lineWidth: 1.5)
+                }
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                HStack(spacing: 4) {
+                    if let symbol {
+                        Image(systemName: symbol).font(.system(size: fontSize * 1.25, weight: .bold))
+                    }
+                    if !title.isEmpty {
+                        Text(title).font(.system(size: fontSize, weight: .medium)).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                }
+                .foregroundStyle(isLit ? (fillWhenLit ? Color.white : litColor.opacity(0.95)) : Nexora.Colors.buttonText.opacity(0.88))
+                .shadow(color: isLit ? litColor.opacity(0.9) : .clear, radius: 4)
+                .padding(.horizontal, 4)
+            }
+            .frame(width: width, height: height)
+            .shadow(color: isLit ? litColor.opacity(0.55) : Color.black.opacity(0.45), radius: isLit ? 6 : 2, x: 0, y: isLit ? 0 : 2)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableButtonStyle())
+        .help(help ?? title)
+        .animation(.easeOut(duration: 0.12), value: isLit)
     }
 }
 

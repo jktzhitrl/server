@@ -50,8 +50,11 @@ enum ScreenshotDirector {
             await sleep(0.6)
         }
 
+        let body: CGFloat = 900
+        let withDrawer: CGFloat = 1280
+
         // 1) Instrument, Demo läuft, mehrere Pads leuchten
-        await resize(840)
+        await resize(body)
         c.setXY(x: 0.62, y: 0.35)
         c.selectPad(1)
         c.play()
@@ -61,7 +64,7 @@ enum ScreenshotDirector {
         capture(window, "01-instrument", into: directory)
 
         // 2) Sequencer
-        await resize(1180)
+        await resize(withDrawer)
         c.drawer = .sequencer
         await sleep(1.0)
         capture(window, "02-sequencer", into: directory)
@@ -96,13 +99,27 @@ enum ScreenshotDirector {
         await sleep(0.8)
         capture(window, "07-midi", into: directory)
 
-        // 8) Step-Modus
+        // 8) Sequencer-Modus auf den Pads
         c.drawer = nil
-        await resize(840)
+        await resize(body)
         c.selectPad(4)
-        c.padMode = .step
+        c.setPadMode(.step)
         await sleep(1.0)
         capture(window, "08-step-mode", into: directory)
+
+        // 9) Keyboard-Modus
+        c.selectPad(14)
+        c.setPadMode(.keyboard)
+        await sleep(0.6)
+        capture(window, "09-keyboard-mode", into: directory)
+
+        // 10) Alternatives Farbschema
+        c.setPadMode(.play)
+        UserDefaults.standard.set(NexoraTheme.lilac.rawValue, forKey: NexoraTheme.storageKey)
+        await sleep(1.2)
+        capture(window, "10-theme-lilac", into: directory)
+        UserDefaults.standard.set(NexoraTheme.crimson.rawValue, forKey: NexoraTheme.storageKey)
+        await sleep(0.3)
 
         c.stop()
         c.isDirty = false
