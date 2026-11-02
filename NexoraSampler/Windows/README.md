@@ -20,6 +20,9 @@ Voraussetzung: Windows 10 oder 11 (64 Bit).
 
 ## Bedienung
 
+Eine bebilderte Anleitung ist in die App eingebaut: **Hilfe → Anleitung** oder **F1**. Als PDF zum Ausdrucken:
+[`../docs/NEXORA-Sampler-Anleitung.pdf`](../docs/NEXORA-Sampler-Anleitung.pdf).
+
 Die Bedienung ist identisch zur Mac-Version (siehe Haupt-README). Abweichungen:
 
 | Mac | Windows |

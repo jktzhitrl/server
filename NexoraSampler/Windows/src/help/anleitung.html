@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' app:; img-src 'self' app: data:; style-src 'self' app: 'unsafe-inline'">
+<title>NEXORA Sampler – Anleitung</title>
+<style>
+  :root {
+    --bg: #fbf8f8; --text: #221a1c; --muted: #6b5f62; --line: #e6dcdd; --accent: #b3203a; --accent-soft: #f6e3e6;
+    --card: #ffffff; --code: #f1ebec; --kbd: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17131a; --text: #eee6e8; --muted: #a99ca0; --line: #3a3036; --accent: #ff5a76; --accent-soft: #3a1e26; --card: #211b22; --code: #2c242b; --kbd: #2c242b; }
+  }
+  @media print { :root { --bg: #fff; --card: #fff; } .toc { break-after: page; } h2, h3 { break-after: avoid; } figure img { max-height: 120mm; width: auto; max-width: 100%; margin: 0 auto; } figure, table, .tip { break-inside: avoid; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+  header.cover { border-bottom: 3px solid var(--accent); padding-bottom: 18px; margin-bottom: 24px; }
+  header.cover .brand { font-size: 38px; font-weight: 800; letter-spacing: -0.5px; margin: 0; }
+  header.cover .brand span { font-weight: 300; }
+  header.cover p { margin: 4px 0 0; color: var(--muted); }
+  header.cover p.brand { color: var(--text); }
+  h2 { font-size: 23px; margin: 44px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  h2 .n { color: var(--accent); margin-right: 8px; }
+  h3 { font-size: 17px; margin: 26px 0 6px; }
+  p, li { max-width: 72ch; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 3px 0; }
+  a { color: var(--accent); }
+  b.ui { font-weight: 650; background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; white-space: nowrap; }
+  kbd { font: 600 12.5px/1 "Segoe UI", system-ui, sans-serif; background: var(--kbd); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 2px 6px; white-space: nowrap; }
+  figure { margin: 16px 0 20px; }
+  figure img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); display: block; }
+  figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 18px; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  th { background: var(--accent-soft); font-weight: 650; }
+  .tip { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 14px 0; }
+  .tip b:first-child { color: var(--accent); }
+  .toc { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 22px; }
+  .toc ol { columns: 2; column-gap: 32px; margin: 6px 0; }
+  .toc h3 { margin: 4px 0; }
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: s; position: relative; padding-left: 36px; margin: 10px 0; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+  .grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; margin: 8px 0 4px; max-width: 560px; }
+  .grid div { aspect-ratio: 1; border-radius: 3px; background: var(--code); border: 1px solid var(--line); font-size: 10px; display: grid; place-items: center; color: var(--muted); }
+  .grid div.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .gridlabel { font-size: 13px; font-weight: 600; margin-top: 8px; }
+  @media (max-width: 640px) { .toc ol { columns: 1; } header.cover .brand { font-size: 30px; } }
+</style>
+</head>
+<body>
+<main>
+<header class="cover">
+  <p class="brand">nexora <span>sampler</span></p>
+  <p>Bedienungsanleitung · Version 1.0 · Windows und macOS</p>
+</header>
+
+<p>NEXORA Sampler ist ein Sampler mit 16 Pads, Step-Sequencer und Effekten, aufgebaut wie ein Hardware-Groovebox-Gerät.
+Du spielst Klänge auf Pads, baust daraus Beats, lädst eigene Lieder und Samples, formst den Sound mit Reglern und exportierst das Ergebnis als WAV- oder AIFF-Datei.</p>
+
+<div class="tip"><b>Mac:</b> Die Anleitung nennt die Windows-Tasten. Auf dem Mac gilt <kbd>⌘</kbd> statt <kbd>Strg</kbd> und <kbd>⌥</kbd> statt <kbd>Alt</kbd>. Alles andere ist gleich.</div>
+
+<nav class="toc">
+  <h3>Inhalt</h3>
+  <ol>
+    <li><a href="#ueberblick">Das Gerät im Überblick</a></li>
+    <li><a href="#start">In 2 Minuten zum ersten Beat</a></li>
+    <li><a href="#projekt">Neues Projekt: leer oder mit Kit</a></li>
+    <li><a href="#pads">Pads spielen</a></li>
+    <li><a href="#regler">Regler bedienen</a></li>
+    <li><a href="#klang">Den Klang eines Pads formen</a></li>
+    <li><a href="#sequencer">Beats bauen mit dem Sequencer</a></li>
+    <li><a href="#aufnahme">Live einspielen</a></li>
+    <li><a href="#lieder">Eigene Lieder und Samples laden</a></li>
+    <li><a href="#browser">Sample-Browser und Bibliothek</a></li>
+    <li><a href="#touchpad">Das Touchpad</a></li>
+    <li><a href="#master">Master-Effekte</a></li>
+    <li><a href="#kits">Kits und Presets</a></li>
+    <li><a href="#midi">MIDI-Controller</a></li>
+    <li><a href="#speichern">Speichern und Öffnen</a></li>
+    <li><a href="#export">Als Audiodatei exportieren</a></li>
+    <li><a href="#einstellungen">Einstellungen</a></li>
+    <li><a href="#tasten">Alle Tastenkürzel</a></li>
+    <li><a href="#probleme">Probleme und Lösungen</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="ueberblick"><span class="n">1</span>Das Gerät im Überblick</h2>
+<figure><img src="img/01-instrument.jpg" alt="Hauptansicht des NEXORA Samplers"><figcaption>Die Hauptansicht: links Display, Transport und Touchpad, in der Mitte die Klangregler, unten die Tastenreihe und die 16 Pads.</figcaption></figure>
+
+<table>
+  <tr><th>Bereich</th><th>Was er macht</th></tr>
+  <tr><td><b>Volume / Swing</b> (oben links)</td><td>Gesamtlautstärke und Swing (der „Groove“ des Beats). Daneben die Pegelanzeige.</td></tr>
+  <tr><td><b>Display</b></td><td>Zeigt Tempo, aktuelles Pattern, das ausgewählte Pad mit Wellenform und jede Änderung, die du gerade machst.</td></tr>
+  <tr><td><b>Transport</b></td><td><b class="ui">●</b> Aufnahme, <b class="ui">■</b> Stopp, <b class="ui">▶‖</b> Play/Pause, <b class="ui">Tap</b> Tempo antippen.</td></tr>
+  <tr><td><b>Click · XY Latch · Master Fx · Learn</b></td><td>Metronom, Touchpad-Werte halten, Master-Effekte öffnen, MIDI-Learn.</td></tr>
+  <tr><td><b>Touchpad</b></td><td>Zwei Effekte gleichzeitig mit der Maus steuern (<a href="#touchpad">Kapitel 11</a>).</td></tr>
+  <tr><td><b>Tempo-Rad</b> und Navigation</td><td>Tempo (BPM), <b class="ui">‹ ›</b> vorheriges/nächstes Pattern, <b class="ui">Edit</b> Pad-Editor, <b class="ui">Exit</b> Bereich schließen, <b class="ui">Browse</b> Sample-Browser, <b class="ui">Kit</b> Kits &amp; Presets.</td></tr>
+  <tr><td><b>Sample · Filter · Modulation · Amp/EG · Insert Fx</b></td><td>Die Klangregler. Sie wirken immer auf das <b>ausgewählte Pad</b> (lila umrandet).</td></tr>
+  <tr><td><b>Tastenreihe</b></td><td>Pad wechseln, Spur stummschalten/löschen, Pad-Modus wählen, Sequencer und MIDI öffnen, Pattern-Bank und Patterns A–H.</td></tr>
+  <tr><td><b>16 Pads</b></td><td>Zum Spielen, zum Programmieren von Schritten oder als Klaviatur, je nach Modus.</td></tr>
+  <tr><td><b>Untere Bereiche</b></td><td>Klappen mit <b class="ui">PAD EDIT</b>, <b class="ui">SEQUENCER</b>, <b class="ui">SAMPLE BROWSER</b>, <b class="ui">MASTER FX</b>, <b class="ui">KITS &amp; PRESETS</b> und <b class="ui">MIDI</b> auf. Ein Klick auf denselben Reiter oder <b class="ui">Exit</b> schließt sie wieder.</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="start"><span class="n">2</span>In 2 Minuten zum ersten Beat</h2>
+<ol class="steps">
+  <li>Starte NEXORA. Ein Kit mit 16 Klängen ist schon geladen (Kick, Snare, Hi-Hats, Bass …).</li>
+  <li>Drücke ein paar Tasten: <kbd>Q</kbd> ist die Kick, <kbd>W</kbd> die Snare, <kbd>T</kbd> die Hi-Hat.</li>
+  <li>Drücke die <kbd>Leertaste</kbd>. Ein Demo-Beat läuft. Noch einmal <kbd>Leertaste</kbd> stoppt ihn.</li>
+  <li>Klicke auf <b class="ui">Seq Edit</b>. Unten öffnet sich das Sequencer-Raster. Jedes Kästchen, das du anklickst, ist ein Schlag.</li>
+  <li>Drehe während der Beat läuft am großen <b>Filter</b>-Regler oder fahre mit der Maus über das <b>Touchpad</b>, und hör, wie sich der Sound verändert.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="projekt"><span class="n">3</span>Neues Projekt: leer oder mit Kit</h2>
+<p>Mit <kbd>Strg</kbd>+<kbd>N</kbd> (Menü <b>Datei → Neues Projekt …</b>) fragt NEXORA, wie das Projekt beginnen soll:</p>
+<ul>
+  <li><b class="ui">Leeres Projekt</b>: 16 leere Pads und leere Patterns. Ideal, um alles mit eigenen Klängen und Liedern zu befüllen.</li>
+  <li><b class="ui">Mit Werks-Kit</b>: das Standard-Kit mit zwei Demo-Beats zum Ausprobieren.</li>
+</ul>
+<p>Direkt ein leeres Projekt ohne Nachfrage: <kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>N</kbd> oder der Knopf <b class="ui">Neues leeres Projekt</b> im Bereich <b class="ui">KITS &amp; PRESETS</b>.
+Hast du ungespeicherte Änderungen, fragt NEXORA vorher, ob sie gesichert werden sollen.</p>
+
+<!-- ============================================================ -->
+<h2 id="pads"><span class="n">4</span>Pads spielen</h2>
+<h3>Mit Maus und Tastatur</h3>
+<ul>
+  <li><b>Maus:</b> Pad anklicken. Weiter oben auf dem Pad klingt es lauter, weiter unten leiser (abschaltbar in den Einstellungen).</li>
+  <li><b>Tastatur:</b> obere Reihe <kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> <kbd>R</kbd> <kbd>T</kbd> <kbd>Y</kbd> <kbd>U</kbd> <kbd>I</kbd> = Pads 1–8, untere Reihe <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> = Pads 9–16.</li>
+  <li><b>Pad auswählen</b> (für Regler und Editor): Pad anklicken oder <b class="ui">◀ Pad</b> / <b class="ui">Pad ▶</b>. Das ausgewählte Pad ist lila umrandet.</li>
+  <li><b>Rechtsklick auf ein Pad</b>: Sample laden, bearbeiten, MIDI-Note lernen, Spur löschen, Pad leeren.</li>
+</ul>
+
+<h3>Die drei Pad-Modi</h3>
+<table>
+  <tr><th>Knopf</th><th>Was die Pads dann tun</th></tr>
+  <tr><td><b class="ui">Trigger</b></td><td>Normaler Modus: Jedes Pad spielt seinen Klang.</td></tr>
+  <tr><td><b class="ui">Sequencer</b></td><td>Die 16 Pads sind die <b>16 Schritte</b> der Spur des ausgewählten Pads. Ein Druck auf ein Pad setzt oder löscht den Schlag an dieser Stelle. Leuchtende Pads = gesetzte Schläge.</td></tr>
+  <tr><td><b class="ui">Keyboard</b></td><td>Die Pads werden zur <b>Klaviatur</b> und spielen den Klang des ausgewählten Pads in verschiedenen Tonhöhen. Untere Reihe = weiße Tasten (C bis C), obere Reihe = schwarze Tasten. Oktave wechseln: <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>.</td></tr>
+</table>
+<figure><img src="img/08-step-mode.jpg" alt="Sequencer-Modus"><figcaption>Sequencer-Modus: Die leuchtenden Pads zeigen, auf welchen der 16 Schritte die ausgewählte Spur spielt.</figcaption></figure>
+
+<!-- ============================================================ -->
+<h2 id="regler"><span class="n">5</span>Regler bedienen</h2>
+<ul>
+  <li><b>Ziehen</b> nach oben/rechts erhöht den Wert, nach unten/links verringert ihn. Die Änderung ist sofort hörbar, das Display zeigt den genauen Wert.</li>
+  <li><b>Fein einstellen:</b> beim Ziehen <kbd>Umschalt</kbd> oder <kbd>Alt</kbd> halten.</li>
+  <li><b>Mausrad</b> über dem Regler: in kleinen Schritten drehen (mit <kbd>Umschalt</kbd> noch feiner).</li>
+  <li><b>Doppelklick</b>: zurück auf den Standardwert.</li>
+  <li><b>Rechtsklick</b>: Regler auf eine Touchpad-Achse legen, MIDI-Learn, MIDI-Zuordnung entfernen, zurücksetzen.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="klang"><span class="n">6</span>Den Klang eines Pads formen</h2>
+<p>Alle Regler auf dem Gerät wirken auf das <b>ausgewählte Pad</b>. Jedes Pad hat seine eigenen Einstellungen.</p>
+<table>
+  <tr><th>Sektion</th><th>Regler und Knöpfe</th></tr>
+  <tr><td><b>Sample</b></td><td>Großer Regler = <b>Start</b>punkt im Sample, <b>Pitch</b> = Tonhöhe in Halbtönen, <b>End</b> = Endpunkt.</td></tr>
+  <tr><td><b>Filter</b></td><td>Großer Regler = <b>Cutoff</b> (Grenzfrequenz), <b>Resonance</b> = Betonung der Grenzfrequenz, <b>EG Int</b> = wie stark die Hüllkurve den Filter bewegt. <b class="ui">LPF</b> lässt Bässe durch (dumpfer), <b class="ui">HPF</b> lässt Höhen durch (dünner), <b class="ui">BPF</b> lässt nur die Mitten durch.</td></tr>
+  <tr><td><b>Modulation</b></td><td>Großer Regler = <b>Tiefe</b>, <b>Speed</b> = Tempo der Modulation. <b class="ui">Mod Off</b> wählt das Ziel (Tonhöhe, Lautstärke, Filter, Panorama), <b class="ui">Wave</b> die Wellenform (Sinus, Dreieck, Rechteck, Sägezahn, Zufall).</td></tr>
+  <tr><td><b>Amp/EG</b></td><td><b>Level</b> = Lautstärke, <b>Pan</b> = links/rechts, <b>Attack</b> = Einschwingen, <b>Decay</b> = Abklingen, <b>Release</b> = Ausklingen nach dem Loslassen. <b class="ui">MFX Send</b> schickt das Pad in Hall und Delay. Der Knopf daneben schaltet die Wiedergabeart um: <b class="ui">One Shot</b> (spielt ganz ab), <b class="ui">Amp EG</b> (spielt, solange gedrückt) und <b class="ui">Loop</b> (wiederholt).</td></tr>
+  <tr><td><b>Insert Fx</b></td><td>Großer Regler = <b>Drive</b> (Verzerrung), <b>Edit</b> = Bitcrusher (Lo-Fi-Effekt). <b class="ui">IFX On</b> schaltet beides ein/aus, <b class="ui">Reverse</b> spielt rückwärts.</td></tr>
+</table>
+
+<h3>Der Pad-Editor (Bereich PAD EDIT)</h3>
+<figure><img src="img/03-pad-editor.jpg" alt="Pad-Editor"><figcaption>Der Pad-Editor mit Wellenform, Start-/Endmarker und allen Pad-Einstellungen.</figcaption></figure>
+<ul>
+  <li><b>Name</b> des Pads ändern, <b class="ui">Laden …</b> (anderes Sample), <b class="ui">Leeren</b>, <b class="ui">▶</b> anspielen.</li>
+  <li><b>Wellenform:</b> Start- und Endmarker mit der Maus ziehen, um einen Ausschnitt zu wählen. Audiodateien kann man direkt auf die Wellenform ziehen.</li>
+  <li><b>MODUS</b>: <b class="ui">ONE</b> / <b class="ui">GATE</b> / <b class="ui">LOOP</b>, wie beim Knopf auf dem Gerät.</li>
+  <li><b>PITCH</b>: <b class="ui">VARI</b> ändert Tonhöhe und Tempo zusammen (wie eine Schallplatte). <b class="ui">STRETCH</b> ändert nur die Tonhöhe, das Tempo bleibt.</li>
+  <li><b>Reverse</b>, <b>Mono</b> (ein neuer Schlag beendet den vorigen), <b>Insert-FX</b>.</li>
+  <li><b>Choke</b>-Gruppe: Pads derselben Gruppe schneiden sich gegenseitig ab, z. B. offene und geschlossene Hi-Hat.</li>
+  <li><b>Taste</b>: welche Computertaste das Pad spielt. <b class="ui">Note lernen</b>: MIDI-Note zuweisen.</li>
+  <li>Weitere Regler: Feinstimmung, Geschwindigkeit, Anschlagsempfindlichkeit, Hüllkurve, Filter, LFO, Drive, Bitcrusher und die Sends zu Hall und Delay.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="sequencer"><span class="n">7</span>Beats bauen mit dem Sequencer</h2>
+<figure><img src="img/02-sequencer.jpg" alt="Sequencer-Raster"><figcaption>Das Sequencer-Raster: 16 Spuren (eine pro Pad) und 16 Schritte. Rechts Pattern-Auswahl, Länge, Tempo, Swing und Quantisierung.</figcaption></figure>
+
+<h3>Das Raster</h3>
+<p>Öffne <b class="ui">Seq Edit</b> oder den Reiter <b class="ui">SEQUENCER</b>. Jede <b>Zeile</b> ist ein Pad, jede <b>Spalte</b> einer von 16 Schritten (ein Takt in Sechzehnteln). Die markierte Spalte zeigt, wo die Wiedergabe gerade steht.</p>
+<ul>
+  <li><b>Klick</b> auf ein Kästchen: Schlag an/aus.</li>
+  <li><b><kbd>Umschalt</kbd>+Klick</b>: Anschlagstärke ändern (leiser/lauter).</li>
+  <li><b class="ui">M</b> = Spur stumm, <b class="ui">S</b> = Spur solo.</li>
+  <li><b>GATE</b> (rechts in jeder Zeile, <b class="ui">–</b>/<b class="ui">+</b>): Notenlänge in Schritten, wirkt bei Pads im Modus Gate oder Loop.</li>
+</ul>
+
+<h3>Beispiel: ein einfacher House-Beat</h3>
+<p class="gridlabel">01 KICK: Schritte 1, 5, 9, 13</p>
+<div class="grid"><div class="on">1</div><div>2</div><div>3</div><div>4</div><div class="on">5</div><div>6</div><div>7</div><div>8</div><div class="on">9</div><div>10</div><div>11</div><div>12</div><div class="on">13</div><div>14</div><div>15</div><div>16</div></div>
+<p class="gridlabel">02 SNARE oder 03 CLAP: Schritte 5, 13</p>
+<div class="grid"><div>1</div><div>2</div><div>3</div><div>4</div><div class="on">5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div><div>11</div><div>12</div><div class="on">13</div><div>14</div><div>15</div><div>16</div></div>
+<p class="gridlabel">05 CL HAT: Schritte 3, 7, 11, 15</p>
+<div class="grid"><div>1</div><div>2</div><div class="on">3</div><div>4</div><div>5</div><div>6</div><div class="on">7</div><div>8</div><div>9</div><div>10</div><div class="on">11</div><div>12</div><div>13</div><div>14</div><div class="on">15</div><div>16</div></div>
+<p>Dann <kbd>Leertaste</kbd>. Ohne Maus geht es auch: Pad auswählen, <b class="ui">Sequencer</b>-Modus einschalten und die Schritte direkt auf den Pads antippen.</p>
+
+<h3>Patterns</h3>
+<ul>
+  <li>Es gibt 8 Patterns, <b>A bis H</b>. Mit den Knöpfen rechts neben den Pads wählst du A–D. <b class="ui">Bank A–D</b> schaltet auf E–H um. Tastatur: <kbd>Strg</kbd>+<kbd>1</kbd> … <kbd>Strg</kbd>+<kbd>8</kbd>.</li>
+  <li><b>Wechsel am Taktende</b>: Beim Umschalten während der Wiedergabe springt NEXORA erst am Ende des Takts ins neue Pattern. So bleibt alles im Takt.</li>
+  <li><b class="ui">Kopieren</b> / <b class="ui">Einfügen</b>: ein Pattern auf ein anderes übertragen, z. B. um eine Variation zu bauen. <b class="ui">Leeren</b> löscht das aktuelle Pattern.</li>
+  <li><b>Länge</b>: mit <b class="ui">–</b>/<b class="ui">+</b> 1 bis 16 Schritte.</li>
+  <li><b class="ui">Pad Mute</b> schaltet die Spur des ausgewählten Pads stumm, <b class="ui">Pad Erase</b> löscht sie im aktuellen Pattern.</li>
+  <li><b>Pattern-Presets</b>: einen Rhythmus unter einem Namen speichern und in anderen Projekten wieder laden.</li>
+</ul>
+
+<h3>Tempo und Groove</h3>
+<ul>
+  <li><b>Tempo</b>: am Tempo-Rad drehen oder mit <b class="ui">Tap</b> (<kbd>Strg</kbd>+<kbd>T</kbd>) im Takt antippen.</li>
+  <li><b>Swing</b>: verschiebt jeden zweiten Sechzehntel nach hinten. 50 % = gerade, höher = mehr Groove.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="aufnahme"><span class="n">8</span>Live einspielen</h2>
+<ol class="steps">
+  <li>Optional <b class="ui">Click</b> einschalten (<kbd>Strg</kbd>+<kbd>K</kbd>), dann hörst du ein Metronom.</li>
+  <li><b class="ui">●</b> drücken (<kbd>Strg</kbd>+<kbd>R</kbd>), dann <b class="ui">▶</b> bzw. <kbd>Leertaste</kbd>.</li>
+  <li>Auf den Pads oder der Tastatur spielen. Jeder Schlag wird ins laufende Pattern geschrieben, das immer wieder von vorne läuft. So kannst du Schicht für Schicht aufbauen.</li>
+  <li><b class="ui">●</b> erneut drücken beendet die Aufnahme.</li>
+</ol>
+<p><b>Rec-Quantisierung</b> (im Sequencer unter <i>Timing</i>): Die Schläge werden auf 1/16, 1/8 oder 1/4 gerückt. Auf <b>OFF</b> bleibt dein genaues Timing erhalten.
+<b class="ui">Pattern quantisieren</b> rückt nachträglich alle Schläge aufs Raster.</p>
+
+<!-- ============================================================ -->
+<h2 id="lieder"><span class="n">9</span>Eigene Lieder und Samples laden</h2>
+<p>Unterstützt werden <b>MP3, WAV, AIFF, FLAC, M4A und OGG</b>, bis 10 Minuten pro Datei.</p>
+<h3>Direkt auf ein Pad</h3>
+<ul>
+  <li>Datei aus dem Explorer (Mac: Finder) <b>auf ein Pad ziehen</b>, fertig.</li>
+  <li>Oder Pad auswählen und <kbd>Strg</kbd>+<kbd>L</kbd> bzw. im Pad-Editor <b class="ui">Laden …</b>.</li>
+</ul>
+<h3>Einen Ausschnitt verwenden</h3>
+<ol class="steps">
+  <li>Pad auswählen und den Bereich <b class="ui">PAD EDIT</b> öffnen.</li>
+  <li>In der Wellenform <b>Start- und Endmarker</b> an die gewünschte Stelle ziehen, z. B. auf den Refrain oder eine Gesangszeile.</li>
+  <li>Modus wählen: <b class="ui">ONE</b> spielt den Ausschnitt einmal, <b class="ui">GATE</b> nur solange gedrückt, <b class="ui">LOOP</b> wiederholt ihn.</li>
+  <li>Passt das Tempo nicht zum Beat? Mit <b class="ui">STRETCH</b> und dem Regler <b>Speed</b> das Tempo ändern, ohne dass die Stimme höher klingt.</li>
+</ol>
+<div class="tip"><b>Tipp:</b> Lade dasselbe Lied auf mehrere Pads und wähle jeweils einen anderen Ausschnitt, z. B. Pad 13 = Intro, Pad 14 = Refrain, Pad 15 = Gesang. So kannst du einen Song live neu zusammensetzen oder im Sequencer zu einem Remix anordnen.</div>
+<p>Beim Speichern werden alle verwendeten Dateien mit ins Projekt kopiert. Deine Originaldateien bleiben unverändert.</p>
+
+<!-- ============================================================ -->
+<h2 id="browser"><span class="n">10</span>Sample-Browser und Bibliothek</h2>
+<figure><img src="img/04-browser.jpg" alt="Sample-Browser"><figcaption>Der Sample-Browser: links die Bibliotheken, rechts die Klänge mit Suche und Vorhören.</figcaption></figure>
+<ul>
+  <li>Die <b>Werks-Bibliothek</b> enthält 151 Klänge in 13 Kategorien: Kicks, Snares, Claps, Hi-Hats, Becken, Toms, Percussion, 808/Bass, Synth/Keys, Akkorde, Pads, Vocal-Chops und FX.</li>
+  <li><b>Eigene Bibliotheken</b>: mit <b class="ui">+</b> anlegen, <b class="ui">Umbenennen</b>, <b class="ui">Löschen</b>. Mit <b class="ui">Importieren …</b> (<kbd>Strg</kbd>+<kbd>I</kbd>) oder per Ziehen in die Liste fügst du Dateien hinzu.</li>
+  <li><b>Suche</b> durchsucht alle Bibliotheken.</li>
+  <li>Ein Klick auf einen Eintrag spielt ihn vor (abschaltbar). <b class="ui">Vorhören</b> / <b class="ui">Stopp</b> gibt es auch als Knopf.</li>
+  <li><b>Auf ein Pad bringen:</b> Eintrag auf ein Pad ziehen, Doppelklick (lädt aufs ausgewählte Pad) oder <b class="ui">Auf ausgewähltes Pad laden</b>.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="touchpad"><span class="n">11</span>Das Touchpad</h2>
+<p>Das Touchpad links steuert zwei Regler gleichzeitig: einen mit der Waagerechten (X), einen mit der Senkrechten (Y). Standard: X = Master-Filter, Y = Hall.</p>
+<ul>
+  <li>Mit gedrückter Maustaste über das Feld fahren, am besten während der Beat läuft.</li>
+  <li>Die Achsen wählst du in den beiden Auswahlfeldern über dem Pad, oder per Rechtsklick auf einen beliebigen Regler → <i>Auf Touchpad X-Achse / Y-Achse legen</i>.</li>
+  <li><b class="ui">XY Latch</b> aus: Beim Loslassen springen die Werte zurück. <b class="ui">XY Latch</b> an: Die Werte bleiben stehen.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="master"><span class="n">12</span>Master-Effekte</h2>
+<figure><img src="img/05-effects.jpg" alt="Master-Effekte"><figcaption>Die Master-Effekte wirken auf die Gesamtsumme aller Pads.</figcaption></figure>
+<p>Öffnen mit <b class="ui">Master Fx</b> oder dem Reiter <b class="ui">MASTER FX</b>. Alle Effekte wirken auf den Gesamtklang:</p>
+<ul>
+  <li><b>Filter</b>: Master-Filter für Ein- und Ausblenden des Klangs („Filter-Sweep“).</li>
+  <li><b>Modulation (LFO)</b>: Tremolo, Vibrato, Filter- oder Auto-Pan-Bewegung.</li>
+  <li><b>Drive · Bitcrusher</b>: Verzerrung und Lo-Fi.</li>
+  <li><b>Delay</b>: Echo im Takt, wahlweise <b>Ping-Pong</b> (links/rechts im Wechsel).</li>
+  <li><b>Reverb</b>: Hall. Welche Pads ihn bekommen, steuern die Sends der Pads (<b class="ui">MFX Send</b>).</li>
+  <li><b>EQ</b>: Bässe, Mitten und Höhen.</li>
+  <li><b>Compressor</b>: macht den Mix dichter und lauter.</li>
+</ul>
+<p><b class="ui">FX zurücksetzen</b> stellt alles auf Standard. Einstellungen lassen sich als <b>FX-Preset</b> speichern und laden.</p>
+
+<!-- ============================================================ -->
+<h2 id="kits"><span class="n">13</span>Kits und Presets</h2>
+<figure><img src="img/06-kits.jpg" alt="Kits und Presets"><figcaption>Kits &amp; Presets: eigene Kits links, Werks-Kits rechts.</figcaption></figure>
+<ul>
+  <li>Ein <b>Kit</b> ist die Belegung aller 16 Pads mit Klängen, Namen, Tasten und Pad-Einstellungen.</li>
+  <li><b>Werks-Kits</b>: NEXORA Factory, House, Techno, Trap, Lo-Fi, Electro, Percussion World. Ein Klick lädt das Kit, deine Patterns bleiben erhalten.</li>
+  <li><b class="ui">Factory + Demo-Patterns</b> lädt das Standard-Kit samt Demo-Beats.</li>
+  <li><b class="ui">Alle Pads leeren</b> leert alle Pads, die Patterns bleiben.</li>
+  <li><b class="ui">Als Kit speichern</b>: aktuelle Pad-Belegung unter einem Namen sichern. Unter <i>Gespeicherte Kits</i> kannst du sie <b class="ui">Laden</b> oder <b class="ui">Löschen</b>.</li>
+  <li><b class="ui">Im Explorer zeigen</b> öffnet den Ordner mit allen Presets.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="midi"><span class="n">14</span>MIDI-Controller</h2>
+<figure><img src="img/07-midi.jpg" alt="MIDI-Einstellungen"><figcaption>MIDI: Eingänge, Kanal, Pad-Noten und CC-Zuordnungen.</figcaption></figure>
+<p>Schließe ein MIDI-Keyboard oder einen Pad-Controller per USB an und öffne <b class="ui">MIDI</b>.</p>
+<ul>
+  <li><b>Eingänge</b>: Gerät auswählen. <b class="ui">Geräte neu suchen</b>, falls es nicht erscheint. Kanal: alle oder ein bestimmter.</li>
+  <li><b>Pad-Noten</b>: Standard ist C1–D#2 (die üblichen Drum-Pad-Noten). Doppelklick auf ein Pad-Feld und eine Taste am Gerät drücken, dann ist die Note neu zugewiesen.</li>
+  <li><b>MIDI-Learn für Regler</b>: <b class="ui">Learn</b> drücken, einen Regler anklicken, am Gerät einen Drehregler bewegen, fertig. Die Zuordnungen stehen unter <i>CC-Zuordnungen</i>.</li>
+  <li><b>Feste Anschlagstärke</b>: jeder Schlag gleich laut. <b>Start/Stop von MIDI übernehmen</b>: Play/Stop folgt einem externen Gerät.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="speichern"><span class="n">15</span>Speichern und Öffnen</h2>
+<ul>
+  <li><kbd>Strg</kbd>+<kbd>S</kbd> <b>Sichern</b>, <kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>S</kbd> <b>Sichern unter …</b>. Ein Projekt ist ein Ordner <code>Name.nexora</code> mit allen verwendeten Samples. Du kannst ihn also als Ganzes weitergeben oder sichern.</li>
+  <li><kbd>Strg</kbd>+<kbd>O</kbd> <b>Projekt öffnen</b>: den Ordner <code>.nexora</code> oder die Datei <code>project.json</code> darin wählen.</li>
+  <li>Projekte sind zwischen <b>Windows und Mac austauschbar</b>.</li>
+  <li>Fehlt beim Öffnen ein Sample, meldet NEXORA welches. Du kannst es über den Sample-Browser neu zuweisen.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="export"><span class="n">16</span>Als Audiodatei exportieren</h2>
+<p><kbd>Strg</kbd>+<kbd>E</kbd> (Menü <b>Datei → Audio exportieren …</b>) speichert deinen Beat als Datei, z. B. zum Anhören am Handy oder zum Weiterbearbeiten in einem anderen Programm.</p>
+<table>
+  <tr><th>Option</th><th>Bedeutung</th></tr>
+  <tr><td>Format</td><td>WAV oder AIFF</td></tr>
+  <tr><td>Abtastrate</td><td>44,1 kHz (CD) oder 48 kHz (Video)</td></tr>
+  <tr><td>Bittiefe</td><td>16 Bit, 24 Bit oder 32 Bit Float (nur WAV)</td></tr>
+  <tr><td>Wiederholungen</td><td>Wie oft das Pattern hintereinander gespielt wird (1–64)</td></tr>
+  <tr><td>Ausklingzeit</td><td>Wie lange Hall und Echo am Ende ausklingen dürfen (bis 30 s)</td></tr>
+  <tr><td>Pattern-Kette exportieren</td><td>Mehrere Patterns hintereinander, z. B. <code>A A B A</code>. So wird aus einzelnen Patterns ein ganzer Song.</td></tr>
+  <tr><td>Normalisieren</td><td>Bringt die Datei auf maximale Lautstärke ohne Übersteuern (−0,3 dBFS)</td></tr>
+</table>
+<p>Der Export klingt genau wie die Wiedergabe, inklusive aller Effekte.</p>
+
+<!-- ============================================================ -->
+<h2 id="einstellungen"><span class="n">17</span>Einstellungen</h2>
+<p><kbd>Strg</kbd>+<kbd>,</kbd> oder <b>Datei → Einstellungen …</b></p>
+<ul>
+  <li><b>Audio</b>: Ausgabegerät (Lautsprecher, Kopfhörer, Audio-Interface) und Latenz. Niedrige Latenz = direkteres Spielgefühl, bei Knacksern höher stellen.</li>
+  <li><b>Projekt</b>: Projektname, Polyphonie (wie viele Klänge gleichzeitig) und Voice-Stealing.</li>
+  <li><b>Bedienung</b>: Gehäusefarbe (<b>Crimson</b> oder <b>Lilac</b>), Anschlagstärke über die Klickposition, Anschlagstärke der Tastatur, angeschlagenes Pad automatisch auswählen, MIDI-Eingang an/aus.</li>
+  <li><b>Bibliothek</b>: Importe in die Bibliothek kopieren, beim Auswählen vorhören, Lautstärke beim Vorhören.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="tasten"><span class="n">18</span>Alle Tastenkürzel</h2>
+<table>
+  <tr><th>Taste</th><th>Funktion</th></tr>
+  <tr><td><kbd>Q</kbd>–<kbd>I</kbd>, <kbd>A</kbd>–<kbd>K</kbd></td><td>Pads 1–8 und 9–16</td></tr>
+  <tr><td><kbd>Leertaste</kbd></td><td>Play / Stop</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>.</kbd></td><td>Pause</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>R</kbd> / <kbd>K</kbd> / <kbd>T</kbd></td><td>Aufnahme / Metronom / Tap-Tempo</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>1</kbd> … <kbd>8</kbd></td><td>Pattern A … H</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>N</kbd></td><td>Neues Projekt (leer oder mit Werks-Kit)</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>N</kbd></td><td>Neues leeres Projekt</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>O</kbd> / <kbd>S</kbd> / <kbd>Umschalt</kbd>+<kbd>S</kbd></td><td>Öffnen / Sichern / Sichern unter</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>I</kbd> / <kbd>L</kbd></td><td>Samples importieren / Sample aufs ausgewählte Pad laden</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>E</kbd></td><td>Audio exportieren</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>,</kbd></td><td>Einstellungen</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>P</kbd> / <kbd>T</kbd> / <kbd>K</kbd></td><td>Pad-Modus Trigger / Sequencer / Keyboard</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></td><td>Keyboard-Modus: Oktave höher / tiefer</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>1</kbd> … <kbd>6</kbd></td><td>Pad-Editor, Sequencer, Sample-Browser, Master-Effekte, Kits &amp; Presets, MIDI</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>0</kbd></td><td>Unteren Bereich schließen</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>M</kbd></td><td>MIDI-Learn</td></tr>
+  <tr><td><kbd>Umschalt</kbd>+<kbd>Esc</kbd></td><td>Alle Noten aus (Notbremse, wenn etwas hängt)</td></tr>
+  <tr><td><kbd>F1</kbd></td><td>Diese Anleitung</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="probleme"><span class="n">19</span>Probleme und Lösungen</h2>
+<table>
+  <tr><th>Problem</th><th>Lösung</th></tr>
+  <tr><td>Kein Ton</td><td>Einmal ins Fenster klicken oder eine Taste drücken. In den Einstellungen das richtige <b>Ausgabegerät</b> wählen. Im Windows-Lautstärkemixer prüfen, ob NEXORA stumm ist. <b>Volume</b> oben links aufdrehen, <b class="ui">Pad Mute</b> und <b>M</b>/<b>S</b> im Sequencer prüfen. Ist das Pad leer („EMPTY“)?</td></tr>
+  <tr><td>Knackser oder Aussetzer</td><td>In den Einstellungen eine höhere <b>Latenz</b> wählen. Andere Programme schließen.</td></tr>
+  <tr><td>Ein Ton hängt / hört nicht auf</td><td><kbd>Umschalt</kbd>+<kbd>Esc</kbd> (alle Noten aus). Bei Loop-Pads ist das Dauerspielen gewollt: Modus auf ONE stellen.</td></tr>
+  <tr><td>Windows warnt beim Start („Der Computer wurde durch Windows geschützt“)</td><td>Die App ist nicht mit einem gekauften Zertifikat signiert. Auf <b>Weitere Informationen → Trotzdem ausführen</b> klicken.</td></tr>
+  <tr><td>Mac: „kann nicht geöffnet werden“</td><td>Rechtsklick auf die App → <b>Öffnen</b> → <b>Öffnen</b> bestätigen.</td></tr>
+  <tr><td>Sample fehlt beim Öffnen eines Projekts</td><td>NEXORA nennt die fehlenden Dateien. Über den Sample-Browser neu zuweisen und das Projekt erneut sichern.</td></tr>
+  <tr><td>Datei lässt sich nicht laden</td><td>Unterstützt: MP3, WAV, AIFF, FLAC, M4A, OGG, bis 10 Minuten. Längere Lieder vorher kürzen.</td></tr>
+  <tr><td>MIDI-Gerät wird nicht erkannt</td><td>Gerät vor dem Start einstecken oder <b class="ui">Geräte neu suchen</b>. In den Einstellungen prüfen, ob „MIDI-Eingang aktiv“ eingeschaltet ist.</td></tr>
+</table>
+
+<p style="color: var(--muted); margin-top: 40px">NEXORA Sampler 1.0 · Diese Anleitung ist auch in der App unter <b>Hilfe → Anleitung</b> (<kbd>F1</kbd>) verfügbar.</p>
+</main>
+</body>
+</html>

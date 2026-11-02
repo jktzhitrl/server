@@ -621,14 +621,30 @@ export class Controller {
     return r === 1;
   }
 
-  async newProject() {
+  /** Neues Projekt: `kind` = 'empty' oder 'factory'; ohne Angabe wird gefragt. */
+  async newProject(kind) {
+    if (!kind) {
+      const r = await bridge.message({
+        type: 'question', title: 'Neues Projekt', message: 'Wie soll das neue Projekt beginnen?',
+        detail: 'Leer: 16 leere Pads und leere Patterns – zum Befüllen mit eigenen Klängen und Songs.\nMit Werks-Kit: das Standard-Kit mit zwei Demo-Beats.',
+        buttons: ['Leeres Projekt', 'Mit Werks-Kit', 'Abbrechen'], defaultId: 0, cancelId: 2
+      });
+      if (r !== 0 && r !== 1) return;
+      kind = r === 0 ? 'empty' : 'factory';
+    }
     if (!(await this.confirmDiscard())) return;
     this.send({ cmd: 'transport', transport: 'stop' }); this.send({ cmd: 'allNotesOff' });
     this.project = newProject('Untitled');
     this.projectPath = null; this.isRecording = false;
-    await this.loadClassicKit(true);
+    if (kind === 'factory') {
+      await this.loadClassicKit(true);
+    } else {
+      for (let i = 0; i < 16; i++) this._setPadSample(i, null, null);
+      this.pushFullState();
+    }
     this.dirty = false; this._updateTitle();
-    this.showLCD('NEW PROJECT', this.project.kitName.toUpperCase());
+    this.showLCD('NEW PROJECT', kind === 'factory' ? this.project.kitName.toUpperCase() : 'EMPTY');
+    this.changed();
   }
 
   async openProjectWithDialog() {
@@ -937,7 +953,7 @@ export class Controller {
   menu(id) {
     const [cmd, arg] = id.split(':');
     const actions = {
-      new: () => this.newProject(), open: () => this.openProjectWithDialog(), save: () => this.saveProject(), saveAs: () => this.saveProjectAs(),
+      new: () => this.newProject(arg), open: () => this.openProjectWithDialog(), save: () => this.saveProject(), saveAs: () => this.saveProjectAs(),
       import: () => this.importWithDialog(), loadSample: () => this.chooseSampleForSelectedPad(),
       export: () => { this.dialog = 'export'; this.changed(); }, settings: () => { this.dialog = 'settings'; this.changed(); },
       togglePlay: () => this.togglePlay(), pause: () => this.pause(), record: () => this.toggleRecord(),

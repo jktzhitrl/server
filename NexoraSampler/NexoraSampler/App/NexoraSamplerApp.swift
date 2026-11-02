@@ -33,8 +33,10 @@ struct AppCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button("Neues Projekt") { controller.newProject() }
+            Button("Neues Projekt …") { controller.newProject() }
                 .keyboardShortcut("n")
+            Button("Neues leeres Projekt") { controller.newProject(.empty) }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
             Button("Projekt öffnen …") { controller.openProjectWithPanel() }
                 .keyboardShortcut("o")
         }

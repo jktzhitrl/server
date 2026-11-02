@@ -34,7 +34,7 @@ function buildMenu() {
   const m = (label, id, accelerator) => ({ label, accelerator, click: () => send('menu', id) });
   const template = [
     { label: '&Datei', submenu: [
-      m('Neues Projekt', 'new', 'CmdOrCtrl+N'), m('Projekt öffnen …', 'open', 'CmdOrCtrl+O'),
+      m('Neues Projekt …', 'new', 'CmdOrCtrl+N'), m('Neues leeres Projekt', 'new:empty', 'CmdOrCtrl+Shift+N'), m('Projekt öffnen …', 'open', 'CmdOrCtrl+O'),
       m('Sichern', 'save', 'CmdOrCtrl+S'), m('Sichern unter …', 'saveAs', 'CmdOrCtrl+Shift+S'),
       { type: 'separator' },
       m('Samples importieren …', 'import', 'CmdOrCtrl+I'), m('Sample auf ausgewähltes Pad laden …', 'loadSample', 'CmdOrCtrl+L'),
@@ -62,9 +62,27 @@ function buildMenu() {
     { label: '&Ansicht', submenu: [
       { role: 'togglefullscreen', label: 'Vollbild' }, { role: 'resetZoom', label: 'Originalgröße' },
       { type: 'separator' }, { role: 'toggleDevTools', label: 'Entwicklerwerkzeuge' }
+    ] },
+    { label: '&Hilfe', submenu: [
+      { label: 'Anleitung', accelerator: 'F1', click: openHelp }
     ] }
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+let helpWin = null;
+
+function openHelp() {
+  if (helpWin && !helpWin.isDestroyed()) { helpWin.focus(); return; }
+  helpWin = new BrowserWindow({
+    width: 980, height: 860, minWidth: 420, minHeight: 400, title: 'NEXORA Sampler – Anleitung',
+    icon: path.join(__dirname, 'build', 'icon.png'), autoHideMenuBar: true,
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+  });
+  helpWin.loadURL('app://nexora/help/anleitung.html');
+  helpWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  helpWin.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('app://nexora/help/')) e.preventDefault(); });
+  helpWin.on('closed', () => { helpWin = null; });
 }
 
 function createWindow() {
@@ -83,7 +101,7 @@ function createWindow() {
     e.preventDefault();
     send('app:close-request');
   });
-  win.on('closed', () => { win = null; });
+  win.on('closed', () => { win = null; if (helpWin && !helpWin.isDestroyed()) helpWin.close(); });
 }
 
 // --------------------------------------------------------------- IPC

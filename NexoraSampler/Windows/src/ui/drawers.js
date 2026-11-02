@@ -396,7 +396,7 @@ function kits(c) {
       dsec('Werks-Kits', h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 118px)', gap: '6px' } },
         factoryButton(c.library.factory?.classicKitName ?? 'NEXORA Factory', () => c.loadClassicKit(false)),
         ...factoryKits.map((k) => factoryButton(k.name, () => c.loadFactoryKit(k)))),
-        h('div', { class: 'row' }, btn('Factory + Demo-Patterns', () => c.loadClassicKit(true)), btn('Alle Pads leeren', () => c.clearAllPads(), { danger: true }))),
+        h('div', { class: 'row' }, btn('Factory + Demo-Patterns', () => c.loadClassicKit(true)), btn('Alle Pads leeren', () => c.clearAllPads(), { danger: true }), btn('Neues leeres Projekt', () => c.newProject('empty'), { tip: 'Leere Pads und leere Patterns (Strg+Umschalt+N)' }))),
       dsec('Presets-Ordner', h('div', { class: 'row' }, btn('Im Explorer zeigen', () => import('../core/bridge.js').then(({ bridge }) => bridge.openPath(c.presets.root))),
         h('span', { class: 'muted', style: { font: '9px var(--mono)' }, text: c.presets.root })))));
 }

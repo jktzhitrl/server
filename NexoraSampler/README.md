@@ -97,6 +97,9 @@ Sample-Suche, WAV/AIFF-Export und MIDI-Parsing ab.
 
 ## Bedienung
 
+> **Ausführliche Anleitung für Einsteiger:** [`docs/NEXORA-Sampler-Anleitung.pdf`](docs/NEXORA-Sampler-Anleitung.pdf)
+> (16 Seiten mit Bildern, gilt für Mac und Windows). In der Windows-App zusätzlich unter **Hilfe → Anleitung** (F1).
+
 ### Aufbau der Oberfläche
 
 ```
@@ -172,6 +175,8 @@ die Bibliothek kopiert (`~/Library/Application Support/NEXORA Sampler/Library`).
 
 ### Projekte, Kits und Presets
 
+* **Neues Projekt** (⌘N) fragt, ob das Projekt **leer** (16 leere Pads, leere Patterns) oder **mit Werks-Kit**
+  und Demo-Beats beginnen soll; ⇧⌘N legt direkt ein leeres Projekt an.
 * **Projekt** (⌘S / ⇧⌘S / ⌘O): Ordner-Paket `Name.nexora` mit `project.json` und Kopien **aller** Samples –
   Projekte sind dadurch in sich geschlossen und können verschoben oder weitergegeben werden.
 * **Kits** (KIT): alle 16 Pad-Belegungen inklusive Samples und Pad-Einstellungen.
@@ -204,7 +209,8 @@ Audio-Ausgabegerät, Puffergröße (32–1024 Samples) mit Latenzanzeige, Polyph
 | ⌘↩ / ⌘. | Play/Stop / Pause |
 | ⌘R / ⌘K / ⌘T | Aufnahme / Metronom / Tap-Tempo |
 | ⌘1 … ⌘8 | Pattern A … H |
-| ⌘N / ⌘O / ⌘S / ⇧⌘S | Neu / Öffnen / Sichern / Sichern unter |
+| ⌘N / ⇧⌘N | Neues Projekt (Auswahl) / neues leeres Projekt |
+| ⌘O / ⌘S / ⇧⌘S | Öffnen / Sichern / Sichern unter |
 | ⌘I / ⌘L / ⌘E | Samples importieren / Sample auf Pad laden / Audio exportieren |
 | ⌥⌘1 … ⌥⌘6, ⌥⌘0 | Bereiche Pad-Editor, Sequencer, Browser, FX, Kits, MIDI / schließen |
 | ⌥⌘P / ⌥⌘T / ⌥⌘K | Trigger- / Sequencer- / Keyboard-Modus · ⌥⌘↑/↓ Oktave |

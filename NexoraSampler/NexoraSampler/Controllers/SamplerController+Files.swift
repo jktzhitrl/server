@@ -34,16 +34,40 @@ extension SamplerController {
 
     // MARK: - Projekt
 
+    enum NewProjectKind { case empty, factoryKit }
+
+    /// Fragt, ob das neue Projekt leer oder mit Werks-Kit und Demo-Beats beginnen soll.
     func newProject() {
+        let alert = NSAlert()
+        alert.messageText = "Neues Projekt"
+        alert.informativeText = "Leer: 16 leere Pads und leere Patterns – zum Befüllen mit eigenen Klängen und Songs.\nMit Werks-Kit: das Standard-Kit mit zwei Demo-Beats."
+        alert.addButton(withTitle: "Leeres Projekt")
+        alert.addButton(withTitle: "Mit Werks-Kit")
+        alert.addButton(withTitle: "Abbrechen")
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: newProject(.empty)
+        case .alertSecondButtonReturn: newProject(.factoryKit)
+        default: return
+        }
+    }
+
+    func newProject(_ kind: NewProjectKind) {
         guard confirmDiscardChanges() else { return }
         host.send(.transport(.stop))
         host.send(.allNotesOff)
         project = ProjectDocument(name: "Untitled")
         projectURL = nil
         isRecording = false
-        loadFactoryKit(resetPatterns: true)
+        switch kind {
+        case .factoryKit:
+            loadFactoryKit(resetPatterns: true)
+            showLCD("NEW PROJECT", FactoryKit.kitName.uppercased())
+        case .empty:
+            for i in 0..<16 { setPadSample(i, buffer: nil, fileURL: nil) }
+            pushFullState()
+            showLCD("NEW PROJECT", "EMPTY")
+        }
         isDirty = false
-        showLCD("NEW PROJECT", FactoryKit.kitName.uppercased())
     }
 
     func openProjectWithPanel() {
