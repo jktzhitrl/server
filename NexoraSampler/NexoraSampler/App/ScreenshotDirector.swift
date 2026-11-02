@@ -147,7 +147,7 @@ enum ScreenshotDirector {
         c.drawer = .sequencer
         c.setPatternLength(64)
         c.setStepPage(2, follow: true)
-        await sleep(0.8)
+        await sleep(2.0)
         capture(window, "13-64-steps", into: directory)
         c.drawer = nil
 
