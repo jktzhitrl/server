@@ -38,6 +38,9 @@ struct MainView: View {
         .alert(item: $controller.notice) { notice in
             Alert(title: Text(notice.title), message: Text(notice.message), dismissButton: .default(Text("OK")))
         }
+        .sheet(isPresented: $controller.showSliceSheet) {
+            SliceSheet().environment(controller)
+        }
         .sheet(isPresented: $controller.showExportSheet) {
             ExportSheet()
                 .environment(controller)

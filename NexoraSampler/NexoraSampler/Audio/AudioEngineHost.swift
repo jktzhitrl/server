@@ -109,6 +109,24 @@ final class AudioEngineHost: @unchecked Sendable {
         start()
     }
 
+    // MARK: Resampling
+
+    /// Nimmt die Summe am Ausgang ab (Resampling). Der Block erhält Stereo-Puffer im Tap-Thread.
+    func installOutputTap(_ block: @escaping @Sendable (UnsafePointer<Float>, UnsafePointer<Float>?, Int) -> Void) {
+        let mixer = engine.mainMixerNode
+        mixer.removeTap(onBus: 0)
+        mixer.installTap(onBus: 0, bufferSize: 2048, format: mixer.outputFormat(forBus: 0)) { buffer, _ in
+            guard let data = buffer.floatChannelData else { return }
+            let n = Int(buffer.frameLength)
+            let right = buffer.format.channelCount > 1 ? UnsafePointer(data[1]) : nil
+            block(UnsafePointer(data[0]), right, n)
+        }
+    }
+
+    func removeOutputTap() {
+        engine.mainMixerNode.removeTap(onBus: 0)
+    }
+
     // MARK: Geräte
 
     var currentOutputDevice: AudioDeviceID? {

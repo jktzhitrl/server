@@ -65,6 +65,8 @@ struct AppCommands: Commands {
                 .keyboardShortcut("k")
             Button("Tap Tempo") { controller.tapTempo() }
                 .keyboardShortcut("t")
+            Button("Song-Modus an/aus") { controller.setSongMode(!controller.project.sequencer.songMode) }
+                .keyboardShortcut("g")
             Divider()
             ForEach(0..<SequencerState.patternSlots, id: \.self) { slot in
                 Button("Pattern \(SequencerState.slotName(slot))") { controller.selectPattern(slot) }
@@ -82,6 +84,15 @@ struct AppCommands: Commands {
                 .keyboardShortcut(.upArrow, modifiers: [.command, .option])
             Button("Keyboard: Oktave tiefer") { controller.keyboardOctave = max(controller.keyboardOctave - 1, -3) }
                 .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+            Button("Nächste Seite (Schritte +16)") { controller.setStepPage(controller.stepPage + 1) }
+                .keyboardShortcut(.rightArrow, modifiers: [.command, .option])
+            Button("Vorherige Seite (Schritte −16)") { controller.setStepPage(controller.stepPage - 1) }
+                .keyboardShortcut(.leftArrow, modifiers: [.command, .option])
+            Divider()
+            Button("Slice …") { controller.showSliceSheet = true }
+                .keyboardShortcut("l", modifiers: [.command, .shift])
+            Button("Pattern auf Pad resamplen") { controller.resamplePattern(to: controller.selectedPad) }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
             Divider()
             Button("Pad-Editor") { controller.drawer = .editor }
                 .keyboardShortcut("1", modifiers: [.command, .option])
@@ -95,6 +106,10 @@ struct AppCommands: Commands {
                 .keyboardShortcut("5", modifiers: [.command, .option])
             Button("MIDI") { controller.drawer = .midi }
                 .keyboardShortcut("6", modifiers: [.command, .option])
+            Button("Song & Motion") { controller.drawer = .song }
+                .keyboardShortcut("7", modifiers: [.command, .option])
+            Button("Sampling") { controller.drawer = .sampling }
+                .keyboardShortcut("8", modifiers: [.command, .option])
             Button("Bereich schließen") { controller.drawer = nil }
                 .keyboardShortcut("0", modifiers: [.command, .option])
             Divider()

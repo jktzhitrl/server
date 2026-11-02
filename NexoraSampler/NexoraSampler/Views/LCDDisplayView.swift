@@ -82,8 +82,9 @@ struct LCDDisplayView: View {
         let pattern = controller.project.currentPattern
         let track = controller.selectedPad
         let playing = controller.meters.transport != .stopped
+        let offset = controller.stepPage * SequencerPattern.stepsPerPage
         return HStack(spacing: 2) {
-            ForEach(0..<SequencerPattern.maxSteps, id: \.self) { step in
+            ForEach(offset..<(offset + SequencerPattern.stepsPerPage), id: \.self) { step in
                 let active = pattern[track, step].active
                 let current = playing && controller.meters.currentStep == step
                 Rectangle()
@@ -95,7 +96,10 @@ struct LCDDisplayView: View {
 
     private func bottomRow(config: PadConfig, sample: SampleBuffer?, pad: Int) -> some View {
         HStack(spacing: 6) {
-            Text(String(format: "Pad:%02d %@", pad + 1, config.settings.playMode.shortName))
+            Text(String(format: "Pad:%02d %@", pad + 1, config.settings.playMode.shortName)
+                 + (controller.pageCount > 1 ? " P\(controller.stepPage + 1)/\(controller.pageCount)" : "")
+                 + (controller.project.sequencer.songMode && controller.meters.songIndex >= 0
+                    ? " SONG \(controller.meters.songIndex + 1)/\(controller.project.patternChain.count)" : ""))
             if let sample {
                 Text(String(format: "%.1fk %@ %.2fs", sample.sampleRate / 1000, sample.isStereo ? "ST" : "MO", sample.duration))
             }

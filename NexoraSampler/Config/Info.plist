@@ -3,6 +3,8 @@
 <plist version="1.0">
 <dict>
 	<!-- Wird mit den von Xcode generierten Einträgen (GENERATE_INFOPLIST_FILE) zusammengeführt. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>NEXORA Sampler nimmt über Mikrofon oder Audio-Eingang neue Samples auf (Sampling).</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>

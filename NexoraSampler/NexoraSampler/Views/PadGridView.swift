@@ -129,7 +129,7 @@ struct PadView: View {
     private func caption(config: PadConfig, hasSample: Bool) -> String {
         switch controller.padMode {
         case .play: return hasSample ? config.name : "EMPTY"
-        case .step: return "STEP \(index + 1)"
+        case .step: return "STEP \(controller.stepPage * SequencerPattern.stepsPerPage + index + 1)"
         case .keyboard:
             guard let semi = SamplerController.keyboardSemitone(forPad: index) else { return "" }
             let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -142,9 +142,10 @@ struct PadView: View {
         switch controller.padMode {
         case .step:
             let pattern = controller.project.currentPattern
-            let step = pattern[controller.selectedPad, index]
-            let inRange = index < pattern.length
-            if controller.meters.transport != .stopped && controller.meters.currentStep == index {
+            let stepIndex = controller.stepPage * SequencerPattern.stepsPerPage + index
+            let step = pattern[controller.selectedPad, stepIndex]
+            let inRange = stepIndex < pattern.length
+            if controller.meters.transport != .stopped && controller.meters.currentStep == stepIndex {
                 return LED(color: Nexora.Colors.violetGlow, intensity: 1)
             }
             if step.active && inRange { return LED(color: Nexora.Colors.ledRed, intensity: 0.45 + 0.55 * step.velocity) }

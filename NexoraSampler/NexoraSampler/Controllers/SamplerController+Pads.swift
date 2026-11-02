@@ -12,7 +12,7 @@ extension SamplerController {
             host.send(.noteOn(pad: pad, velocity: velocity))
             if AppPreferences.selectPadOnHit && selectedPad != pad { selectedPad = pad }
         case .step:
-            toggleStep(track: selectedPad, step: pad)
+            toggleStep(track: selectedPad, step: stepPage * SequencerPattern.stepsPerPage + pad)
         case .keyboard:
             guard let semi = Self.keyboardSemitone(forPad: pad) else { return }
             keyboardHeldPads.insert(pad)

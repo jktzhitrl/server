@@ -16,13 +16,15 @@ enum PadMode: String, CaseIterable {
 
 /// Ausklappbarer Bereich unterhalb des Instruments.
 enum DrawerPanel: String, CaseIterable, Identifiable {
-    case editor, sequencer, browser, effects, kits, midi
+    case editor, sequencer, song, sampling, browser, effects, kits, midi
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .editor: return "PAD EDIT"
         case .sequencer: return "SEQUENCER"
+        case .song: return "SONG & MOTION"
+        case .sampling: return "SAMPLING"
         case .browser: return "SAMPLE BROWSER"
         case .effects: return "MASTER FX"
         case .kits: return "KITS & PRESETS"
@@ -91,6 +93,19 @@ final class SamplerController {
     var factoryInstallProgress: Double?
     /// Automatischer Screenshot-Modus (keine Dialoge)
     var screenshotMode = false
+    /// Sichtbare Seite (0 … 3) im Raster und Step-Modus
+    var stepPage = 0
+    /// Seite folgt der Wiedergabe
+    var followPage = true
+    var showSliceSheet = false
+    var sampling = SamplingState()
+    var inputDevices: [AudioOutputDevice] = []
+    var isResampling = false
+    @ObservationIgnored var motionLast: MotionRecordPoint?
+    @ObservationIgnored var motionPushPending = false
+    @ObservationIgnored var activeRecorder: SampleRecorder?
+    @ObservationIgnored var inputRecorder: AudioInputRecorder?
+    @ObservationIgnored var recordingCounter = 0
 
     // MARK: Dienste
     let host: AudioEngineHost
@@ -173,6 +188,8 @@ final class SamplerController {
 
     func sendTrackStates() {
         host.send(.setTrackStates(mutes: project.sequencer.muteMask, solos: project.sequencer.soloMask))
+        host.send(.setMotionMode(project.sequencer.motionMode))
+        sendSong()
     }
 
     private func apply(_ scope: ParameterScope) {
@@ -202,6 +219,7 @@ final class SamplerController {
         let target = pad ?? selectedPad
         let scope = project.setNormalizedValue(normalized, for: id, pad: target)
         apply(scope)
+        recordMotionValue(id, pad: target)
         if showOnLCD { showParameter(id, pad: target) }
         markDirty()
     }
@@ -209,6 +227,7 @@ final class SamplerController {
     func setParameterValue(_ id: ParameterID, value: Double, pad: Int? = nil) {
         let target = pad ?? selectedPad
         apply(project.setValue(value, for: id, pad: target))
+        recordMotionValue(id, pad: target)
         showParameter(id, pad: target)
         markDirty()
     }
@@ -281,6 +300,16 @@ final class SamplerController {
         if meters.transport == .playing, meters.currentPattern != project.sequencer.currentPattern,
            (0..<SequencerState.patternSlots).contains(meters.currentPattern) {
             project.sequencer.currentPattern = meters.currentPattern
+        }
+        if followPage, meters.transport == .playing {
+            let page = meters.currentStep / SequencerPattern.stepsPerPage
+            if page != stepPage { stepPage = page }
+        }
+        if sampling.isActive, let rec = activeRecorder {
+            sampling.level = rec.level
+            sampling.seconds = rec.recordedSeconds
+            sampling.phase = rec.state == .armed ? .armed : .recording
+            if rec.state == .finished { stopSampling() }
         }
         if let progress = factoryInstallProgress {
             lcdMessage = LCDMessage(title: "INSTALLING SOUND LIBRARY", value: "\(Int(progress * 100))%  ·  \(FactoryLibrary.sounds.count) SOUNDS",

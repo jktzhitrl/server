@@ -12,6 +12,8 @@ final class MeterModel {
     var transport: TransportState = .stopped
     var currentPattern = 0
     var queuedPattern = -1
+    /// Laufender Eintrag der Song-Kette (−1 = Song-Modus aus)
+    var songIndex = -1
     var peakLeft: Float = 0
     var peakRight: Float = 0
     var activeVoices = 0
@@ -45,6 +47,7 @@ final class MeterModel {
         assign(\.transport, status.transport)
         assign(\.currentPattern, status.currentPattern)
         assign(\.queuedPattern, status.queuedPattern)
+        assign(\.songIndex, status.songIndex)
         assign(\.peakLeft, (status.peakLeft * 40).rounded() / 40)
         assign(\.peakRight, (status.peakRight * 40).rounded() / 40)
         assign(\.activeVoices, status.activeVoices)

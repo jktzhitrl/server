@@ -44,6 +44,8 @@ struct DrawerView: View {
                 switch panel {
                 case .editor: PadEditorPanel()
                 case .sequencer: SequencerPanel()
+                case .song: SongMotionPanel()
+                case .sampling: SamplingPanel()
                 case .browser: SampleBrowserPanel()
                 case .effects: EffectsPanel()
                 case .kits: KitsPanel()

@@ -36,6 +36,26 @@ enum AudioDeviceManager {
         }
     }
 
+    /// Geräte mit Eingängen (Mikrofon, Line-In, Audio-Interface).
+    static func inputDevices() -> [AudioOutputDevice] {
+        var addr = address(kAudioHardwarePropertyDevices)
+        var size: UInt32 = 0
+        let system = AudioObjectID(kAudioObjectSystemObject)
+        guard AudioObjectGetPropertyDataSize(system, &addr, 0, nil, &size) == noErr, size > 0 else { return [] }
+        let count = Int(size) / MemoryLayout<AudioDeviceID>.size
+        var ids = [AudioDeviceID](repeating: 0, count: count)
+        guard AudioObjectGetPropertyData(system, &addr, 0, nil, &size, &ids) == noErr else { return [] }
+        return ids.compactMap { id in
+            var streams = address(kAudioDevicePropertyStreams, scope: kAudioObjectPropertyScopeInput)
+            var streamSize: UInt32 = 0
+            guard AudioObjectGetPropertyDataSize(id, &streams, 0, nil, &streamSize) == noErr, streamSize > 0 else { return nil }
+            return AudioOutputDevice(id: id,
+                                     uid: stringProperty(id, kAudioDevicePropertyDeviceUID) ?? "\(id)",
+                                     name: stringProperty(id, kAudioObjectPropertyName) ?? "Input \(id)",
+                                     nominalSampleRate: nominalSampleRate(id) ?? 0)
+        }
+    }
+
     static func defaultOutputDevice() -> AudioDeviceID? {
         var addr = address(kAudioHardwarePropertyDefaultOutputDevice)
         var id = AudioDeviceID(0)

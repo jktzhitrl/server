@@ -34,6 +34,13 @@ struct ParameterKnob: View {
                 controller.showParameter(id, pad: target)
             }
         )
+        .overlay(alignment: .topLeading) {
+            if controller.hasMotion(id, pad: target) {
+                Circle().fill(Nexora.Colors.pink).frame(width: 5, height: 5)
+                    .shadow(color: Nexora.Colors.pink, radius: 3)
+                    .help("Motion-Spur im aktuellen Pattern")
+            }
+        }
         .help("\(spec.name)\(id.isPadParameter ? " (Pad \(target + 1))" : "") – ziehen zum Ändern, ⌥ = fein, Doppelklick = Standardwert. Rechtsklick für MIDI-Learn und XY-Zuweisung.")
         .contextMenu {
             Button("MIDI-Learn") { controller.beginLearn(for: id) }
@@ -43,6 +50,10 @@ struct ParameterKnob: View {
             Divider()
             Button("Auf XY-Pad X-Achse legen") { controller.assignXY(axis: .x, parameter: id) }
             Button("Auf XY-Pad Y-Achse legen") { controller.assignXY(axis: .y, parameter: id) }
+            if controller.hasMotion(id, pad: target) {
+                Divider()
+                Button("Motion-Spur löschen") { controller.removeMotion(id, pad: target) }
+            }
             Divider()
             Button("Zurücksetzen") { controller.setParameter(id, normalized: spec.defaultNormalized, pad: pad) }
         }

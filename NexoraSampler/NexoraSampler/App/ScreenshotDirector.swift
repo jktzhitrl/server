@@ -121,6 +121,36 @@ enum ScreenshotDirector {
         UserDefaults.standard.set(NexoraTheme.crimson.rawValue, forKey: NexoraTheme.storageKey)
         await sleep(0.3)
 
+        // 11) Song & Motion
+        await resize(withDrawer)
+        c.songClear()
+        for slot in [0, 0, 1, 0] { c.songAppend(slot) }
+        c.setSongMode(true)
+        let slot = c.project.sequencer.currentPattern
+        for step in 0..<16 {
+            c.project.sequencer.patterns[slot].recordMotion(parameter: .padCutoff, pad: 0, step: step, value: 300 * pow(50, Double(step) / 15))
+            c.project.sequencer.patterns[slot].recordMotion(parameter: .reverbMix, pad: 0, step: step, value: Double(step % 8) / 10)
+        }
+        c.pushPattern(slot)
+        c.drawer = .song
+        await sleep(1.8)
+        capture(window, "11-song-motion", into: directory)
+        c.setSongMode(false)
+
+        // 12) Sampling
+        c.sampling.targetPad = 15
+        c.drawer = .sampling
+        await sleep(0.8)
+        capture(window, "12-sampling", into: directory)
+
+        // 13) 64 Schritte
+        c.drawer = .sequencer
+        c.setPatternLength(64)
+        c.setStepPage(2, follow: true)
+        await sleep(0.8)
+        capture(window, "13-64-steps", into: directory)
+        c.drawer = nil
+
         c.stop()
         c.isDirty = false
         print("[NEXORA] Screenshots gespeichert in \(directory.path)")

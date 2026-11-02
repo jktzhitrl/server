@@ -24,6 +24,8 @@ struct PadEditorPanel: View {
                     Button("Laden …") { controller.chooseSampleForSelectedPad() }
                         .help("Audiodatei auf dieses Pad laden (⌘L)")
                     Button("Leeren") { controller.clearPad(pad) }
+                    Button("Slice …") { controller.showSliceSheet = true }
+                        .help("Sample in Stücke zerlegen und auf Pads verteilen")
                         .disabled(controller.padSamples[pad] == nil)
                     Button {
                         controller.padDown(pad, velocity: 1)

@@ -27,6 +27,7 @@ extension SamplerController {
 
     func toggleRecord() {
         isRecording.toggle()
+        motionLast = nil
         host.send(.setRecording(isRecording))
         showLCD("RECORD", isRecording ? "ARMED · Q \(project.sequencer.quantize.shortName)" : "OFF")
         if isRecording && meters.transport != .playing { play() }
@@ -109,6 +110,7 @@ extension SamplerController {
     func setPatternLength(_ length: Int) {
         let slot = project.sequencer.currentPattern
         project.sequencer.patterns[slot].length = min(max(length, 1), SequencerPattern.maxSteps)
+        stepPage = min(stepPage, (project.sequencer.patterns[slot].length - 1) / SequencerPattern.stepsPerPage)
         pushPattern(slot)
         showLCD("PATTERN LENGTH", "\(project.sequencer.patterns[slot].length) STEPS")
         markDirty()
@@ -185,7 +187,7 @@ extension SamplerController {
     }
 
     func setPatternChain(_ chain: [Int]) {
-        project.patternChain = chain.filter { (0..<SequencerState.patternSlots).contains($0) }
-        markDirty()
+        project.patternChain = Array(chain.filter { (0..<SequencerState.patternSlots).contains($0) }.prefix(64))
+        songChanged()
     }
 }

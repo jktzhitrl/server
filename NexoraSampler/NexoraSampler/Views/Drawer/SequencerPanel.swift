@@ -23,12 +23,21 @@ struct SequencerPanel: View {
                                     .background(RoundedRectangle(cornerRadius: 3).fill(slot == controller.project.sequencer.currentPattern ? Nexora.Colors.pink : Nexora.Colors.panel))
                             }
                         }
-                        Stepper("Länge: \(controller.currentPattern.length) Schritte",
-                                value: Binding(get: { controller.currentPattern.length }, set: { controller.setPatternLength($0) }),
-                                in: 1...SequencerPattern.maxSteps)
-                        Toggle("Wechsel am Taktende", isOn: Binding(get: { controller.project.sequencer.switchAtBarEnd },
-                                                                   set: { controller.setSwitchAtBarEnd($0) }))
-                            .toggleStyle(.checkbox)
+                        HStack(spacing: 6) {
+                            Stepper("Länge: \(controller.currentPattern.length)",
+                                    value: Binding(get: { controller.currentPattern.length }, set: { controller.setPatternLength($0) }),
+                                    in: 1...SequencerPattern.maxSteps)
+                            Button("×2") { controller.setPatternLength(min(SequencerPattern.maxSteps, controller.currentPattern.length * 2)) }
+                                .help("Länge verdoppeln (bis 64 Schritte)")
+                            PagePicker()
+                        }
+                        HStack(spacing: 10) {
+                            Toggle("Seite folgt Wiedergabe", isOn: Binding(get: { controller.followPage }, set: { controller.followPage = $0 }))
+                                .toggleStyle(.checkbox)
+                            Toggle("Wechsel am Taktende", isOn: Binding(get: { controller.project.sequencer.switchAtBarEnd },
+                                                                       set: { controller.setSwitchAtBarEnd($0) }))
+                                .toggleStyle(.checkbox)
+                        }
                         HStack(spacing: 6) {
                             Button("Kopieren") { controller.copyPattern() }
                             Button("Einfügen") { controller.pastePattern() }.disabled(controller.patternClipboard == nil)
@@ -72,12 +81,35 @@ struct SequencerPanel: View {
                 }
             }
             .font(.system(size: 11))
-            .frame(width: 330)
+            .frame(width: 400)
         }
     }
 }
 
-/// Das 16×16-Raster. Klick: Schritt an/aus · ⇧-Klick: Anschlagstärke wechseln.
+/// Auswahl der sichtbaren Seite (je 16 Schritte).
+struct PagePicker: View {
+    @Environment(SamplerController.self) private var controller
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(0..<SequencerPattern.pageCount, id: \.self) { page in
+                let first = page * SequencerPattern.stepsPerPage
+                let playingHere = controller.meters.transport != .stopped && controller.meters.currentStep / SequencerPattern.stepsPerPage == page
+                Button("\(first + 1)–\(first + SequencerPattern.stepsPerPage)") { controller.setStepPage(page) }
+                    .buttonStyle(.plain)
+                    .font(Nexora.Fonts.value(8.5))
+                    .frame(width: 40, height: 20)
+                    .foregroundStyle(page == controller.stepPage ? Nexora.Colors.display : Nexora.Colors.labelLight)
+                    .background(RoundedRectangle(cornerRadius: 3).fill(page == controller.stepPage ? Nexora.Colors.turquoise : Nexora.Colors.panel))
+                    .overlay(alignment: .bottom) { if playingHere { Rectangle().fill(Nexora.Colors.pink).frame(height: 2) } }
+                    .opacity(page < controller.pageCount ? 1 : 0.35)
+                    .help("Seite \(page + 1): Schritte \(first + 1)–\(first + SequencerPattern.stepsPerPage)")
+            }
+        }
+    }
+}
+
+/// Das Raster: 16 Spuren × 16 Schritte der gewählten Seite. Klick: Schritt an/aus · ⇧-Klick: Anschlagstärke wechseln.
 struct StepGridView: View {
     @Environment(SamplerController.self) private var controller
     private let cellWidth: CGFloat = 34
@@ -87,12 +119,13 @@ struct StepGridView: View {
         let pattern = controller.currentPattern
         let playing = controller.meters.transport != .stopped
         let current = controller.meters.currentStep
+        let offset = controller.stepPage * SequencerPattern.stepsPerPage
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 2) {
                 Text("TRACK").frame(width: 92, alignment: .leading)
                 Text("M").frame(width: 16)
                 Text("S").frame(width: 16)
-                ForEach(0..<SequencerPattern.maxSteps, id: \.self) { step in
+                ForEach(offset..<(offset + SequencerPattern.stepsPerPage), id: \.self) { step in
                     Text("\(step + 1)")
                         .frame(width: cellWidth)
                         .foregroundStyle(playing && current == step ? Nexora.Colors.pink : Nexora.Colors.labelMuted)
@@ -102,12 +135,12 @@ struct StepGridView: View {
             .font(Nexora.Fonts.value(8))
             .foregroundStyle(Nexora.Colors.labelMuted)
             ForEach(0..<SequencerPattern.trackCount, id: \.self) { track in
-                trackRow(track, pattern: pattern, playing: playing, current: current)
+                trackRow(track, pattern: pattern, playing: playing, current: current, offset: offset)
             }
         }
     }
 
-    private func trackRow(_ track: Int, pattern: SequencerPattern, playing: Bool, current: Int) -> some View {
+    private func trackRow(_ track: Int, pattern: SequencerPattern, playing: Bool, current: Int, offset: Int) -> some View {
         let seq = controller.project.sequencer
         let selected = controller.selectedPad == track
         return HStack(spacing: 2) {
@@ -126,7 +159,7 @@ struct StepGridView: View {
             .buttonStyle(.plain)
             smallToggle("M", on: seq.trackMutes[track], color: Color(hex: 0xFFD166)) { controller.toggleMute(track) }
             smallToggle("S", on: seq.trackSolos[track], color: Nexora.Colors.turquoise) { controller.toggleSolo(track) }
-            ForEach(0..<SequencerPattern.maxSteps, id: \.self) { step in
+            ForEach(offset..<(offset + SequencerPattern.stepsPerPage), id: \.self) { step in
                 StepCell(step: pattern[track, step], inRange: step < pattern.length,
                          isCurrent: playing && current == step, beat: step % 4 == 0,
                          width: cellWidth, height: cellHeight)
