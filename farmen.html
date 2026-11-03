@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Farm-Anleitungen Burgstadt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: wie ein Bauplan auf Blaupausenpapier. Oben die Farmauswahl, dann das Modell in 3D neben der Etappe, darunter der Schichtplan, dann Material und Fehlersuche. */
+:root{
+  --ink:#14233a;--muted:#5a6b82;--paper:#e9f0f8;--panel:#f7faff;--line:#c8d5e6;--accent:#b25f12;--accent-ink:#ffffff;--chip:#dfe8f3;--sky:#b9d8f2;
+  --f-display:"Pixelify Sans","Courier New",monospace;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#dbe6f3;--muted:#8fa3bd;--paper:#0a1320;--panel:#0f1b2c;--line:#22344c;--accent:#f0a845;--accent-ink:#1b1206;--chip:#18283e;--sky:#1e2d47;color-scheme:dark}}
+:root[data-theme="dark"]{--ink:#dbe6f3;--muted:#8fa3bd;--paper:#0a1320;--panel:#0f1b2c;--line:#22344c;--accent:#f0a845;--accent-ink:#1b1206;--chip:#18283e;--sky:#1e2d47;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--f-body)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:24px}
+h3{font-size:17px}
+p{margin:0;max-width:68ch}
+.lede{color:var(--muted);font-size:17px}
+.head{display:flex;flex-direction:column;gap:10px}
+.picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.picker button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:10px 12px;line-height:1.2}
+.picker button small{font:400 12px/1.3 var(--f-body);opacity:.8}
+.facts{display:flex;flex-wrap:wrap;gap:8px}
+.facts span{background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font:600 13px/1.4 var(--f-mono);font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.view{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:8px;overflow:hidden;background:var(--sky);border:1px solid var(--line)}
+.view canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.view .hint{position:absolute;left:8px;bottom:8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--muted)}
+.stages{display:flex;flex-wrap:wrap;gap:6px}
+button{font:700 14px/1 var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:9px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"],button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+.stnav{display:flex;gap:8px}.stnav button{flex:1}
+.eyebrow{font:700 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+ol.steps li{max-width:68ch}
+.note{border-left:3px solid var(--accent);background:var(--chip);padding:8px 12px;border-radius:0 6px 6px 0;font-size:15px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font:700 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.n{text-align:right;font-family:var(--f-mono)}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.3);vertical-align:-2px;margin-right:8px;flex:none}
+.planrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.planrow input{flex:1;min-width:140px}
+.planbox{overflow-x:auto}
+#plan{display:block;max-width:100%;border-radius:6px}
+.cap{font:13px/1.4 var(--f-mono);color:var(--muted);min-height:1.4em}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 14px;font-size:14px}
+.legend div{display:flex;align-items:center}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+dl{margin:0;display:flex;flex-direction:column;gap:10px}
+dt{font-weight:700}
+dd{margin:2px 0 0;color:var(--muted);max-width:68ch}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <span class="eyebrow">Minecraft Java 26.3 · Burgstadt</span>
+    <h1>Farm-Anleitungen</h1>
+    <p class="lede">Jede Farm aus der Burgstadt als eigene Bauanleitung zum Nachbauen, auch einzeln irgendwo in deiner Welt: Modell in 3D, Etappen, Schichtplan, Material und was zu tun ist, wenn etwas nicht klappt.</p>
+    <nav class="picker" id="picker" aria-label="Farm wählen"></nav>
+  </header>
+
+  <section class="head" aria-live="polite">
+    <span class="eyebrow" id="fEyebrow"></span>
+    <h2 id="fTitle" style="font-size:clamp(24px,4vw,32px)"></h2>
+    <p class="lede" id="fIntro"></p>
+    <div class="facts" id="facts"></div>
+  </section>
+
+  <section class="grid" aria-label="Modell und Etappen">
+    <div class="card">
+      <div class="view"><canvas id="view" aria-label="3D-Modell der Farm"></canvas><span class="hint">Ziehen: drehen · Mausrad: zoomen</span></div>
+      <div class="stages" id="stageBtns" role="group" aria-label="Etappe wählen"></div>
+    </div>
+    <div class="card" id="stageCard"></div>
+  </section>
+
+  <section class="card" aria-labelledby="planH">
+    <h2 id="planH">Schichtplan</h2>
+    <p>Jede Schicht von oben gesehen, Norden ist oben. Blass dahinter liegt die Schicht darunter. Pfeile zeigen, wohin Trichter, Werfer und Kolben zeigen.</p>
+    <div class="planrow">
+      <button id="lPrev" aria-label="Schicht tiefer">◀</button>
+      <input type="range" id="lRange" min="0" max="1" value="0" aria-label="Schicht">
+      <button id="lNext" aria-label="Schicht höher">▶</button>
+      <b id="lNum" style="font-family:var(--f-mono)"></b>
+    </div>
+    <div class="planbox"><canvas id="plan" width="560" height="560"></canvas></div>
+    <div class="cap" id="planCap">Fahr mit der Maus über den Plan, dann steht hier der Block.</div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="cols">
+    <div class="card" aria-labelledby="matH">
+      <h2 id="matH">Material gesamt</h2>
+      <div id="total"></div>
+      <div class="row"><button id="cpy">Liste kopieren</button><span id="cpyMsg" class="cap"></span></div>
+    </div>
+    <div class="card" aria-labelledby="tipsH">
+      <h2 id="tipsH">Wenn etwas nicht klappt</h2>
+      <dl id="tips"></dl>
+      <p class="note" id="yield"></p>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ---------- Blöcke ----------
+// Höhen: Die Schicht direkt auf dem Boden liegt auf Y 64, wenn die Farm auf deiner flachen Insel steht (oberster Bodenblock Y 63).
+const YBASE=64;
+const B={
+  stone_bricks:{n:'Steinziegel',id:'stone_bricks',c:'#8b9094',s:'▦'},
+  cobblestone:{n:'Bruchstein',id:'cobblestone',c:'#76797c',s:''},
+  glass:{n:'Glas',id:'glass',c:'#bfe6f5',t:.35,s:'□'},
+  hopper:{n:'Trichter',id:'hopper',c:'#4a4e55',s:'↓',dir:true},
+  chest:{n:'Truhe',id:'chest',c:'#a8742c',h:.875,s:'K'},
+  sign:{n:'Schild (Fichte)',id:'spruce_sign',c:'#7a5a34',s:'S'},
+  bed:{n:'Bett',id:'red_bed',c:'#b33a3a',h:.5625,s:'B',half:true},
+  slab:{n:'Steinziegelstufe',id:'stone_brick_slab',c:'#9a9fa3',h:.5,s:'▁'},
+  farmland:{n:'Ackerboden (Erde + Hacke)',id:'farmland',c:'#5e3d22',h:.94,s:''},
+  dirt:{n:'Erde',id:'dirt',c:'#8b5e3c',s:''},
+  sand:{n:'Sand',id:'sand',c:'#dbcf8e',s:''},
+  dispenser:{n:'Werfer',id:'dispenser',c:'#6d6d6d',s:'→',dir:true},
+  piston:{n:'Kolben',id:'piston',c:'#b49a6a',s:'→',dir:true},
+  redstone:{n:'Redstone-Staub',id:'redstone',c:'#c0281e',flat:true,s:'·'},
+  rblock:{n:'Redstone-Block',id:'redstone_block',c:'#a0170f',s:'R'},
+  button:{n:'Steinknopf',id:'stone_button',c:'#9a9a9a',small:true,s:'o'},
+  rail:{n:'Schiene',id:'rail',c:'#8a7a5a',flat:true,s:'='},
+  prail:{n:'Antriebsschiene',id:'powered_rail',c:'#d1a827',flat:true,s:'≡'},
+  ladder:{n:'Leiter',id:'ladder',c:'#9a7a4a',s:'H'},
+  fence:{n:'Fichtenholzzaun',id:'spruce_fence',c:'#6b4f30',post:true,s:'+'},
+  lantern:{n:'Laterne',id:'lantern',c:'#ffc85a',glow:true,small:true,s:'*'},
+  campfire:{n:'Lagerfeuer',id:'campfire',c:'#7a4f2b',h:.44,s:'f'},
+  beehive:{n:'Bienenstock',id:'beehive',c:'#c9a04f',s:'h',dir:true},
+  wheat:{n:'Weizenkörner',id:'wheat_seeds',c:'#c9b44a',plant:true,s:','},
+  carrot:{n:'Karotten',id:'carrot',c:'#e08a2a',plant:true,s:','},
+  potato:{n:'Kartoffeln',id:'potato',c:'#b9a050',plant:true,s:','},
+  cane:{n:'Zuckerrohr',id:'sugar_cane',c:'#8fc55a',plant:true,h:1,s:'|'},
+  mstem:{n:'Melonenkerne',id:'melon_seeds',c:'#7fb04f',plant:true,h:.6,s:'m'},
+  pstem:{n:'Kürbiskerne',id:'pumpkin_seeds',c:'#a8b04f',plant:true,h:.6,s:'k'},
+  melon:{n:'Melone',id:'melon',c:'#6aa531',s:'M'},
+  pumpkin:{n:'Kürbis',id:'pumpkin',c:'#e08a1e',s:'K'},
+  flower:{n:'Blumen',id:'poppy',c:'#d8443a',plant:true,h:.6,s:'❀'},
+  water:{n:'Wasserquelle',id:'water',c:'#3f76e4',t:.6,h:.9,s:'~',liquid:true},
+  lava:{n:'Lavaquelle',id:'lava',c:'#ff7a1a',glow:true,s:'L',liquid:true},
+  flow:{n:'fließendes Wasser',c:'#7fa8f0',t:.7,h:.15,s:'',liquid:true},
+  villager:{n:'Dorfbewohner',c:'#8f6a4a',ent:[.6,1.9],s:'D'},
+  zombie:{n:'Zombie',c:'#4f8a3c',ent:[.6,1.9],s:'Z'},
+  cow:{n:'Kuh',c:'#5a4030',ent:[.9,1.3],s:'C'},
+  chicken:{n:'Huhn',c:'#f2f2f2',ent:[.4,.7],s:'h'},
+  hopcart:{n:'Trichterlore',c:'#55595f',ent:[.9,.6],s:'T'}
+};
+const DIR=['Norden','Osten','Süden','Westen','unten'];
+const ARROW=['↑','→','↓','←','•'];
+
+// ---------- Farmen ----------
+// Jede Farm: Modell (y = gy ist die erste Lage auf dem Boden, darunter wird gegraben), Etappen, Material extra, Fehlersuche.
+const FARMS=[];
+
+// Eisenfarm
+FARMS.push({id:'eisen',t:'Eisenfarm',short:'Golems, Lava, Truhe',gy:0,
+  intro:'Drei Dorfbewohner sehen einen Zombie, bekommen Angst und rufen Eisengolems. Die Golems erscheinen auf einer Plattform, Wasser schiebt sie zur Mitte, sie fallen durch eine Lavaschicht und Eisen und Mohn landen über Trichter in einer Truhe.',
+  facts:['3 Dorfbewohner','1 Zombie'],
+  build(put){
+    const N=20,H0=9,H1=10;
+    for(const[x,z]of[[0,0],[19,0],[0,19],[19,19],[9,0],[0,9],[19,10],[10,19]])for(let y=0;y<=4;y++)put(x,y,z,'stone_bricks',1);
+    put(H0,0,H0,'stone_bricks',1);put(H1,0,H0,'stone_bricks',1);put(H0,1,H0,'chest',1);put(H1,1,H0,'chest',1);
+    put(H0,2,H1,'hopper',2,{f:0});put(H1,2,H1,'hopper',2,{f:0});put(H0,2,H0,'hopper',2,{f:4});put(H1,2,H0,'hopper',2,{f:4});
+    for(let x=H0-1;x<=H1+1;x++)for(let z=H0-1;z<=H1+1;z++){if(x>=H0&&x<=H1&&z>=H0&&z<=H1)continue;for(let y=2;y<=4;y++)put(x,y,z,'stone_bricks',2)}
+    put(H0,4,H0,'sign',2,{wall:3});put(H0,4,H1,'sign',2,{wall:3});put(H1,4,H0,'sign',2,{wall:1});put(H1,4,H1,'sign',2,{wall:1});
+    for(let x=0;x<N;x++)for(let z=0;z<N;z++){if(x>=H0&&x<=H1&&z>=H0&&z<=H1)continue;put(x,5,z,'cobblestone',3,{soft:true});if(x===0||z===0||x===N-1||z===N-1){put(x,6,z,'glass',3);put(x,7,z,'glass',3)}}
+    const VC=[7,9,11];
+    for(let x=6;x<=12;x++)for(let z=7;z<=10;z++)put(x,9,z,'cobblestone',4);
+    for(let x=8;x<=10;x++)for(let z=11;z<=12;z++)put(x,9,z,'cobblestone',4);
+    for(let x=6;x<=12;x++)for(let z=7;z<=10;z++){if(VC.includes(x)&&(z===8||z===9))put(x,10,z,'bed',4,{head:z===8});else for(let y=10;y<=12;y++)put(x,y,z,'glass',4);put(x,13,z,'glass',4)}
+    for(const[x,z]of[[8,11],[10,11],[8,12],[9,12],[10,12]])for(let y=10;y<=11;y++)put(x,y,z,'glass',4);
+    for(let x=8;x<=10;x++)for(let z=11;z<=12;z++){put(x,12,z,'stone_bricks',4);put(x,13,z,'glass',4)}
+    for(const x of VC)put(x,10,8,'villager',5,{onBed:true});put(9,10,11,'zombie',5);
+    for(let x=1;x<=N-2;x++)for(let z=1;z<=N-2;z++)if(x===1||z===1||x===N-2||z===N-2)put(x,6,z,'water',6);
+    for(let x=H0;x<=H1;x++)for(let z=H0;z<=H1;z++)put(x,5,z,'lava',6);
+    for(let x=2;x<=N-3;x++)for(let z=2;z<=N-3;z++)if(!(x>=H0&&x<=H1&&z>=H0&&z<=H1))put(x,6,z,'flow',6);
+  },
+  stages:[
+    {t:'Stützen und Sammelstelle',steps:['Eine flache Fläche von 20 × 20 Blöcken aussuchen. Im Umkreis von 8 Blöcken darf später nichts höher als 3 Blöcke über dem Boden stehen, sonst spawnen Golems dort.','Acht Säulen aus Steinziegeln, je 5 hoch: an den vier Ecken und in der Mitte jeder Seite.','Genau in der Mitte einen Steinziegel auf den Boden, darauf eine Doppeltruhe. Hier holst du später das Eisen ab, du stehst dabei unter der Plattform.']},
+    {t:'Tötungskammer',steps:['Über der Truhe vier Trichter im Quadrat. Die zwei genau über der Truhe zeigen nach unten in die Truhe. Die zwei südlich daneben zeigen nach Norden in diese Trichter: beim Setzen schleichen und auf den Zieltrichter klicken.','Um die vier Trichter einen Ring aus Steinziegeln, drei hoch. So entsteht eine Kammer von 2 × 2 Blöcken.','In der obersten Lage des Rings in jedes der vier Kammerfelder ein Schild an die Ringwand hängen. Die Schilder halten später die Lava fest.']},
+    {t:'Plattform',steps:['Boden 20 × 20 aus Bruchstein über alle Säulen und den Ring. Das 2 × 2 Loch über der Kammer frei lassen.','Ringsum am Rand eine Wand aus Glas, zwei hoch. Auf Glas spawnen keine Golems.']},
+    {t:'Zellen',steps:['Zum Bauen ein Gerüst nehmen und es danach wieder ganz abbauen.','Drei Blöcke über der Plattform den Boden für die Zellen legen: 7 × 4 Blöcke über der Mitte und davor (südlich) 3 × 2 für den Zombie.','Drei Betten nebeneinander, Kopfende nach Norden, mit Glas dazwischen und ringsum, drei hoch, oben eine Lage Glas als Dach.','Die Zombie-Zelle ist 1 Block groß, Glas zwei hoch, darüber Steinziegel gegen die Sonne und darauf noch eine Lage Glas, damit dort kein Golem spawnen kann.']},
+    {t:'Dorfbewohner und Zombie',steps:['Drei erwachsene Dorfbewohner mit einer Lore über eine Schienenrampe hochbringen, je einen aufs Bett. Lücken mit Glas schließen.','Den Zombie mit einem Namensschild benennen und genauso in seine Zelle bringen.','Gerüst und Schienen ganz abbauen.']},
+    {t:'Wasser und Lava',steps:['Wasserquellen auf jedes Feld des äußersten Rings innerhalb der Glaswand (68 Quellen). Das Wasser fließt genau 7 Blöcke weit und hört direkt am Loch auf.','Ganz zum Schluss je einen Eimer Lava auf die vier Schilder im Loch.','Fertig: Golems fallen durch die Lava auf die Trichter, Eisen und Mohn landen in der Truhe.']}
+  ],
+  extras:{4:[['Gerüst',null,'zum Bauen, danach abbauen']],5:[['Dorfbewohner',3,'erwachsen'],['Zombie',1,null],['Namensschild',1,'für den Zombie']],6:[['Wassereimer',2,'mit unendlicher Quelle'],['Lavaeimer',4,null]]},
+  tips:[['Es kommen keine Golems','Die Dorfbewohner müssen den Zombie durch das Glas sehen und nachts in ihren Betten schlafen können. Die Farm muss in deiner Simulationsdistanz liegen.'],['Golems spawnen woanders','Im Umkreis von 8 Blöcken um die Dorfbewohner und bis 6 Blöcke unter ihnen darf es keine andere Fläche geben, auf der ein Golem stehen kann. Glas und Laub zählen nicht.'],['Die Lava ist zu Stein geworden','Dann ist Wasser ins Loch gelaufen: Quellen nur auf den äußersten Ring setzen.']],
+  yield:'Etwa ein Golem alle 30 bis 40 Sekunden, grob 300 bis 400 Eisen pro Stunde. Die genaue Zahl schwankt je nach Version.'
+});
+
+// Spülfarm für Weizen, Karotten und Kartoffeln
+FARMS.push({id:'spuel',t:'Spülfarm',short:'Weizen, Karotten, Kartoffeln',gy:1,
+  intro:'Ein Feld mit sechs Reihen Ackerboden. Ein Knopfdruck lässt Werfer Wasser über das Feld laufen: Es bricht die reifen Pflanzen ab und schwemmt sie in eine Trichterreihe am anderen Ende. Ein zweiter Druck holt das Wasser zurück. Danach neu pflanzen.',
+  facts:['42 Pflanzen','halbautomatisch'],
+  build(put){
+    for(let x=0;x<=8;x++){put(x,0,-1,'stone_bricks',1);put(x,1,-1,'stone_bricks',1)}
+    for(let x=0;x<=7;x++){put(x,0,7,'stone_bricks',1);put(x,1,7,'stone_bricks',1)}
+    put(8,1,7,'stone_bricks',1);
+    for(let z=-1;z<=6;z++){put(9,0,z,'stone_bricks',1);put(9,1,z,'stone_bricks',1)}
+    for(let z=0;z<=6;z++)put(0,0,z,'stone_bricks',1);
+    for(let z=0;z<=6;z++)put(8,0,z,'hopper',2,{f:2});
+    put(8,0,7,'hopper',2,{f:1});put(9,0,7,'chest',2);
+    for(let x=1;x<=7;x++)for(let z=0;z<=6;z++){if(z===3){put(x,0,z,'water',3);put(x,1,z,'slab',3)}else put(x,0,z,'farmland',3)}
+    for(let z=0;z<=6;z++){if(z===3)put(0,1,z,'stone_bricks',4);else put(0,1,z,'dispenser',4,{f:1});put(0,2,z,'redstone',4)}
+    put(0,2,-1,'button',4);
+    put(9,2,-1,'lantern',4);put(0,2,7,'lantern',4);
+    const crop=z=>z<2?'wheat':z<5?'carrot':'potato';
+    for(let x=1;x<=7;x++)for(const z of[0,1,2,4,5,6])put(x,1,z,crop(z),5);
+  },
+  stages:[
+    {t:'Rand',steps:['Fläche 10 × 9 Blöcke abstecken. Ganz links (Westen) kommt die Reihe mit den Werfern, rechts (Osten) die Trichter.','Rundherum einen Rand aus Steinziegeln, zwei hoch: eine Lage im Boden, eine darüber. So bleibt das Spülwasser im Feld.','Unter die spätere Werferreihe eine Lage Steinziegel in den Boden.']},
+    {t:'Trichter und Truhe',steps:['Auf der Ostseite des Feldes eine Reihe Trichter in den Boden, alle zeigen nach Süden.','Der letzte Trichter in der Südostecke zeigt nach Osten in eine Truhe außerhalb des Randes. Über der Truhe muss Luft sein, sonst geht sie nicht auf.']},
+    {t:'Acker und Wasserrinne',steps:['Die Erde im Feld mit der Hacke zu Ackerboden machen.','Die mittlere Reihe ist eine Wasserrinne: Wasser in den Boden und eine Steinziegelstufe (untere Hälfte) darüber. Die Rinne hält alle Reihen feucht, die Stufe hält das Spülwasser von ihr fern.']},
+    {t:'Werfer und Redstone',steps:['In die Westreihe auf Höhe der Pflanzen sechs Werfer, Öffnung nach Osten zum Feld. Vor die Rinne ein Steinziegel.','Auf alle Werfer eine Linie Redstone-Staub, an der Nordecke ein Knopf oben auf dem Rand, direkt neben dem Staub.','In jeden Werfer einen Wassereimer. Zwei Laternen auf den Rand, damit nachts nichts spawnt.']},
+    {t:'Pflanzen',steps:['Weizen, Karotten oder Kartoffeln in die sechs Reihen pflanzen.','Ernten, wenn alles reif ist: Knopf drücken. Das Wasser fließt genau bis zu den Trichtern und bricht alles ab. Wenn alles in der Truhe ist, nochmal drücken: Die Werfer holen das Wasser zurück.','Neu pflanzen. Mit Knochenmehl geht es schneller.']}
+  ],
+  extras:{3:[['Wassereimer',2,'für die Rinne, mit unendlicher Quelle']],4:[['Wassereimer',6,'für die Werfer']]},
+  tips:[['Das Wasser fließt nicht bis zu den Trichtern','Wasser fließt auf flachem Boden 7 Blöcke weit. Das Feld darf vom Werfer bis zu den Trichtern nicht länger als 8 Blöcke sein.'],['Die Werfer reagieren nicht','Der Staub muss auf den Werfern liegen und der Knopf direkt neben dem Staub sitzen.'],['Ackerboden wird zu Erde','Das passiert, wenn man darauf springt oder nichts gepflanzt ist. Gleich wieder bepflanzen.']],
+  yield:'Pro Ernte 42 Pflanzen. Mit Licht und feuchtem Acker sind sie in etwa 1 bis 2 Minecraft-Tagen reif.'
+});
+
+// Zuckerrohr
+FARMS.push({id:'zucker',t:'Zuckerrohrfarm',short:'Kolben + Trichterlore',gy:3,
+  intro:'Zwei Reihen Zuckerrohr auf Sand neben einer Wasserrinne. Ein Knopf lässt Kolben das obere Rohr abbrechen. Unter dem Sand fährt eine Trichterlore hin und her und sammelt die Ernte durch den Sand hindurch ein.',
+  facts:['18 Pflanzen','halbautomatisch'],
+  build(put){
+    for(const z of[1,3]){
+      put(-1,1,z,'stone_bricks',1);put(9,1,z,'stone_bricks',1);
+      for(let x=0;x<=8;x++){const end=x===0||x===8;put(x,1,z,end?'prail':'rail',1);if(end)put(x,0,z,'rblock',1)}
+    }
+    for(let x=0;x<=8;x++)put(x,1,2,'stone_bricks',1);
+    put(4,0,1,'hopper',1,{f:2});put(4,0,2,'hopper',1,{f:2});put(4,0,3,'hopper',1,{f:2});put(4,0,4,'hopper',1,{f:2});put(4,0,5,'chest',1);
+    for(let y=0;y<=2;y++)put(4,y,6,'ladder',1,{wall:2});
+    for(let x=0;x<=8;x++){put(x,2,1,'sand',2);put(x,2,3,'sand',2);put(x,2,2,'water',2);put(x,3,1,'cane',2);put(x,3,3,'cane',2);put(x,4,1,'cane',2,{ex:true});put(x,4,3,'cane',2,{ex:true})}
+    for(let x=0;x<=8;x++){put(x,3,0,'stone_bricks',3);put(x,3,4,'stone_bricks',3);put(x,4,0,'piston',3,{f:2});put(x,4,4,'piston',3,{f:0});put(x,5,0,'redstone',3);put(x,5,4,'redstone',3)}
+    put(9,4,0,'stone_bricks',3);put(9,5,0,'button',3);put(9,4,4,'stone_bricks',3);put(9,5,4,'button',3);
+    put(2,1,1,'hopcart',4);put(6,1,3,'hopcart',4);
+  },
+  stages:[
+    {t:'Gräben und Schienen',steps:['Fläche 11 × 5 abstecken, dazu südlich eine kleine Grube für die Truhe. Unter den beiden späteren Rohrreihen je einen Graben, zwei Blöcke tief.','Unten in jeden Graben eine Schiene, 9 lang. An beiden Enden eine Antriebsschiene auf einem Redstone-Block, dahinter ein Steinziegel als Prellbock.','Unter die Wasserrinne (mittlere Reihe) eine Lage Steinziegel, damit das Wasser nicht in die Gräben läuft.','In der Mitte unter beiden Schienen je einen Trichter, eine Trichterreihe nach Süden bis zu einer Truhe. Davor eine kleine Grube mit Leiter, damit du an die Truhe kommst.']},
+    {t:'Sand, Wasser, Zuckerrohr',steps:['Auf die Gräben je eine Reihe Sand, dazwischen eine Reihe Wasser. Zuckerrohr wächst nur direkt neben Wasser.','Auf jeden Sandblock ein Zuckerrohr pflanzen.']},
+    {t:'Kolben und Redstone',steps:['Hinter jeder Rohrreihe auf Höhe des zweiten Rohrstücks eine Reihe Kolben, Kopf zum Rohr. Darunter Steinziegel als Sockel.','Auf alle Kolben Redstone-Staub. Am Ende jeder Reihe ein Steinziegel mit einem Knopf obendrauf, direkt neben dem Staub.']},
+    {t:'Trichterloren',steps:['In jeden Graben eine Trichterlore setzen und anschubsen. Sie pendelt jetzt allein hin und her.','Ernten: beide Knöpfe drücken, wenn das Rohr 2 bis 3 hoch ist. Das unterste Stück bleibt stehen und wächst nach. Die Loren sammeln die Rohre durch den Sand ein und geben sie in der Mitte an die Trichter ab.']}
+  ],
+  extras:{4:[['Trichterlore',2,null]],2:[['Wassereimer',2,'mit unendlicher Quelle']]},
+  tips:[['Die Lore bleibt stehen','Die Antriebsschienen an den Enden müssen auf Redstone-Blöcken liegen, und dahinter muss ein fester Block sein.'],['Rohr bleibt auf dem Sand liegen','Die Trichterlore sammelt nur durch einen vollen Block. Unter jeder Sandreihe muss die Schiene direkt darunter liegen.'],['Das Rohr wächst nicht','Jeder Sandblock braucht Wasser direkt daneben und das Rohr Licht.']],
+  yield:'Pro Ernte 36 Rohr, wenn alles 3 hoch ist. Zuckerrohr wächst etwa alle 15 bis 20 Minuten ein Stück.'
+});
+
+// Melonen und Kürbisse
+FARMS.push({id:'melone',t:'Melonen- und Kürbisfarm',short:'Kolben + Trichterlore',gy:3,
+  intro:'Melonen- und Kürbisstiele wachsen auf Ackerboden neben einer Wasserrinne. Die Früchte erscheinen auf den Erdreihen daneben. Ein Knopf lässt Kolben die Früchte zerschlagen, eine Trichterlore unter der Erde sammelt sie ein.',
+  facts:['18 Stiele','halbautomatisch'],
+  build(put){
+    for(const z of[1,5]){
+      put(-1,1,z,'stone_bricks',1);put(9,1,z,'stone_bricks',1);
+      for(let x=0;x<=8;x++){const end=x===0||x===8;put(x,1,z,end?'prail':'rail',1);if(end)put(x,0,z,'rblock',1)}
+    }
+    for(let x=0;x<=8;x++)put(x,1,3,'stone_bricks',1);
+    for(let z=1;z<=6;z++)put(4,0,z,'hopper',1,{f:2});
+    put(4,0,7,'chest',1);for(let y=0;y<=2;y++)put(4,y,8,'ladder',1,{wall:2});
+    for(let x=0;x<=8;x++){put(x,2,1,'dirt',2);put(x,2,5,'dirt',2);put(x,2,2,'farmland',2);put(x,2,4,'farmland',2);put(x,2,3,'water',2);
+      const st=x<=4?'mstem':'pstem';put(x,3,2,st,2);put(x,3,4,st,2)}
+    for(const z of[2,4]){put(-1,3,z,'stone_bricks',2);put(9,3,z,'stone_bricks',2)}
+    for(const x of[1,3,6,8]){put(x,3,1,x<=4?'melon':'pumpkin',2,{ex:true})}
+    for(const x of[0,5,7]){put(x,3,5,x<=4?'melon':'pumpkin',2,{ex:true})}
+    for(let x=0;x<=8;x++){put(x,3,0,'piston',3,{f:2});put(x,3,6,'piston',3,{f:0});put(x,4,0,'redstone',3);put(x,4,6,'redstone',3)}
+    put(9,3,0,'stone_bricks',3);put(9,4,0,'button',3);put(9,3,6,'stone_bricks',3);put(9,4,6,'button',3);
+    put(2,1,1,'hopcart',4);put(6,1,5,'hopcart',4);
+  },
+  stages:[
+    {t:'Gräben und Schienen',steps:['Fläche 11 × 7 abstecken, dazu südlich eine kleine Grube für die Truhe. Unter den beiden äußeren Erdreihen je einen Graben, zwei Blöcke tief.','In jeden Graben eine Schiene, an beiden Enden eine Antriebsschiene auf einem Redstone-Block, dahinter ein Steinziegel als Prellbock.','Unter die Wasserrinne in der Mitte eine Lage Steinziegel.','In der Mitte unter beiden Schienen je einen Trichter und eine Trichterreihe nach Süden bis zu einer Truhe, davor eine Grube mit Leiter.']},
+    {t:'Erde, Acker, Wasser, Stiele',steps:['Reihen von Norden nach Süden: Erde, Ackerboden, Wasser, Ackerboden, Erde. Die Erdreihen liegen genau über den Gräben.','Links (Westen) Melonenkerne, rechts (Osten) Kürbiskerne in die Ackerreihen.','An die Enden der Ackerreihen je einen Steinziegel, sonst wachsen Früchte daneben ins Gras, wo die Kolben nicht hinkommen.']},
+    {t:'Kolben und Redstone',steps:['Ganz außen je eine Reihe Kolben auf Höhe der Früchte, Kopf zur Erdreihe.','Auf alle Kolben Redstone-Staub, am Ende jeder Reihe ein Steinziegel mit Knopf obendrauf.']},
+    {t:'Trichterloren',steps:['In jeden Graben eine Trichterlore setzen und anschubsen.','Ernten: beide Knöpfe drücken. Die Kolben zerschlagen alle Früchte, die Stiele bleiben stehen. Die Loren sammeln die Stücke durch die Erde ein.']}
+  ],
+  extras:{4:[['Trichterlore',2,null]],2:[['Wassereimer',2,'mit unendlicher Quelle']]},
+  tips:[['Früchte wachsen nicht','Neben jedem Stiel braucht es einen freien Erd-, Gras- oder Ackerblock mit Luft darüber, und der Stiel braucht Licht.'],['Früchte wachsen außerhalb','Jeder Stiel kann in alle vier Richtungen eine Frucht setzen. Darum sind die Enden der Ackerreihen mit Steinziegeln zu.'],['Die Lore sammelt nichts','Die Erdreihe muss genau über der Schiene liegen.']],
+  yield:'Jeder Stiel bringt etwa alle 10 bis 20 Minuten eine Frucht. Melonen geben 3 bis 7 Scheiben.'
+});
+
+// Lederfarm
+FARMS.push({id:'leder',t:'Lederfarm',short:'Kühe, Kälbertunnel',gy:1,
+  intro:'Kühe vermehren sich in einem Gehege. Die Kälber passen durch einen nur 1 Block hohen Spalt in einen Tunnel. Wachsen sie dort heran, stoßen sie an die Decke und ersticken. Leder und Rindfleisch fallen in die Trichter.',
+  facts:['2 Kühe','füttern von Hand'],
+  build(put){
+    for(let x=-1;x<=4;x++)for(let z=-1;z<=5;z++){const edge=x===-1||x===4||z===-1||z===5;if(edge&&!(x===4&&z===2))put(x,1,z,'fence',1)}
+    put(-1,2,-1,'lantern',1);
+    for(let x=4;x<=8;x++)put(x,0,2,'hopper',2,{f:x<8?1:2});
+    put(8,0,3,'hopper',2,{f:2});put(8,0,4,'chest',2);
+    for(let x=5;x<=8;x++){put(x,1,1,'stone_bricks',3);put(x,1,3,'stone_bricks',3)}
+    put(9,1,2,'stone_bricks',3);for(let x=4;x<=8;x++)put(x,2,2,'stone_bricks',3);
+    put(1,1,1,'cow',4);put(2,1,3,'cow',4);put(6,1,2,'cow',4,{ex:true,calf:true});
+  },
+  stages:[
+    {t:'Gehege',steps:['Ein Gehege 4 × 5 aus Fichtenholzzaun bauen. Auf der Ostseite in der Mitte eine Lücke lassen.','Eine Laterne auf einen Zaunpfosten, damit nachts keine Monster spawnen.']},
+    {t:'Trichter und Truhe',steps:['Von der Lücke aus eine Reihe aus fünf Trichtern nach Osten in den Boden, alle zeigen nach Osten. Der letzte zeigt nach Süden.','Dahinter ein Trichter unter der späteren Tunnelwand, der in eine Truhe zeigt. Über der Truhe muss Luft sein.']},
+    {t:'Tunnel',steps:['Über die Trichter einen Tunnel, nur einen Block hoch: Wände aus Steinziegeln links und rechts, am Ende eine Wand, oben eine Decke.','Auch über der Lücke im Zaun liegt ein Steinziegel: So ist der Eingang nur einen Block hoch. Kälber passen durch, erwachsene Kühe nicht.']},
+    {t:'Kühe',steps:['Zwei Kühe mit Weizen ins Gehege locken.','Immer wieder mit Weizen füttern, dann gibt es Kälber. Die laufen in den Tunnel, wachsen dort heran und ersticken an der Decke.']}
+  ],
+  extras:{4:[['Kühe',2,null],['Weizen',32,'zum Füttern']]},
+  tips:[['Die Kälber gehen nicht in den Tunnel','Sie laufen zufällig hinein, das dauert etwas. Das Gehege klein halten hilft.'],['Erwachsene Kühe kommen in den Tunnel','Über der Lücke fehlt der Block, der Eingang muss genau 1 hoch sein.'],['Das Fleisch ist roh','Wer gebratenes Fleisch will, kann ein Lagerfeuer statt eines Trichters setzen, dann landet das Fleisch aber nicht in der Truhe.']],
+  yield:'Wie viel Leder kommt, hängt davon ab, wie oft du fütterst: jede Fütterung ein Kalb, jedes Kalb 0 bis 2 Leder.'
+});
+
+// Eierfarm
+FARMS.push({id:'eier',t:'Eierfarm',short:'Hühner auf Trichtern',gy:1,
+  intro:'Vier Hühner stehen in einer Glasröhre auf Trichtern. Ihre Eier fallen in die Trichter und landen in einer Truhe. Mit den Eiern kannst du neue Hühner ausbrüten.',
+  facts:['4 Hühner','automatisch'],
+  build(put){
+    for(let x=0;x<=4;x++)put(x,0,0,'hopper',1,{f:1});
+    put(5,0,0,'chest',1);
+    for(let x=-1;x<=4;x++){put(x,1,-1,'glass',2);put(x,1,1,'glass',2)}
+    put(-1,1,0,'glass',2);put(4,1,0,'glass',2);
+    for(let x=-1;x<=4;x++)for(let z=-1;z<=1;z++)put(x,2,z,'slab',2);
+    for(let x=0;x<=3;x++)put(x,1,0,'chicken',3);
+  },
+  stages:[
+    {t:'Trichter und Truhe',steps:['Fünf Trichter in einer Reihe in den Boden, alle zeigen nach Osten, am Ende eine Truhe. Über der Truhe muss Luft sein.']},
+    {t:'Glasröhre',steps:['Um die ersten vier Trichter eine Röhre aus Glas, einen Block hoch. Über dem fünften Trichter ein Glas, damit die Hühner nicht über die Truhe laufen.','Oben drauf Steinziegelstufen (untere Hälfte) als Dach.']},
+    {t:'Hühner',steps:['Vier Hühner in die Röhre bringen: mit Weizenkörnern anlocken oder Eier hineinwerfen, bis Küken schlüpfen. Dafür eine Stufe kurz wegnehmen.','Ein Huhn legt etwa alle 5 bis 10 Minuten ein Ei.']}
+  ],
+  extras:{3:[['Hühner',4,null],['Weizenkörner',16,'zum Anlocken']]},
+  tips:[['Es kommen keine Eier in die Truhe','Die Trichter müssen alle zur Truhe zeigen, beim Setzen schleichen und auf den nächsten Block klicken.'],['Hühner sind weg','Die Röhre muss rundum geschlossen sein, auch über der Truhe.']],
+  yield:'Vier Hühner legen zusammen etwa 30 bis 50 Eier pro Stunde.'
+});
+
+// Bienengarten
+FARMS.push({id:'bienen',t:'Bienengarten',short:'Honig und Waben',gy:1,
+  intro:'Drei Bienenstöcke über Lagerfeuern in einem umzäunten Blumengarten. Der Rauch beruhigt die Bienen, so kannst du gefahrlos Honig in Flaschen füllen und mit der Schere Honigwaben ernten.',
+  facts:['3 Bienenstöcke','von Hand ernten'],
+  build(put){
+    for(let x=0;x<=6;x++)for(let z=0;z<=4;z++){const edge=x===0||x===6||z===0||z===4;if(edge){if(!(z===4&&x===3))put(x,1,z,'fence',1)}}
+    for(const[x,z]of[[0,0],[6,0],[0,4],[6,4]])put(x,2,z,'lantern',1);
+    for(const x of[1,3,5]){put(x,1,1,'campfire',2);put(x,2,1,'beehive',2,{f:2})}
+    for(let x=1;x<=5;x++)for(let z=2;z<=3;z++)put(x,1,z,'flower',3);
+    put(2,1,1,'flower',3);put(4,1,1,'flower',3);
+  },
+  stages:[
+    {t:'Zaun',steps:['Einen Garten 7 × 5 umzäunen, vorne in der Mitte eine Lücke als Tor. Laternen auf die Ecken.']},
+    {t:'Lagerfeuer und Bienenstöcke',steps:['Hinten drei Lagerfeuer, direkt darauf je einen Bienenstock, Öffnung nach vorne zum Garten.','Das Lagerfeuer darf bis zu 5 Blöcke unter dem Stock sein, direkt darunter ist am einfachsten.']},
+    {t:'Blumen und Bienen',steps:['Den Rest mit Blumen bepflanzen.','Bienen bekommst du aus einem Bienennest in der Wildnis: mit Behutsamkeit abbauen, dann ziehen sie mit um. Oder Bienen mit Blumen in der Hand herlocken.','Wenn ein Stock voll ist (Honig tropft heraus): mit einer Glasflasche Honig abfüllen oder mit der Schere Honigwaben ernten.']}
+  ],
+  extras:{3:[['Bienen',3,'aus einem Bienennest'],['Glasflaschen',16,null],['Schere',1,null]]},
+  tips:[['Die Bienen greifen an','Unter jedem Stock muss ein brennendes Lagerfeuer stehen. Ohne Rauch werden die Bienen wütend.'],['Der Stock füllt sich nicht','Bienen brauchen Blumen in der Nähe und fliegen tagsüber, nicht bei Regen.']],
+  yield:'Ein Stock ist nach etwa 5 Blumenbesuchen voll. Bei drei Stöcken kannst du alle paar Minecraft-Tage ernten.'
+});
+
+// ---------- Material ----------
+let F=null,VOX=[],YMIN=0,YMAX=0,BX0=0,BX1=0,BZ0=0,BZ1=0,stage=1,layer=0;
+const K=(x,y,z)=>x+','+y+','+z;
+function buildFarm(f){
+  const V=new Map();
+  f.build((x,y,z,b,st,o={})=>{V.set(K(x,y,z)+(B[b].ent?'e':''),Object.assign({x,y,z,b,st},o))});
+  VOX=[...V.values()];
+  YMIN=Math.min(...VOX.map(v=>v.y));YMAX=Math.max(...VOX.map(v=>v.y));
+  BX0=Math.min(...VOX.map(v=>v.x));BX1=Math.max(...VOX.map(v=>v.x));BZ0=Math.min(...VOX.map(v=>v.z));BZ1=Math.max(...VOX.map(v=>v.z));
+}
+function countOf(list){const c={};for(const v of list){const b=B[v.b];if(b.ent||b.liquid||v.ex)continue;if(b.half&&!v.head)continue;c[v.b]=(c[v.b]||0)+1}return c}
+const stacks=n=>n>=64?`${Math.floor(n/64)} St.${n%64?` + ${n%64}`:''}`:'';
+function matTable(c,ex){
+  const rows=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<tr><td><span class="sw" style="background:${B[k].c}"></span>${B[k].n} <span style="color:var(--muted);font:12px var(--f-mono)">minecraft:${B[k].id}</span></td><td class="n">${n}</td><td class="n">${stacks(n)}</td></tr>`);
+  for(const[n,c2,note]of ex||[])rows.push(`<tr><td>${n}${note?` <span style="color:var(--muted)">(${note})</span>`:''}</td><td class="n">${c2??''}</td><td></td></tr>`);
+  return rows.length?`<div style="overflow-x:auto"><table><thead><tr><th>Block</th><th style="text-align:right">Anzahl</th><th style="text-align:right">Stacks</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'<p class="cap">Keine Blöcke in dieser Etappe.</p>';
+}
+const yOf=y=>YBASE+(y-F.gy);
+const layerName=y=>`Y ${yOf(y)}${y<F.gy?' · im Boden':''}`;
+
+// ---------- 3D ----------
+let renderer,scene,camera,controls,group,ground;
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function init3D(){
+  const cv=document.getElementById('view');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  scene=new THREE.Scene();scene.background=new THREE.Color(cssVar('--sky')||'#b9d8f2');
+  camera=new THREE.PerspectiveCamera(45,4/3,.1,500);
+  controls=new THREE.OrbitControls(camera,cv);controls.enableDamping=true;controls.minDistance=4;controls.maxDistance=120;
+  scene.add(new THREE.HemisphereLight(0xffffff,0x667788,.85));const sun=new THREE.DirectionalLight(0xffffff,.55);sun.position.set(30,50,20);scene.add(sun);
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshLambertMaterial({color:0x6aa84f,transparent:true,opacity:.55,depthWrite:false}));ground.rotation.x=-Math.PI/2;scene.add(ground);
+  group=new THREE.Group();scene.add(group);
+  new ResizeObserver(resize).observe(cv.parentElement);resize();
+  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)})();
+}
+function resize(){const el=renderer.domElement.parentElement;const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+function frameFarm(){
+  const cx=(BX0+BX1+1)/2,cz=(BZ0+BZ1+1)/2,size=Math.max(BX1-BX0,BZ1-BZ0,YMAX-YMIN)+1;
+  ground.scale.set(BX1-BX0+9,BZ1-BZ0+9,1);ground.position.set(cx,F.gy,cz);
+  ground.material.opacity=YMIN<F.gy?.45:.9;
+  controls.target.set(cx,(YMIN+YMAX)/2,cz);camera.position.set(cx+size*1.3,F.gy+size*1.1,cz+size*1.5);controls.update();
+}
+function boxFor(v){
+  const b=B[v.b];let sx=1,sy=b.h||1,sz=1,ox=0,oz=0,bottom=v.y;
+  const wall=d=>[[0,-.46],[.46,0],[0,.46],[-.46,0]][d];
+  if(v.b==='sign'){sx=.9;sy=.5;sz=.08;bottom=v.y+.25;const w=wall(v.wall);ox=w[0];oz=w[1];if(v.wall%2){sx=.08;sz=.9}}
+  else if(v.b==='ladder'){sx=.9;sz=.08;const w=wall(v.wall);ox=w[0];oz=w[1];if(v.wall%2){sx=.08;sz=.9}}
+  else if(b.ent){const e=v.calf?[.6,.8]:b.ent;sx=sz=e[0];sy=e[1];if(v.onBed)bottom=v.y+.56}
+  else if(b.plant){sx=sz=.45;sy=b.h||.7}
+  else if(b.flat){sy=.08}
+  else if(b.post){sx=sz=.28}
+  else if(b.small){sx=sz=.38;sy=.4}
+  else if(v.b==='hopper'){sx=sz=.94}
+  return{sx,sy,sz,cx:v.x+.5+ox,cy:bottom+sy/2,cz:v.z+.5+oz};
+}
+function build3D(){
+  while(group.children.length){const m=group.children.pop();m.geometry.dispose();m.material.dispose()}
+  const geo=new THREE.BoxGeometry(1,1,1),byType={};
+  for(const v of VOX){if(v.st>stage)continue;(byType[v.b]=byType[v.b]||[]).push(v)}
+  for(const[k,list]of Object.entries(byType)){
+    const b=B[k];
+    const mat=b.glow?new THREE.MeshBasicMaterial({color:b.c}):new THREE.MeshLambertMaterial({color:0xffffff,transparent:!!b.t,opacity:b.t?1-b.t+.1:1,depthWrite:!b.t});
+    const m=new THREE.InstancedMesh(geo.clone(),mat,list.length),M=new THREE.Matrix4(),C=new THREE.Color();
+    list.forEach((v,i)=>{const s=boxFor(v);M.makeScale(s.sx,s.sy,s.sz);M.setPosition(s.cx,s.cy,s.cz);m.setMatrixAt(i,M);
+      C.set(b.c);if(v.st<stage)C.lerp(new THREE.Color(0x9aa3ad),.45);else if(!b.glow)C.multiplyScalar(1.12);m.setColorAt(i,C)});
+    if(m.instanceColor)m.instanceColor.needsUpdate=true;if(b.t)m.renderOrder=1;group.add(m);
+  }
+}
+
+// ---------- Etappen ----------
+function showStage(s){
+  stage=s;build3D();
+  document.querySelectorAll('#stageBtns button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.s===s));
+  const S=F.stages[s-1],list=VOX.filter(v=>v.st===s),n=F.stages.length;
+  const ys=[...new Set(list.map(v=>v.y))].sort((a,b)=>a-b);
+  document.getElementById('stageCard').innerHTML=`<span class="eyebrow">Etappe ${s} von ${n}</span><h2>${S.t}</h2>
+    <div class="stnav"><button id="sPrev" ${s===1?'disabled':''}>◀ Zurück</button><button class="primary" id="sNext" ${s===n?'disabled':''}>Weiter ▶</button></div>
+    <ol class="steps">${S.steps.map(t=>`<li>${t}</li>`).join('')}</ol>
+    ${ys.length?`<p class="cap">Höhen in dieser Etappe: ${ys.map(yOf).join(', ')}. <button id="sLayer" style="padding:4px 8px">Im Schichtplan zeigen</button></p>`:''}
+    <h3>Material für diese Etappe</h3>${matTable(countOf(list),(F.extras||{})[s])}`;
+  document.getElementById('sPrev').onclick=()=>showStage(s-1);
+  document.getElementById('sNext').onclick=()=>showStage(s+1);
+  const sl=document.getElementById('sLayer');if(sl)sl.onclick=()=>{setLayer(ys[0]-YMIN);document.getElementById('planH').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})};
+  setLayer(ys.length?ys[0]-YMIN:layer);
+}
+
+// ---------- Schichtplan ----------
+const pc=document.getElementById('plan'),px=pc.getContext('2d');
+function setLayer(l){layer=Math.max(0,Math.min(YMAX-YMIN,l));document.getElementById('lRange').value=layer;drawPlan()}
+function drawPlan(){
+  const W=BX1-BX0+1,D=BZ1-BZ0+1,avail=Math.min(560,pc.parentElement.clientWidth||560),cs=Math.max(12,Math.floor(avail/Math.max(W,D)));
+  pc.width=cs*W;pc.height=cs*D;
+  const y=YMIN+layer;
+  document.getElementById('lNum').textContent=`Schicht ${layer+1} / ${YMAX-YMIN+1} · ${layerName(y)}`;
+  px.fillStyle=cssVar('--chip');px.fillRect(0,0,pc.width,pc.height);
+  px.strokeStyle=cssVar('--line');px.lineWidth=1;
+  for(let i=0;i<=W;i++){px.beginPath();px.moveTo(i*cs+.5,0);px.lineTo(i*cs+.5,D*cs);px.stroke()}
+  for(let i=0;i<=D;i++){px.beginPath();px.moveTo(0,i*cs+.5);px.lineTo(W*cs,i*cs+.5);px.stroke()}
+  const at=yy=>VOX.filter(v=>v.y===yy&&v.st<=stage);
+  px.globalAlpha=.22;for(const v of at(y-1)){px.fillStyle=B[v.b].c;px.fillRect((v.x-BX0)*cs+1,(v.z-BZ0)*cs+1,cs-1,cs-1)}px.globalAlpha=1;
+  px.textAlign='center';px.textBaseline='middle';px.font=`700 ${Math.round(cs*.55)}px ${cssVar('--f-mono')||'monospace'}`;
+  for(const v of at(y)){
+    const b=B[v.b],x=(v.x-BX0)*cs,z=(v.z-BZ0)*cs;
+    px.globalAlpha=b.t?.75:v.ex?.55:1;px.fillStyle=b.c;
+    const wall=[[0,0,cs,cs*.25],[cs*.75,0,cs*.25,cs],[0,cs*.75,cs,cs*.25],[0,0,cs*.25,cs]];
+    if(b.ent){px.beginPath();px.arc(x+cs/2,z+cs/2,cs*.36,0,7);px.fill()}
+    else if(v.b==='sign'||v.b==='ladder'){const w=wall[v.wall];px.fillRect(x+w[0],z+w[1],w[2],w[3])}
+    else if(b.plant||b.small||b.post){px.beginPath();px.arc(x+cs/2,z+cs/2,cs*.3,0,7);px.fill()}
+    else px.fillRect(x+1,z+1,cs-1,cs-1);
+    px.globalAlpha=1;
+    let sym=b.s;if(b.dir)sym=ARROW[v.f];if(v.b==='bed')sym=v.head?'B':'b';
+    if(sym){px.fillStyle=['sign','ladder'].includes(v.b)||b.plant||b.small||b.post||b.flat?cssVar('--ink'):['glass','water','chest','lava','sand','melon','pumpkin','lantern','chicken'].includes(v.b)?'#14233a':'#ffffff';px.fillText(sym,x+cs/2,z+cs/2+1)}
+  }
+}
+function describe(v){let s=B[v.b].n;if(B[v.b].dir)s+=v.f===4?' (zeigt nach unten)':` (zeigt nach ${DIR[v.f]})`;if(v.b==='sign'||v.b==='ladder')s+=` (an der Wand im ${DIR[v.wall]})`;if(v.b==='bed')s+=v.head?' (Kopfende)':' (Fußende)';if(v.ex)s+=' (Beispiel, wächst von selbst)';return s}
+pc.addEventListener('mousemove',e=>{
+  const r=pc.getBoundingClientRect(),W=BX1-BX0+1,D=BZ1-BZ0+1,cx=Math.floor((e.clientX-r.left)/(r.width/W)),cz=Math.floor((e.clientY-r.top)/(r.height/D));
+  const y=YMIN+layer,vs=VOX.filter(v=>v.x===cx+BX0&&v.z===cz+BZ0&&v.y===y&&v.st<=stage);
+  document.getElementById('planCap').textContent=cx>=0&&cz>=0&&cx<W&&cz<D?`Spalte ${cx+1}, Reihe ${cz+1}, ${layerName(y)}: ${vs.map(describe).join(' + ')||'leer'}`:'';
+});
+document.getElementById('lRange').oninput=e=>setLayer(+e.target.value);
+document.getElementById('lPrev').onclick=()=>setLayer(layer-1);
+document.getElementById('lNext').onclick=()=>setLayer(layer+1);
+addEventListener('resize',()=>{if(F)drawPlan()});
+
+// ---------- Farm wählen ----------
+document.getElementById('picker').innerHTML=FARMS.map(f=>`<button data-f="${f.id}"><span>${f.t}</span><small>${f.short}</small></button>`).join('');
+document.querySelectorAll('#picker button').forEach(b=>b.onclick=()=>{showFarm(b.dataset.f);try{history.replaceState(null,'','#'+b.dataset.f)}catch(e){}});
+function showFarm(id){
+  F=FARMS.find(f=>f.id===id)||FARMS[0];buildFarm(F);
+  document.querySelectorAll('#picker button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.f===F.id));
+  document.getElementById('fEyebrow').textContent=`Farm ${FARMS.indexOf(F)+1} von ${FARMS.length}`;
+  document.getElementById('fTitle').textContent=F.t;
+  document.getElementById('fIntro').textContent=F.intro;
+  const total=countOf(VOX),nB=Object.values(total).reduce((a,b)=>a+b,0);
+  document.getElementById('facts').innerHTML=[`${BX1-BX0+1} × ${BZ1-BZ0+1} Blöcke`,`${YMAX-YMIN+1} Schichten`,`${nB} Blöcke`].concat(F.facts).map(t=>`<span>${t}</span>`).join('');
+  const ex=[].concat(...Object.values(F.extras||{})).filter(e=>e[1]);
+  document.getElementById('total').innerHTML=matTable(total,ex);
+  document.getElementById('cpy').onclick=async()=>{
+    const txt=`${F.t} – Material\n`+Object.entries(total).map(([k,n])=>`${n} × ${B[k].n}`).join('\n')+'\n'+ex.map(e=>`${e[1]} × ${e[0]}`).join('\n');
+    const msg=document.getElementById('cpyMsg');
+    try{await navigator.clipboard.writeText(txt);msg.textContent='Kopiert.'}catch(e){msg.textContent='Kopieren ging nicht, bitte die Tabelle markieren.'}
+  };
+  document.getElementById('tips').innerHTML=F.tips.map(([q,a])=>`<dt>${q}</dt><dd>${a}</dd>`).join('');
+  document.getElementById('yield').textContent=F.yield;
+  const used=new Set(VOX.map(v=>v.b));
+  document.getElementById('legend').innerHTML=Object.entries(B).filter(([k])=>used.has(k)).map(([k,b])=>`<div><span class="sw" style="background:${b.c}"></span>${b.n}${b.dir?' (Pfeil = Richtung)':k==='bed'?' (B = Kopfende)':k==='sign'||k==='ladder'?' (Balken = Wandseite)':''}</div>`).join('');
+  document.getElementById('lRange').max=YMAX-YMIN;
+  document.getElementById('stageBtns').innerHTML=F.stages.map((S,i)=>`<button data-s="${i+1}" title="${S.t}">${i+1}. ${S.t.split(" ")[0].replace(/[,:]$/,"")}</button>`).join('');
+  document.querySelectorAll('#stageBtns button').forEach(b=>b.onclick=()=>showStage(+b.dataset.s));
+  layer=0;if(renderer)frameFarm();
+  showStage(1);
+}
+if(window.THREE&&THREE.OrbitControls){init3D()}else{document.querySelector('.view').innerHTML='<p class="cap" style="padding:16px">Die 3D-Ansicht braucht eine Internetverbindung. Schichtplan und Anleitung funktionieren trotzdem.</p>';build3D=()=>{};frameFarm=()=>{}}
+showFarm((location.hash||'').slice(1));
+</script>
+</body>
+</html>

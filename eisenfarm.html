@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eisenfarm-Bauanleitung</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: wie ein Bauplan auf Blaupausenpapier. Oben das Modell in 3D neben der Etappe, darunter der Schichtplan, dann Material und Fehlersuche. */
+:root{
+  --ink:#14233a;--muted:#5a6b82;--paper:#e9f0f8;--panel:#f7faff;--line:#c8d5e6;--accent:#b25f12;--accent-ink:#ffffff;--chip:#dfe8f3;--sky:#b9d8f2;
+  --good:#2f7d4a;--warn:#a5520b;
+  --f-display:"Pixelify Sans","Courier New",monospace;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#dbe6f3;--muted:#8fa3bd;--paper:#0a1320;--panel:#0f1b2c;--line:#22344c;--accent:#f0a845;--accent-ink:#1b1206;--chip:#18283e;--sky:#1e2d47;--good:#6fcf8f;--warn:#f0a845;color-scheme:dark}}
+:root[data-theme="dark"]{--ink:#dbe6f3;--muted:#8fa3bd;--paper:#0a1320;--panel:#0f1b2c;--line:#22344c;--accent:#f0a845;--accent-ink:#1b1206;--chip:#18283e;--sky:#1e2d47;--good:#6fcf8f;--warn:#f0a845;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--f-body)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:24px}
+h3{font-size:17px}
+p{margin:0;max-width:68ch}
+.lede{color:var(--muted);font-size:17px}
+.head{display:flex;flex-direction:column;gap:10px}
+.facts{display:flex;flex-wrap:wrap;gap:8px}
+.facts span{background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font:600 13px/1.4 var(--f-mono);font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.view{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:8px;overflow:hidden;background:var(--sky);border:1px solid var(--line)}
+.view canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.view .hint{position:absolute;left:8px;bottom:8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--muted)}
+.stages{display:flex;flex-wrap:wrap;gap:6px}
+button{font:700 14px/1 var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:9px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"],button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+.stnav{display:flex;gap:8px}.stnav button{flex:1}
+.eyebrow{font:700 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+ol.steps li{max-width:68ch}
+.note{border-left:3px solid var(--accent);background:var(--chip);padding:8px 12px;border-radius:0 6px 6px 0;font-size:15px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font:700 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.n{text-align:right;font-family:var(--f-mono)}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.3);vertical-align:-2px;margin-right:8px}
+.planrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.planrow input{flex:1;min-width:140px}
+.planbox{overflow-x:auto}
+#plan{display:block;max-width:100%;image-rendering:pixelated;border-radius:6px}
+.cap{font:13px/1.4 var(--f-mono);color:var(--muted);min-height:1.4em}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px 14px;font-size:14px}
+.legend div{display:flex;align-items:center}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+dl{margin:0;display:flex;flex-direction:column;gap:10px}
+dt{font-weight:700}
+dd{margin:2px 0 0;color:var(--muted);max-width:68ch}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <span class="eyebrow">Minecraft Java 26.3 · Bauanleitung</span>
+    <h1>Eisenfarm</h1>
+    <p class="lede">Drei Dorfbewohner sehen einen Zombie, bekommen Angst und rufen Eisengolems. Die Golems erscheinen auf einer Plattform, Wasser schiebt sie zur Mitte, sie fallen durch eine Lavaschicht und Eisen und Mohn landen über Trichter in einer Truhe. Du baust sie in sechs Etappen, jede mit Schichtplan und Material.</p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <section class="grid" aria-label="Modell und Etappen">
+    <div class="card">
+      <div class="view"><canvas id="view" aria-label="3D-Modell der Eisenfarm"></canvas><span class="hint">Ziehen: drehen · Mausrad: zoomen</span></div>
+      <div class="stages" id="stageBtns" role="group" aria-label="Etappe wählen"></div>
+    </div>
+    <div class="card" id="stageCard" aria-live="polite"></div>
+  </section>
+
+  <section class="card" aria-labelledby="planH">
+    <h2 id="planH">Schichtplan</h2>
+    <p>Jede Schicht von oben gesehen, Norden ist oben. Blass dahinter liegt die Schicht darunter. Schicht 1 ist die erste Lage direkt auf dem Boden.</p>
+    <div class="planrow">
+      <button id="lPrev" aria-label="Schicht tiefer">◀</button>
+      <input type="range" id="lRange" min="0" max="13" value="0" aria-label="Schicht">
+      <button id="lNext" aria-label="Schicht höher">▶</button>
+      <b id="lNum" style="font-family:var(--f-mono)"></b>
+    </div>
+    <div class="planbox"><canvas id="plan" width="560" height="560"></canvas></div>
+    <div class="cap" id="planCap">Fahr mit der Maus über den Plan, dann steht hier der Block.</div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="cols">
+    <div class="card" aria-labelledby="matH">
+      <h2 id="matH">Material gesamt</h2>
+      <div id="total"></div>
+      <div class="row"><button id="cpy">Liste kopieren</button><span id="cpyMsg" class="cap"></span></div>
+    </div>
+    <div class="card" aria-labelledby="tipsH">
+      <h2 id="tipsH">Wenn etwas nicht klappt</h2>
+      <dl>
+        <dt>Es kommen keine Golems</dt>
+        <dd>Die Dorfbewohner müssen den Zombie durch das Glas sehen können. Jeder braucht sein Bett und muss nachts darin schlafen. Golems spawnen nur, solange die Farm in deiner Simulationsdistanz liegt, also wenn du in der Nähe bist.</dd>
+        <dt>Golems spawnen woanders</dt>
+        <dd>Im Umkreis von 8 Blöcken um die Dorfbewohner und bis 6 Blöcke unter ihnen darf es keine andere Fläche geben, auf der ein Golem stehen kann: kein Gerüst, keine Dächer, keine Mauern. Glas und Laub zählen nicht, darauf spawnen keine Golems.</dd>
+        <dt>Golems bleiben am Loch stehen</dt>
+        <dd>Das Wasser muss bis direkt an das Loch fließen. Wasserquellen nur auf den äußersten Ring der Plattform setzen, dann fließt es genau 7 Blöcke weit.</dd>
+        <dt>Die Lava ist zu Stein geworden</dt>
+        <dd>Dann ist Wasser ins Loch gelaufen. Prüfen, ob irgendwo eine Quelle weiter innen sitzt, Stein abbauen und neue Lava auf die Schilder gießen.</dd>
+        <dt>Der Zombie ist weg</dt>
+        <dd>Ohne Namensschild verschwindet er. Brennt er in der Sonne, fehlt der Steinblock über seiner Zelle.</dd>
+      </dl>
+      <p class="note">Ertrag: etwa ein Golem alle 30 bis 40 Sekunden, das sind grob 300 bis 400 Eisen pro Stunde. Die genaue Zahl schwankt je nach Version.</p>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ---------- Blöcke ----------
+// Höhe: Schicht 1 (y = 0) liegt direkt auf dem Boden. Auf deiner flachen Insel (oberster Bodenblock Y 63) ist das Y 64.
+const YBASE=64;
+const B={
+  stone_bricks:{n:'Steinziegel',id:'stone_bricks',c:'#8b9094',s:'▦'},
+  cobblestone:{n:'Bruchstein',id:'cobblestone',c:'#76797c',s:''},
+  glass:{n:'Glas',id:'glass',c:'#bfe6f5',t:.35,s:'□'},
+  hopper:{n:'Trichter',id:'hopper',c:'#4a4e55',s:'↓'},
+  chest:{n:'Truhe',id:'chest',c:'#a8742c',h:.875,s:'K'},
+  sign:{n:'Schild (Fichte)',id:'spruce_sign',c:'#7a5a34',s:'S'},
+  bed:{n:'Bett',id:'red_bed',c:'#b33a3a',h:.5625,s:'B',half:true},
+  water:{n:'Wasserquelle',id:'water',c:'#3f76e4',t:.6,h:.9,s:'~',liquid:true},
+  lava:{n:'Lavaquelle',id:'lava',c:'#ff7a1a',glow:true,s:'L',liquid:true},
+  flow:{n:'fließendes Wasser',c:'#7fa8f0',t:.7,h:.15,s:'',liquid:true},
+  villager:{n:'Dorfbewohner',c:'#8f6a4a',ent:true,s:'D'},
+  zombie:{n:'Zombie',c:'#4f8a3c',ent:true,s:'Z'}
+};
+const DIR=['Norden','Osten','Süden','Westen','unten'];
+const ARROW=['↑','→','↓','←','•'];
+
+// ---------- Modell ----------
+const V=new Map();const K=(x,y,z)=>x+','+y+','+z;
+function put(x,y,z,b,st,o={}){V.set(K(x,y,z)+(B[b].ent?'e':''),Object.assign({x,y,z,b,st},o))}
+const N=20,H0=9,H1=10; // Plattform 20 × 20, Loch in der Mitte
+// Etappe 1: Stützen und Sammelstelle
+for(const[x,z]of[[0,0],[19,0],[0,19],[19,19],[9,0],[0,9],[19,10],[10,19]])for(let y=0;y<=4;y++)put(x,y,z,'stone_bricks',1);
+put(H0,0,H0,'stone_bricks',1);put(H1,0,H0,'stone_bricks',1);
+put(H0,1,H0,'chest',1,{f:2});put(H1,1,H0,'chest',1,{f:2});
+// Etappe 2: Tötungskammer
+put(H0,2,H1,'hopper',2,{f:0});put(H1,2,H1,'hopper',2,{f:0});put(H0,2,H0,'hopper',2,{f:4});put(H1,2,H0,'hopper',2,{f:4});
+for(let x=H0-1;x<=H1+1;x++)for(let z=H0-1;z<=H1+1;z++){if(x>=H0&&x<=H1&&z>=H0&&z<=H1)continue;for(let y=2;y<=4;y++)put(x,y,z,'stone_bricks',2)}
+put(H0,4,H0,'sign',2,{f:1,wall:3});put(H0,4,H1,'sign',2,{f:1,wall:3});put(H1,4,H0,'sign',2,{f:3,wall:1});put(H1,4,H1,'sign',2,{f:3,wall:1});
+// Etappe 3: Plattform und Glasrand
+for(let x=0;x<N;x++)for(let z=0;z<N;z++){
+  const hole=x>=H0&&x<=H1&&z>=H0&&z<=H1;if(hole)continue;
+  if(!V.has(K(x,5,z)))put(x,5,z,'cobblestone',3);
+  if(x===0||z===0||x===N-1||z===N-1){put(x,6,z,'glass',3);put(x,7,z,'glass',3)}
+}
+// Etappe 4: Zellen über der Mitte
+const VC=[7,9,11];
+for(let x=6;x<=12;x++)for(let z=7;z<=10;z++)put(x,9,z,'cobblestone',4);
+for(let x=8;x<=10;x++)for(let z=11;z<=12;z++)put(x,9,z,'cobblestone',4);
+for(let x=6;x<=12;x++)for(let z=7;z<=10;z++){
+  const cell=VC.includes(x)&&(z===8||z===9);
+  if(cell){put(x,10,z,'bed',4,{f:0,head:z===8})}else for(let y=10;y<=12;y++)put(x,y,z,'glass',4);
+  put(x,13,z,'glass',4);
+}
+for(const[x,z]of[[8,11],[10,11],[8,12],[9,12],[10,12]])for(let y=10;y<=11;y++)put(x,y,z,'glass',4);
+for(let x=8;x<=10;x++)for(let z=11;z<=12;z++){put(x,12,z,'stone_bricks',4);put(x,13,z,'glass',4)}
+// Etappe 5: Bewohner
+for(const x of VC)put(x,10,8,'villager',5,{onBed:true});
+put(9,10,11,'zombie',5);
+// Etappe 6: Wasser und Lava
+for(let x=1;x<=N-2;x++)for(let z=1;z<=N-2;z++)if(x===1||z===1||x===N-2||z===N-2)put(x,6,z,'water',6);
+for(let x=H0;x<=H1;x++)for(let z=H0;z<=H1;z++)put(x,5,z,'lava',6);
+for(let x=2;x<=N-3;x++)for(let z=2;z<=N-3;z++)if(!(x>=H0&&x<=H1&&z>=H0&&z<=H1))put(x,6,z,'flow',6);
+const VOX=[...V.values()];
+const YMAX=Math.max(...VOX.map(v=>v.y));
+
+const STAGES=[
+  {t:'Stützen und Sammelstelle',steps:[
+    'Eine flache Fläche von 20 × 20 Blöcken aussuchen. Im Umkreis von 8 Blöcken darf später nichts höher als 3 Blöcke über dem Boden stehen, sonst spawnen Golems dort.',
+    'Acht Säulen aus Steinziegeln, je 5 hoch (Schicht 1 bis 5): an den vier Ecken und in der Mitte jeder Seite.',
+    'Genau in der Mitte einen Steinziegel auf den Boden, darauf eine Doppeltruhe (Schicht 2). Hier holst du später das Eisen ab, du stehst dabei auf dem Boden unter der Plattform.']},
+  {t:'Tötungskammer',steps:[
+    'Auf Schicht 3 vier Trichter im Quadrat. Die zwei genau über der Truhe zeigen nach unten in die Truhe. Die zwei südlich daneben zeigen nach Norden in diese Trichter: beim Setzen schleichen und auf den Zieltrichter klicken.',
+    'Um die vier Trichter einen Ring aus Steinziegeln, Schicht 3 bis 5. So entsteht eine Kammer von 2 × 2 Blöcken.',
+    'Auf Schicht 5 in jedes der vier Kammerfelder ein Schild an die Ringwand hängen. Die Schilder halten später die Lava fest. Golems laufen durch Schilder hindurch.']},
+  {t:'Plattform',steps:[
+    'Schicht 6: Boden 20 × 20 aus Bruchstein über alle Säulen und den Ring. Das 2 × 2 Loch über der Kammer frei lassen.',
+    'Schicht 7 und 8: ringsum am Rand eine Wand aus Glas, zwei hoch. Auf Glas können keine Golems spawnen, und sie fallen nicht herunter.']},
+  {t:'Zellen für Dorfbewohner und Zombie',steps:[
+    'Zum Bauen ein Gerüst nehmen und es danach wieder ganz abbauen.',
+    'Schicht 10: Boden für die Zellen über der Mitte der Plattform, 7 × 4 Blöcke und davor (südlich) 3 × 2 für den Zombie.',
+    'Schicht 11: drei Betten nebeneinander, Kopfende nach Norden, mit je einer Reihe Glas dazwischen und ringsum.',
+    'Glaswände bei den Dorfbewohnern drei hoch (Schicht 11 bis 13), oben drauf eine Lage Glas als Dach (Schicht 14).',
+    'Die Zombie-Zelle ist 1 Block groß, Glas zwei hoch (Schicht 11 und 12). Darüber Steinziegel, damit die Sonne den Zombie nicht verbrennt, und darauf noch eine Lage Glas: So kann auf dem Stein kein Golem spawnen.']},
+  {t:'Dorfbewohner und Zombie',steps:[
+    'Drei erwachsene Dorfbewohner hochbringen: Schienen als Rampe bis an eine Zelle legen, an der eine Glasscheibe noch fehlt, den Dorfbewohner in einer Lore hochfahren und die Lore abbauen. Er fällt auf sein Bett. Dann die Lücke mit Glas schließen.',
+    'Den Zombie mit einem Namensschild benennen, sonst verschwindet er. Genauso mit einer Lore in seine Zelle bringen und schließen.',
+    'Gerüst und Schienen komplett abbauen. In der ersten Nacht nachsehen, ob alle drei in ihren Betten liegen.']},
+  {t:'Wasser und Lava',steps:[
+    'Wasserquellen auf jedes Feld des äußersten Rings innerhalb der Glaswand (Schicht 7, 68 Quellen). Das Wasser fließt genau 7 Blöcke weit und hört direkt am Loch auf, so läuft nichts in die Lava. Zwei Eimer reichen, wenn du dir daneben eine unendliche Quelle baust.',
+    'Ganz zum Schluss die Lava: je einen Eimer auf die vier Schilder in der Kammer, also in das Loch auf Schicht 6.',
+    'Fertig. Golems erscheinen auf der Plattform, das Wasser schiebt sie zum Loch, sie fallen durch die Lava auf die Trichter. Eisen und Mohn landen in der Truhe.']}
+];
+const EXTRAS={4:[['Gerüst',null,'zum Bauen, danach abbauen']],5:[['Dorfbewohner',3,'erwachsen'],['Zombie',1,null],['Namensschild',1,'für den Zombie'],['Schienen und Lore',null,'zum Hochbringen']],6:[['Wassereimer',2,'mit unendlicher Quelle'],['Lavaeimer',4,null]]};
+
+// ---------- Material ----------
+function countOf(list){const c={};for(const v of list){const b=B[v.b];if(b.ent||b.liquid)continue;if(b.half&&!v.head)continue;c[v.b]=(c[v.b]||0)+1}return c}
+const stacks=n=>n>=64?`${Math.floor(n/64)} St.${n%64?` + ${n%64}`:''}`:'';
+function matTable(c,ex){
+  const rows=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<tr><td><span class="sw" style="background:${B[k].c}"></span>${B[k].n} <span style="color:var(--muted);font:12px var(--f-mono)">minecraft:${B[k].id}</span></td><td class="n">${n}</td><td class="n">${stacks(n)}</td></tr>`);
+  for(const[n,c2,note]of ex||[])rows.push(`<tr><td>${n}${note?` <span style="color:var(--muted)">(${note})</span>`:''}</td><td class="n">${c2??''}</td><td></td></tr>`);
+  return rows.length?`<div style="overflow-x:auto"><table><thead><tr><th>Block</th><th style="text-align:right">Anzahl</th><th style="text-align:right">Stacks</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'<p class="cap">Keine Blöcke in dieser Etappe.</p>';
+}
+const total=countOf(VOX);
+const allExtras=[].concat(...Object.values(EXTRAS));
+document.getElementById('total').innerHTML=matTable(total,allExtras.filter(e=>e[1]));
+const nBlocks=Object.values(total).reduce((a,b)=>a+b,0);
+document.getElementById('facts').innerHTML=[`20 × 20 Blöcke`,`14 Schichten hoch`,`${nBlocks} Blöcke`,`3 Dorfbewohner`,`1 Zombie`,`Schicht 1 = Y ${YBASE}`].map(t=>`<span>${t}</span>`).join('');
+document.getElementById('cpy').onclick=async()=>{
+  const txt='Eisenfarm – Material\n'+Object.entries(total).map(([k,n])=>`${n} × ${B[k].n}`).join('\n')+'\n'+allExtras.filter(e=>e[1]).map(e=>`${e[1]} × ${e[0]}`).join('\n');
+  const msg=document.getElementById('cpyMsg');
+  try{await navigator.clipboard.writeText(txt);msg.textContent='Kopiert.'}catch(e){msg.textContent='Kopieren ging nicht, bitte die Tabelle markieren.'}
+};
+
+// ---------- 3D ----------
+let stage=1,renderer,scene,camera,controls,group;
+function init3D(){
+  const cv=document.getElementById('view');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  scene=new THREE.Scene();scene.background=new THREE.Color(cssVar('--sky')||'#b9d8f2');
+  camera=new THREE.PerspectiveCamera(45,4/3,.1,500);camera.position.set(34,26,38);
+  controls=new THREE.OrbitControls(camera,cv);controls.target.set(10,4,10);controls.enableDamping=true;controls.minDistance=6;controls.maxDistance=120;controls.update();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x667788,.85));const sun=new THREE.DirectionalLight(0xffffff,.55);sun.position.set(30,50,20);scene.add(sun);
+  const g=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshLambertMaterial({color:0x6aa84f}));g.rotation.x=-Math.PI/2;g.position.set(10,0,10);scene.add(g);
+  const grid=new THREE.GridHelper(40,40,0x4f7f3a,0x4f7f3a);grid.position.set(10,.01,10);scene.add(grid);
+  group=new THREE.Group();scene.add(group);
+  const ro=new ResizeObserver(resize);ro.observe(cv.parentElement);resize();
+  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)})();
+}
+function resize(){const el=renderer.domElement.parentElement;const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+function boxFor(v){
+  const b=B[v.b];let sx=1,sy=b.h||1,sz=1,ox=0,oy=0,oz=0;
+  if(v.b==='sign'){sx=.9;sy=.5;sz=.08;oy=.25;const d=[[0,-.46],[.46,0],[0,.46],[-.46,0]][v.wall];ox=d[0];oz=d[1];if(v.wall===1||v.wall===3){sx=.08;sz=.9}}
+  if(b.ent){sx=.6;sz=.6;sy=1.9;if(v.onBed)oy=.56}
+  if(v.b==='hopper'){sx=sz=.94}
+  return{sx,sy,sz,cx:v.x+.5+ox,cy:v.y+oy+(v.b==='sign'?0:sy/2),cz:v.z+.5+oz};
+}
+function build3D(){
+  while(group.children.length){const m=group.children.pop();m.geometry.dispose();m.material.dispose()}
+  const geo=new THREE.BoxGeometry(1,1,1);
+  const byType={};for(const v of VOX){if(v.st>stage)continue;(byType[v.b]=byType[v.b]||[]).push(v)}
+  for(const[k,list]of Object.entries(byType)){
+    const b=B[k];
+    const mat=b.glow?new THREE.MeshBasicMaterial({color:b.c}):new THREE.MeshLambertMaterial({color:0xffffff,transparent:!!b.t,opacity:b.t?1-b.t+.1:1,depthWrite:!b.t});
+    const m=new THREE.InstancedMesh(geo.clone(),mat,list.length);const M=new THREE.Matrix4(),C=new THREE.Color();
+    list.forEach((v,i)=>{const s=boxFor(v);M.makeScale(s.sx,s.sy,s.sz);M.setPosition(s.cx,s.cy,s.cz);m.setMatrixAt(i,M);
+      C.set(b.c);if(v.st<stage)C.lerp(new THREE.Color(0x9aa3ad),.45);else if(!b.glow)C.multiplyScalar(1.12);m.setColorAt(i,C)});
+    if(m.instanceColor)m.instanceColor.needsUpdate=true;if(b.t)m.renderOrder=1;group.add(m);
+  }
+}
+
+// ---------- Etappen ----------
+function showStage(s){
+  stage=s;build3D();
+  document.querySelectorAll('#stageBtns button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.s===s));
+  const S=STAGES[s-1],list=VOX.filter(v=>v.st===s);
+  const layers=[...new Set(list.map(v=>v.y+1))].sort((a,b)=>a-b);
+  document.getElementById('stageCard').innerHTML=`<span class="eyebrow">Etappe ${s} von ${STAGES.length}</span><h2>${S.t}</h2>
+    <div class="stnav"><button id="sPrev" ${s===1?'disabled':''}>◀ Zurück</button><button class="primary" id="sNext" ${s===STAGES.length?'disabled':''}>Weiter ▶</button></div>
+    <ol class="steps">${S.steps.map(t=>`<li>${t}</li>`).join('')}</ol>
+    ${layers.length?`<p class="cap">Schichten in dieser Etappe: ${layers.join(', ')}. <button id="sLayer" style="padding:4px 8px">Schicht ${layers[0]} im Plan zeigen</button></p>`:''}
+    <h3>Material für diese Etappe</h3>${matTable(countOf(list),EXTRAS[s])}`;
+  document.getElementById('sPrev').onclick=()=>showStage(s-1);
+  document.getElementById('sNext').onclick=()=>showStage(s+1);
+  const sl=document.getElementById('sLayer');if(sl)sl.onclick=()=>{setLayer(layers[0]-1);document.getElementById('planH').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})};
+  setLayer(layers.length?layers[0]-1:layer);
+}
+document.getElementById('stageBtns').innerHTML=STAGES.map((S,i)=>`<button data-s="${i+1}" title="${S.t}">${i+1}. ${S.t.split(' ')[0]}</button>`).join('');
+document.querySelectorAll('#stageBtns button').forEach(b=>b.onclick=()=>showStage(+b.dataset.s));
+
+// ---------- Schichtplan ----------
+let layer=0;
+const pc=document.getElementById('plan'),px=pc.getContext('2d');
+function setLayer(y){layer=Math.max(0,Math.min(YMAX,y));document.getElementById('lRange').value=layer;drawPlan()}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function drawPlan(){
+  const W=pc.clientWidth||560,cs=Math.floor(Math.min(560,W)/N);pc.width=cs*N;pc.height=cs*N;
+  document.getElementById('lNum').textContent=`Schicht ${layer+1} / ${YMAX+1} · Y ${YBASE+layer}`;
+  px.fillStyle=cssVar('--chip');px.fillRect(0,0,pc.width,pc.height);
+  px.strokeStyle=cssVar('--line');px.lineWidth=1;
+  for(let i=0;i<=N;i++){px.beginPath();px.moveTo(i*cs+.5,0);px.lineTo(i*cs+.5,N*cs);px.stroke();px.beginPath();px.moveTo(0,i*cs+.5);px.lineTo(N*cs,i*cs+.5);px.stroke()}
+  const at=y=>VOX.filter(v=>v.y===y&&v.st<=stage);
+  if(layer>0){px.globalAlpha=.22;for(const v of at(layer-1)){px.fillStyle=B[v.b].c;px.fillRect(v.x*cs+1,v.z*cs+1,cs-1,cs-1)}px.globalAlpha=1}
+  px.textAlign='center';px.textBaseline='middle';px.font=`700 ${Math.round(cs*.55)}px ${cssVar('--f-mono')||'monospace'}`;
+  for(const v of at(layer)){
+    const b=B[v.b],x=v.x*cs,z=v.z*cs;
+    px.globalAlpha=b.t?.75:1;px.fillStyle=b.c;
+    if(b.ent){px.beginPath();px.arc(x+cs/2,z+cs/2,cs*.36,0,7);px.fill()}
+    else if(v.b==='sign'){const w=[[0,0,cs,cs*.25],[cs*.75,0,cs*.25,cs],[0,cs*.75,cs,cs*.25],[0,0,cs*.25,cs]][v.wall];px.fillRect(x+w[0],z+w[1],w[2],w[3])}
+    else px.fillRect(x+1,z+1,cs-1,cs-1);
+    px.globalAlpha=1;
+    let sym=b.s;if(v.b==='hopper')sym=ARROW[v.f];if(v.b==='bed')sym=v.head?'B':'b';
+    if(sym){px.fillStyle=v.b==='sign'?cssVar('--ink'):['glass','water','chest','lava'].includes(v.b)?'#14233a':'#ffffff';px.fillText(sym,x+cs/2,z+cs/2+1)}
+  }
+}
+pc.addEventListener('mousemove',e=>{
+  const r=pc.getBoundingClientRect(),cs=r.width/N,x=Math.floor((e.clientX-r.left)/cs),z=Math.floor((e.clientY-r.top)/cs);
+  const vs=VOX.filter(v=>v.x===x&&v.z===z&&v.y===layer&&v.st<=stage);
+  const t=vs.map(v=>{let s=B[v.b].n;if(v.b==='hopper')s+=v.f===4?' (zeigt nach unten)':` (zeigt nach ${DIR[v.f]})`;if(v.b==='sign')s+=` (an der Wand im ${DIR[v.wall]})`;if(v.b==='bed')s+=v.head?' (Kopfende)':' (Fußende)';return s}).join(' + ');
+  document.getElementById('planCap').textContent=x>=0&&z>=0&&x<N&&z<N?`Spalte ${x+1}, Reihe ${z+1}, Schicht ${layer+1}: ${t||'leer'}`:'';
+});
+document.getElementById('lRange').max=YMAX;
+document.getElementById('lRange').oninput=e=>setLayer(+e.target.value);
+document.getElementById('lPrev').onclick=()=>setLayer(layer-1);
+document.getElementById('lNext').onclick=()=>setLayer(layer+1);
+addEventListener('resize',drawPlan);
+document.getElementById('legend').innerHTML=Object.entries(B).map(([k,b])=>`<div><span class="sw" style="background:${b.c}"></span>${b.n}${k==='hopper'?' (Pfeil = Richtung)':k==='bed'?' (B = Kopfende)':k==='sign'?' (Balken = Wandseite)':''}</div>`).join('');
+
+if(window.THREE&&THREE.OrbitControls){init3D()}else{document.querySelector('.view').innerHTML='<p class="cap" style="padding:16px">Die 3D-Ansicht braucht eine Internetverbindung. Schichtplan und Anleitung funktionieren trotzdem.</p>';build3D=()=>{}}
+showStage(1);
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+KOMFORT-PAKET (Datenpaket für Minecraft Java 26.x)
+==================================================
+
+Läuft nur auf dem Server. Mitspieler müssen nichts installieren.
+
+INSTALLIEREN
+1. Server kurz stoppen (oder später /reload).
+2. Mit FileZilla in den Ordner  world/datapacks  gehen (gibt es den nicht, anlegen).
+3. Die Datei Komfort-Paket.zip dort hineinladen (NICHT entpacken).
+4. Server starten. Prüfen mit:  /datapack list   (dort muss "file/Komfort-Paket.zip" stehen)
+
+EINMAL ALS ADMIN EINRICHTEN
+- An die Stelle stellen, wo der Spawn sein soll, und eingeben:
+    /function komfort:admin/spawn_setzen
+
+BEFEHLE FÜR ALLE SPIELER
+  /trigger sethome   Zuhause an der aktuellen Stelle speichern
+  /trigger home      nach Hause teleportieren (auch aus Nether und End)
+  /trigger spawn     zum Spawn teleportieren
+  /trigger zurueck   zurück zum letzten Todespunkt
+  /trigger hilfe     zeigt diese Liste im Spiel
+
+NEUE REZEPTE
+  Verrottetes Fleisch im Ofen  ->  Leder
+  Bruchstein im Steinschneider ->  Kies
+  Kies im Steinschneider       ->  Sand
+  3 Laub übereinander          ->  3 Ranken
+  1 Wolle                      ->  4 Faden
+
+TIPP: Schlafen, wenn nur einer schläft
+  Das ist eine Spielregel, kein Teil des Pakets. Als Admin eingeben:
+    /gamerule players   und dann TAB drücken, die Regel für den Schlaf-Prozentsatz wählen und 1 eintragen.

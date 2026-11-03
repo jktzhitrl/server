@@ -1,0 +1,2 @@
+# Testdaten: drei Spieler, einer mit Namen als Text, einer als Text-Baustein, einer ohne Namen
+data modify storage spieler:db p set value [{u:[I;1,2,3,4],nn:"Testspieler",s0:12,s1:3,s2:9740,s3:50,s4:7,s5:2,s6:500,s7:4,s8:1,s9:6,s10:2,s11:9},{u:[I;5,6,7,8],nc:{text:"Komponente"},s0:6,s1:0,s2:1771,s3:20,s4:3,s5:0,s6:0,s7:0,s8:0,s9:0,s10:0,s11:1},{u:[I;9,9,9,9],s0:0,s1:1,s2:4,s3:0,s4:0,s5:0,s6:0,s7:0,s8:0,s9:0,s10:0,s11:0}]
