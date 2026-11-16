@@ -155,7 +155,7 @@ ul.log li:first-child{border-top:0}
     <span><i style="background:var(--occ)"></i>Gleis besetzt</span>
     <span>Amber blinkend: Zug wartet auf dich</span>
     <span>Weiß gestrichelt: mögliches Zielsignal</span>
-    <span>Sbk 1, Sbk 2 …: selbsttätige Signale auf freier Strecke (grünes Gehäuse)</span>
+    <span>Sbk 1, Sbk 2 …: Blocksignale auf freier Strecke (grünes Gehäuse, Auto oder Hand)</span>
   </div>
 
   <div class="lower">
@@ -172,7 +172,7 @@ ul.log li:first-child{border-top:0}
       <li><b>Netz:</b> Die Hauptstrecke Eschbach – Linden hat in Hohenau eine Abzweigung nach Bergheim (untere Reihe). Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
       <li><b>Halte:</b> RB halten in allen Orten, RE in Hohenau, Rosental und Wiesental, IC nur in Hohenau. ICE und Güterzüge fahren durch. Alle Züge halten am Ende in Eschbach, Linden oder Bergheim.</li>
       <li><b>Wende:</b> Im Endbahnhof bleibt der Zug stehen, bis die Wendezeit vorbei ist. Danach fährt er zum Abfahrtssignal und kehrt auf die Strecke zurück.</li>
-      <li><b>Selbstblock (Sbk):</b> Auf freier Strecke sichern selbsttätige Blocksignale S1, S2 … die Blockabschnitte. Ein Zug fährt erst in den nächsten Block, wenn dieser frei ist. So können Züge dicht hintereinander fahren.</li>
+      <li><b>Selbstblock (Sbk):</b> Auf freier Strecke sichern Blocksignale (Sbk) die Blockabschnitte. Sie schalten selbsttätig. Mit der Taste Blocksignale: Hand stellst du sie selbst, wie alle anderen Signale.</li>
       <li><b>Betrieb:</b> Alle Bahnhöfe außer Hohenau laufen auf Wunsch automatisch (Taste Auto/Hand). Wertung: Punkte für jede Fahrt, Abzug für Verspätung.</li>
     </ol>
     <button class="btn go" id="bGo">Dienst antreten</button>
@@ -387,6 +387,8 @@ var ACC=36,BRAKE=55,MARGIN=6,TIMESCALE=6,AUTO_DIST=420;
 
 /* ================= Zustand ================= */
 var trains=[],T,resv,occSec,occPiece,queue,sigRoute,score,served,punct,idc,logs;
+var sbkAuto=true;
+function isAuto(S){return S.kind==='block'?sbkAuto:(S.auto||!!(S.station&&STBY[S.station].auto))}
 var speed=1,paused=true,running=false,diff='normal',sel=null,best=0,zoom=null;
 try{best=+localStorage.getItem('stw-best')||0}catch(e){}
 
@@ -613,8 +615,7 @@ function targetFree(from,to){
 function autoStep(){
   trains.forEach(function(t){
     var S=SIGS[t.endSig];if(!S||sigRoute[S.id])return;
-    var auto=S.auto||(S.station&&STBY[S.station].auto);
-    if(!auto)return;
+    if(!isAuto(S))return;
     if(t.curRoute&&t.head<=t.curRoute.startD+2)return;
     if(t.platStop&&!t.platStop.done)return;
     if(total(t)-t.head>AUTO_DIST)return;
@@ -706,7 +707,7 @@ function render(){
     var cls='ring';
     if(sel===id)cls+=' sel';
     else if(tg.indexOf(id)>=0)cls+=' tgt'+(targetFree(sel,id)?'':' blocked');
-    else if(!g&&!s.auto&&!(s.station&&STBY[s.station].auto)){
+    else if(!g&&!isAuto(s)){
       var w=trains.find(function(t){return t.endSig===id&&t.v<.5&&t.head>total(t)-14&&!(t.platStop&&!t.platStop.done)});
       if(w)cls+=' attn';
     }
@@ -747,7 +748,7 @@ function onSignal(id){
     if(setRoute(sel,id)){sel=null;buildCmd()}
     return;
   }
-  if(S.auto)return;
+  if(isAuto(S))return;
   if(sigRoute[id]){cancelRoute(id);sel=null;buildCmd();return}
   sel=(sel===id)?null:id;buildCmd();
 }
@@ -790,6 +791,16 @@ function buildStBar(){
     t.addEventListener('click',function(){s.auto=!s.auto;lab();say(s.name+': '+(s.auto?'Automatikbetrieb.':'Handbetrieb.'),'')});
     w.appendChild(g);w.appendChild(t);bar.appendChild(w);
   });
+  var sw=document.createElement('span');sw.className='stn';
+  var sl=document.createElement('button');sl.className='btn sm';sl.textContent='Blocksignale';sl.style.cursor='default';
+  var st=document.createElement('button');st.className='btn sm tg';
+  function slab(){st.textContent=sbkAuto?'Auto':'Hand';st.classList.toggle('auto',sbkAuto)}
+  slab();
+  st.addEventListener('click',function(){
+    sbkAuto=!sbkAuto;slab();
+    say(sbkAuto?'Blocksignale schalten selbsttätig.':'Blocksignale im Handbetrieb: Startsignal tippen, dann Zielsignal.','');
+  });
+  sw.appendChild(sl);sw.appendChild(st);bar.appendChild(sw);
   var z=document.createElement('span');z.className='zoom';
   [['−',1/1.25],['+',1.25],['Alles',0]].forEach(function(q){
     var b=document.createElement('button');b.className='btn sm';b.textContent=q[0];
@@ -853,7 +864,7 @@ requestAnimationFrame(frame);
 window.addEventListener('resize',function(){if(zoom*VBW<$('#planbox').clientWidth)fitZoom()});
 window.__stellwerk={setRoute:setRoute,cancelRoute:cancelRoute,get trains(){return trains},get queue(){return queue},SIGS:SIGS,STAT:STAT,ROUTES_FROM:ROUTES_FROM,EDGES:EDGES,
   step:step,start:function(){running=true;paused=false;$('#intro').hidden=true},posAt:posAt,get T(){return T},get score(){return score},get served(){return served},
-  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},candidate:candidate,total:total,distTo:distTo};
+  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},setSbk:function(v){sbkAuto=v},candidate:candidate,total:total,distTo:distTo};
 })();
 </script>
 
