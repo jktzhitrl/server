@@ -133,6 +133,7 @@ ul.log li:first-child{border-top:0}
 .tl{font:700 17px var(--f-mono);fill:#111;text-anchor:middle;paint-order:stroke;stroke:#e8e8e8;stroke-width:4px;stroke-linejoin:round}
 .tl.late{fill:#b25a00}
 .buf{fill:#222}
+.ann2{font:600 17px var(--f-mono);fill:#7a5a10}
 .closed{fill:none;stroke:#f2b134;stroke-width:9;stroke-dasharray:14 10;opacity:.95;pointer-events:none}
 .wmark{fill:#f2b134;stroke:#000;stroke-width:2;pointer-events:none}
 .wmt{font:700 20px var(--f-mono);fill:#000;pointer-events:none}
@@ -177,7 +178,7 @@ ul.log li:first-child{border-top:0}
   <div class="stbar" id="stbar"></div>
 
   <div class="stage">
-    <section class="plan" id="planbox"><svg id="plan" viewBox="0 0 5960 1290" role="img" aria-label="Gleisbildplan Strecke Eschbach Hohenau Linden"></svg></section>
+    <section class="plan" id="planbox"><svg id="plan" viewBox="0 0 3880 2330" role="img" aria-label="Gleisbildplan Strecke Eschbach Hohenau Linden"></svg></section>
     <div class="alerts" id="alerts" hidden aria-live="polite"></div>
     <aside class="tinfo" id="tinfo" hidden aria-live="polite"></aside>
     <aside class="drawer" id="drawer" hidden>
@@ -206,7 +207,7 @@ ul.log li:first-child{border-top:0}
     <h2>Dienst im Stellwerk Hohenau</h2>
     <ol>
       <li><b>Start und Ziel:</b> Jede Fahrstraße hat ein Startsignal und ein Zielsignal. Tippe das Startsignal, dann ein weiß gestricheltes Zielsignal. Das Ziel darf bis zu drei Abschnitte weit weg liegen, alle Signale dazwischen werden mitgestellt.</li>
-      <li><b>Netz:</b> Drei Reihen: die Hauptstrecke Eschbach – Linden, die Zweigstrecke Hohenau – Bergheim und die durchgehende Seetalbahn. Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
+      <li><b>Netz:</b> Fünf Reihen untereinander: Hauptstrecke Eschbach – Linden, Zweigstrecke Hohenau – Bergheim und die durchgehende Seetalbahn. Was rechts am Bildschirmrand aufhört, fährt in der nächsten Reihe links weiter. Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
       <li><b>Halte:</b> RB halten in allen Orten, RE in den größeren Orten, IC nur in Hohenau, Rosental, Seehof und Eichberg. ICE und Güterzüge fahren durch. Ein haltender Zug zeigt im Plan „Halt“ mit der Restzeit. Züge im Hauptnetz enden in Eschbach, Linden oder Bergheim.</li>
       <li><b>Wende und Durchfahrer:</b> Im Endbahnhof bleibt der Zug stehen, bis die Wendezeit vorbei ist. Manche Züge werden dort abgestellt, dafür kommen neue. Auf der Seetalbahn fahren immer wieder neue Züge von einem Rand zum anderen durch.</li>
       <li><b>Vormerken:</b> Ist die Strecke noch belegt, kannst du das Ziel trotzdem antippen. Die Fahrstraße wird vorgemerkt (Signal blinkt) und automatisch gestellt, sobald alles frei ist. Erneut antippen löscht die Vormerkung.</li>
@@ -294,23 +295,24 @@ function terminal(code,xt,yA,yD,bufWest){
   return {A0:P+'A0',D0:P+'D0',tracks:tr,buf:true};
 }
 
-var YLN=250,YLS=320,YN2=700,YS2=770,YN3=1060,YS3=1130;
+var YLN=250,YLS=320,YN2=700,YS2=770,YN4=1000,YS4=1070,YN5=1350,YS5=1420,YN3=1700,YS3=1770,YN6=2100,YS6=2170;
 /* Stationen */
 var stE={code:'E',name:'Eschbach',kind:'term',auto:true,trk:terminal('E',720,YLN,YLS,true)};
 var stM={code:'M',name:'Mühlau',kind:'hp',auto:true,xs:1000,W:360};
 var stH={code:'H',name:'Hohenau',kind:'lens',auto:false,xs:1640,W:1100,n:2};
-var stR={code:'R',name:'Rosental',kind:'hp',auto:true,xs:3900,W:360};
+var stR={code:'R',name:'Rosental',kind:'hp',auto:true,xs:500,W:360};
 var stN={code:'N',name:'Brunnen',kind:'hp',auto:true,xs:3250,W:360};
-var stL={code:'L',name:'Linden',kind:'term',auto:true,trk:terminal('L',5160,YLS,YLN,false)};
-var stW={code:'W',name:'Wiesental',kind:'hp',auto:true,xs:3540,W:360};
-var stB={code:'B',name:'Bergheim',kind:'term',auto:true,trk:terminal('B',4200,YS2,YN2,false)};
+var stL={code:'L',name:'Linden',kind:'term',auto:true,trk:terminal('L',1760,YS4,YN4,false)};
+var stW={code:'W',name:'Wiesental',kind:'hp',auto:true,xs:500,W:360};
+var stB={code:'B',name:'Bergheim',kind:'term',auto:true,trk:terminal('B',1160,YS5,YN5,false)};
 var stK={code:'K',name:'Kaltenbach',kind:'hp',auto:true,xs:500,W:360};
 var stS={code:'S',name:'Seehof',kind:'lens',auto:true,xs:1300,W:760,n:1};
 var stD={code:'D',name:'Waldau',kind:'hp',auto:true,xs:2400,W:360};
-var stC={code:'C',name:'Eichberg',kind:'lens',auto:true,xs:3560,W:760,n:1};
-var stT={code:'T',name:'Talmühle',kind:'hp',auto:true,xs:4620,W:360};
-[stE,stM,stH,stN,stR,stL,stW,stB,stK,stS,stD,stC,stT].forEach(function(s){STAT.push(s);STBY[s.code]=s});
-[[stM,YLN,YLS],[stH,YLN,YLS],[stN,YLN,YLS],[stR,YLN,YLS],[stW,YN2,YS2],[stK,YN3,YS3],[stS,YN3,YS3],[stD,YN3,YS3],[stC,YN3,YS3],[stT,YN3,YS3]].forEach(function(q){
+var stC={code:'C',name:'Eichberg',kind:'lens',auto:true,xs:500,W:760,n:1};
+var stT={code:'T',name:'Talmühle',kind:'hp',auto:true,xs:1560,W:360};
+var stU={code:'U',name:'Seeburg',kind:'lens',auto:true,xs:2300,W:760,n:1};
+[stE,stM,stH,stN,stR,stL,stW,stB,stK,stS,stD,stC,stT,stU].forEach(function(s){STAT.push(s);STBY[s.code]=s});
+[[stM,YLN,YLS],[stH,YLN,YLS],[stN,YLN,YLS],[stR,YN4,YS4],[stW,YN5,YS5],[stK,YN3,YS3],[stS,YN3,YS3],[stD,YN3,YS3],[stC,YN6,YS6],[stT,YN6,YS6],[stU,YN6,YS6]].forEach(function(q){
   var s=q[0],n=s.kind==='hp'?0:s.n;
   s.xe=s.xs+s.W;
   s.south=lens(s.code,'s',s.xs,s.W,n,q[2],1,false);
@@ -340,7 +342,7 @@ var stT={code:'T',name:'Talmühle',kind:'hp',auto:true,xs:4620,W:360};
 var blk=0;
 function line(id,a,b,allow){addEdge(id,a,b,allow,'Strecke')}
 function pt(id,x,y){addNode(id,x,y)}
-function blockAt(edge,node){blk++;addSig('S'+blk,edge,node,{kind:'block',auto:true,title:'Selbstblock S'+blk})}
+function blockAt(edge,node){blk++;return addSig('S'+blk,edge,node,{kind:'block',auto:true,title:'Selbstblock S'+blk})}
 function einf(id,edge,node,st,t){addSig(id,edge,node,{kind:'in',station:st,auto:false,title:'Einfahrt '+STBY[st].name,dir:t})}
 /* Selbstblock (Sbk): Streckenabschnitte werden in Blockabschnitte von höchstens 280 Einheiten geteilt, jeder mit einem selbsttätigen Blocksignal */
 function slink(id,a,b,allow,ein,isExit){
@@ -349,13 +351,15 @@ function slink(id,a,b,allow,ein,isExit){
     var last=i===n+1,nid=last?b:id+'n'+i,eid=id+'e'+i;
     if(!last)pt(nid,A.x+sx*len*i/(n+1),A.y);
     line(eid,prev,nid,allow);
-    if(!last){blockAt(eid,nid);lastBlk=SIGS['S'+blk]}else if(ein)einf(ein[0],eid,nid,ein[1],ein[2]);
+    if(!last){lastBlk=blockAt(eid,nid)}else if(ein==='block'){blockAt(eid,nid)}else if(ein)einf(ein[0],eid,nid,ein[1],ein[2]);
     prev=nid;
   }
   if(isExit&&lastBlk)lastBlk.exit=true;
+  return lastBlk;
 }
+function portal(sig,entryEdge){sig.exit=true;sig.portal=entryEdge;PORTALS.push({sig:sig.id,edge:entryEdge})}
 /* Gleiswechselbetrieb: vier Weichenverbindungen zwischen den Streckengleisen. Dazwischen darf auf beiden Gleisen in beide Richtungen gefahren werden. */
-var GWGROUPS=[];
+var GWGROUPS=[],PORTALS=[];
 function gw(P,xw,yS,yN,prevLS,nextLS,prevLN,nextLN,einLS,einLN){
   function nd(n,x,y){addNode(P+n,x,y)}
   nd('AwS',xw,yS);nd('AwN',xw+70,yN);nd('BwN',xw+110,yN);nd('BwS',xw+180,yS);
@@ -374,44 +378,62 @@ function gw(P,xw,yS,yN,prevLS,nextLS,prevLN,nextLN,einLS,einLN){
   NODES[P+'BeN'].stem=P+'LN1';NODES[P+'BeS'].stem=P+'ls4';
   blockAt(P+'ls0',P+'AwS');blockAt(P+'LS2',P+'AeS');blockAt(P+'LN2',P+'AeN');
   blockAt(P+'ln0',P+'BeN');blockAt(P+'LN2',P+'BwN');blockAt(P+'LS2',P+'BwS');
-  einf(einLS[0],P+'ls4',nextLS,einLS[1],'E');
+  if(einLS)einf(einLS[0],P+'ls4',nextLS,einLS[1],'E');
   einf(einLN[0],P+'ln4',nextLN,einLN[1],'W');
   GWGROUPS.push({text:'Gleiswechsel '+P,south:[P+'LS1',P+'LS2',P+'LS3'],north:[P+'LN2'],x:xw+250,y:(yS+yN)/2});
 }
-/* Hauptstrecke Süd (nach Osten) */
+/* Reihe 1: Hauptstrecke Eschbach bis Brunnen, rechts am Rand geht es unten links weiter */
 slink('ls1','EtD0','MsA0','E',['MA','M','E']);
 slink('ls2','MsD0','HsA0','E',['HA','H','E']);
 pt('Jd',2850,YLS);pt('Q1',3300,YS2);
 line('ls3a','HsD0','Jd','E');addEdge('brS1','Jd','Q1','E','Abzweig');NODES['Jd'].stem='ls3a';
 slink('ls3','Jd','NsA0','E',['NA','N','E']);blockAt('brS1','Q1');
-slink('ls3x','NsD0','RsA0','E',['RA','R','E']);
-gw('gA',4420,YLS,YLN,'RsD0','LtA0','LtD0','RnA0',['LA','L'],['RF','R']);
-/* Hauptstrecke Nord (nach Westen) */
+pt('pAsb',3760,YLS);pt('pAs',4100,YLS);line('lsA1','NsD0','pAsb','E');line('lsA2','pAsb','pAs','E');
+var pMainE=blockAt('lsA1','pAsb');
+pt('pAn',4100,YLN);
+slink('lnA','pAn','NnA0','W',['NF','N','W']);
 pt('Jm',2970,YLN);pt('Q2',3420,YN2);
-slink('ln4','RnD0','NnA0','W',['NF','N','W']);
 slink('ln4x','NnD0','Jm','W',null);
 line('ln3a','Jm','HnA0','W');addEdge('brN4','Q2','Jm','W','Abzweig');NODES['Jm'].stem='ln3a';einf('HF','ln3a','HnA0','H','W');
 slink('ln2','HnD0','MnA0','W',['MF','M','W']);
 slink('ln1','MnD0','EtA0','W',['EF','E','W']);
-/* Zweigstrecke (untere Reihe) */
-slink('brS2','Q1','WsA0','E',['WA','W','E']);
-slink('brS3','WsD0','BtA0','E',['BA','B','E']);
-slink('brN1','BtD0','WnA0','W',['WF','W','W']);
-line('brN3','WnD0','Q2','W');blockAt('brN3','Q2');
-/* Seetalbahn: durchgehende Strecke von Rand zu Rand, hier fahren neue Züge ein und wieder aus */
-addNode('srcW3',-260,YS3);addNode('srcE3',6220,YN3);addNode('termW3',-260,YN3);addNode('termE3',6220,YS3);
+/* Zweigstrecke: Abzweig in Reihe 1, Fortsetzung links unten in Reihe 3 */
+pt('pQb',3760,YS2);pt('pQ',4100,YS2);line('brS2a','Q1','pQb','E');line('brS2b','pQb','pQ','E');
+var pBrE=blockAt('brS2a','pQb');
+pt('srcQ',4100,YN2);slink('brN3x','srcQ','Q2','W','block');
+/* Reihe 2: Hauptstrecke Fortsetzung mit Rosental, Gleiswechsel und Linden */
+pt('srcB',-260,YS4);pt('termB',-260,YN4);
+slink('rB','srcB','RsA0','E',['RA','R','E']);
+gw('gA',1020,YS4,YN4,'RsD0','LtA0','LtD0','RnA0',['LA','L'],['RF','R']);
+var pMainW=slink('rBx','RnD0','termB','W',null,true);
+/* Reihe 3: Zweigstrecke Fortsetzung mit Wiesental und Bergheim */
+pt('srcC',-260,YS5);pt('termC',-260,YN5);
+slink('rC','srcC','WsA0','E',['WA','W','E']);
+slink('rC2','WsD0','BtA0','E',['BA','B','E']);
+slink('rC3','BtD0','WnA0','W',['WF','W','W']);
+var pBrW=slink('rC4','WnD0','termC','W',null,true);
+/* Reihe 4 und 5: Seetalbahn, durchgehend von Rand zu Rand, in der Mitte geht es unten links weiter */
+addNode('srcW3',-260,YS3);addNode('termW3',-260,YN3);addNode('srcE3',4140,YN6);addNode('termE3',4140,YS6);
 slink('r3a','srcW3','KsA0','E',['KA','K','E']);
 slink('r3b','KsD0','SsA0','E',['SA','S','E']);
 slink('r3c','SsD0','DsA0','E',['DA','D','E']);
-gw('gB',2900,YS3,YN3,'DsD0','CsA0','CnD0','DnA0',['CA','C'],['DF','D']);
-slink('r3e','CsD0','TsA0','E',['TA','T','E']);
-slink('r3f','TsD0','termE3','E',null,true);
-slink('r3g','srcE3','TnA0','W',['TF','T','W']);
-slink('r3h','TnD0','CnA0','W',['CF','C','W']);
+pt('pD1sb',3600,YS3);pt('pD1s',4100,YS3);pt('srcD1n',4100,YN3);
+gw('gB',2900,YS3,YN3,'DsD0','pD1sb','srcD1n','DnA0',null,['DF','D']);
+var pSeeE=blockAt('gBls4','pD1sb');line('lsD2','pD1sb','pD1s','E');
 slink('r3j','DnD0','SnA0','W',['SF','S','W']);
 slink('r3k','SnD0','KnA0','W',['KF','K','W']);
 slink('r3l','KnD0','termW3','W',null,true);
-var VBW=5960,VBH=1290;
+addNode('srcD2',-260,YS6);addNode('termW6',-260,YN6);
+slink('r3a2','srcD2','CsA0','E',['CA','C','E']);
+slink('r3e','CsD0','TsA0','E',['TA','T','E']);
+slink('r3e2','TsD0','UsA0','E',['UA','U','E']);
+slink('r3f','UsD0','termE3','E',null,true);
+slink('r3g','srcE3','UnA0','W',['UF','U','W']);
+slink('r3h','UnD0','TnA0','W',['TF','T','W']);
+slink('r3h2','TnD0','CnA0','W',['CF','C','W']);
+var pSeeW=slink('r3l2','CnD0','termW6','W',null,true);
+portal(pMainE,'rBe1');portal(pMainW,'lnAe1');portal(pBrE,'rCe1');portal(pBrW,'brN3xe1');portal(pSeeE,'r3a2e1');portal(pSeeW,'gBln0');
+var VBW=3880,VBH=2330;
 
 /* Fahrstraßen per Tiefensuche: Startsignal bis zum nächsten Signal in Fahrtrichtung */
 function addRoute(from,to,parts){
@@ -463,16 +485,17 @@ var distCache={};
 function distTo(code){
   if(distCache[code])return distCache[code];
   var d={};Object.keys(SIGS).forEach(function(id){if(SIGS[id].station===code&&SIGS[id].kind==='tarr')d[id]=0});
+  var links=ALLROUTES.map(function(r){var to=r.to;if(to===null&&SIGS[r.from].portal){var pe=SIGS[r.from].portal;to=SIGAT[pe+'@'+EDGES[pe].b]}return {from:r.from,to:to}});
   var ch=true;
-  while(ch){ch=false;ALLROUTES.forEach(function(r){
+  while(ch){ch=false;links.forEach(function(r){
     if(r.to&&d[r.to]!==undefined&&(d[r.from]===undefined||d[r.from]>d[r.to]+1)){d[r.from]=d[r.to]+1;ch=true}
   })}
   return distCache[code]=d;
 }
 
 var TYPES={
-  RB:{label:'Regionalbahn',pre:'RB',L:120,vmax:90,dwell:9,turn:20,stops:['M','N','H','R','W','K','S','D','C','T'],color:'#4fc3a1',base:80,num:function(){return 7000+rnd(0,999)}},
-  RE:{label:'Regional-Express',pre:'RE',L:150,vmax:115,dwell:8,turn:24,stops:['M','H','R','W','S','C'],color:'#ff9f43',base:100,num:function(){return 4000+rnd(0,999)}},
+  RB:{label:'Regionalbahn',pre:'RB',L:120,vmax:90,dwell:9,turn:20,stops:['M','N','H','R','W','K','S','D','C','T','U'],color:'#4fc3a1',base:80,num:function(){return 7000+rnd(0,999)}},
+  RE:{label:'Regional-Express',pre:'RE',L:150,vmax:115,dwell:8,turn:24,stops:['M','H','R','W','S','C','U'],color:'#ff9f43',base:100,num:function(){return 4000+rnd(0,999)}},
   IC:{label:'InterCity',pre:'IC',L:200,vmax:135,dwell:7,turn:28,stops:['H','R','S','C'],color:'#7fb2ff',base:150,num:function(){return 200+rnd(0,99)}},
   ICE:{label:'ICE (durchfahrend)',pre:'ICE',L:260,vmax:150,dwell:0,turn:30,stops:[],color:'#b79cff',base:200,num:function(){return 500+rnd(0,499)}},
   GZ:{label:'Güterzug',pre:'Gz',L:240,vmax:70,dwell:0,turn:18,stops:[],color:'#a07a52',base:60,num:function(){return 50000+rnd(0,9999)}}
@@ -534,9 +557,14 @@ Object.keys(EDGES).forEach(function(id){
     el('line',{x1:q[0],y1:q[1]-8,x2:q[0],y2:q[1]+8,class:'tick'},gTick);
   });
 })})();
-var lbl1=el('text',{x:20,y:30,class:'edge'},gStatic);lbl1.textContent='Hauptstrecke Eschbach – Linden';
-var lbl2=el('text',{x:2850,y:820,class:'edge'},gStatic);lbl2.textContent='Zweigstrecke Hohenau – Bergheim';
-var lbl3=el('text',{x:20,y:890,class:'edge'},gStatic);lbl3.textContent='Seetalbahn (durchgehend): Züge fahren von Rand zu Rand';
+[[20,30,'Reihe 1: Hauptstrecke Eschbach – Hohenau – Brunnen, rechts am Rand weiter in Reihe 2 links'],
+ [20,YN4-150,'Reihe 2: Hauptstrecke, Fortsetzung bis Linden'],
+ [3000,YS2+90,'Zweigstrecke ab Hohenau, rechts am Rand weiter in Reihe 3 links'],
+ [20,YN5-170,'Reihe 3: Zweigstrecke, Fortsetzung bis Bergheim'],
+ [20,YN3-190,'Reihe 4: Seetalbahn (durchgehend), in der Mitte weiter in Reihe 5 links'],
+ [20,YN6-190,'Reihe 5: Seetalbahn, Fortsetzung bis zum rechten Rand']].forEach(function(q){var t=el('text',{x:q[0],y:q[1],class:'edge'},gStatic);t.textContent=q[2]});
+[[3560,YLS+70,'weiter unten links ↙'],[3560,YS2+60,'weiter unten links ↙'],[3260,YS3+70,'weiter unten links ↙'],
+ [20,YS4+70,'↗ von oben rechts'],[20,YS5+70,'↗ von oben rechts'],[20,YS6+70,'↗ von oben rechts']].forEach(function(q){var t=el('text',{x:q[0],y:q[1],class:'ann2'},gStatic);t.textContent=q[2]});
 Object.keys(SIGS).forEach(function(id){
   var s=SIGS[id],N=NODES[s.node],Ed=EDGES[s.edge];
   var east=(Ed.b===s.node?NODES[Ed.b].x-NODES[Ed.a].x:NODES[Ed.a].x-NODES[Ed.b].x)>0;
@@ -583,6 +611,7 @@ function appendRoute(t,route){
   });
   route.endD=total(t);route.train=t;
   route.prevLeave=t.leaving;t.curRoute=route;t.endSig=def.to;t.leaving=(def.to===null);
+  t.portalEdge=def.to===null?(SIGS[def.from].portal||null):null;
   var S=SIGS[def.to];
   if(S&&S.plat){
     var ns=null;
@@ -716,6 +745,24 @@ function entryText(e){
   if(e.through)return 'aus '+(e.from==='W3'?'Westen':'Osten')+' durch nach '+(e.from==='W3'?'Osten':'Westen');
   return 'ab '+STBY[e.from].name+' nach '+STBY[destOf(e.pair,e.from)].name;
 }
+function transferTrain(t){
+  var edge=t.portalEdge,e=EDGES[edge],wasSel=(selTrain===t.id);
+  var nt={id:++idc,name:t.name,type:t.type,L:t.L,vmax:t.vmax,color:t.color,stops:t.stops,dwellT:t.dwellT,turnT:t.turnT,
+    pts:[],cum:[],segs:[],head:0,v:t.vmax*.9,slowTo:0,defectUntil:0,curRoute:null,endSig:SIGAT[edge+'@'+e.b],platStop:null,platQueue:[],
+    dwelledAt:t.dwelledAt,dwellTimer:0,leaving:false,delay:t.delay,base:t.base,pair:t.pair,dest:t.dest,through:t.through,from:t.from,runs:t.runs};
+  pushPts(nt,cp(e.pts));nt.segs.push({sec:edge,piece:edge,a:0,b:total(nt)});
+  var n=Math.max(2,Math.round(nt.L/36)),car=nt.L/n;
+  nt.halo=el('polyline',{class:'thalo',visibility:'hidden'},gTrain);
+  nt.el=el('polyline',{class:'train',stroke:nt.color,'stroke-dasharray':(car-3)+' 3'},gTrain);
+  nt.lamp=el('circle',{r:4,class:'tlamp'},gTrain);
+  nt.txt=el('text',{class:'tl','pointer-events':'none'},gTrain);
+  nt.hit=el('polyline',{class:'thit'},gTrain);
+  nt.hit.addEventListener('click',function(){selectTrain(nt.id)});
+  removeTrain(t);
+  resv[edge]={owner:nt.id};
+  trains.push(nt);
+  if(wasSel){selTrain=nt.id;updateTinfo()}
+}
 function finishThrough(t){
   var dm=t.delay/10,pts=Math.max(10,Math.round(t.base-dm*10));
   score+=pts;served++;if(dm<=4)punct++;
@@ -835,11 +882,12 @@ function autoStep(){
     if(t.curRoute&&t.head<=t.curRoute.startD+2)return;
     if(t.platStop&&!t.platStop.done)return;
     if(total(t)-t.head>AUTO_DIST)return;
+    if(S.portal&&(occSec[S.portal]||resv[S.portal]))return;
     var list=ROUTES_FROM[S.id],d=t.dest?distTo(t.dest):{};
     var pref=list.filter(function(r){return r.to&&d[r.to]!==undefined&&(d[S.id]===undefined||d[r.to]<d[S.id])});
     if(!pref.length)pref=list;
     for(var i=0;i<pref.length;i++){
-      if(checkRoute(pref[i],t.id,t.id).ok){commit(S,pref[i],{owner:t.id,train:t});break}
+      if(checkRoute(pref[i],t.id,t.id).ok){commit(S,pref[i],{owner:t.id,train:t});if(S.portal)resv[S.portal]={owner:t.id};break}
     }
   });
 }
@@ -898,13 +946,10 @@ function step(dt){
   for(var i=trains.length-1;i>=0;i--){
     var tt=trains[i];
     if(tt.dead||(tt.leaving&&tt.segs.length===0)){
-      if(tt.dead){
-        Object.keys(sigRoute).forEach(function(id){if(sigRoute[id]&&sigRoute[id].train===tt)sigRoute[id]=null});
-        removeTrain(tt);
-      }else{
-        Object.keys(sigRoute).forEach(function(id){if(sigRoute[id]&&sigRoute[id].train===tt)sigRoute[id]=null});
-        finishThrough(tt);
-      }
+      Object.keys(sigRoute).forEach(function(id){if(sigRoute[id]&&sigRoute[id].train===tt)sigRoute[id]=null});
+      if(tt.dead)removeTrain(tt);
+      else if(tt.portalEdge)transferTrain(tt);
+      else finishThrough(tt);
     }
   }
   if(T>=nextThrough){
