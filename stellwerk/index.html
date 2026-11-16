@@ -1,5 +1,13 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1115">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stellwerk">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Stellwerk Hohenau</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +45,7 @@ button{font:inherit;color:inherit}
 .btn.on{border-color:var(--amber);color:var(--amber)}
 select.btn{padding:0 10px;appearance:auto}
 .plan{background:var(--scope);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
-#plan{display:block;width:100%;min-width:780px;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#plan{display:block;width:100%;min-width:900px;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .cmd{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;min-height:72px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
 .cmd .msg{flex:1 1 220px;min-width:0;font-size:15px}
 .cmd .msg.err{color:var(--amber)} .cmd .msg.ok{color:var(--go)}
@@ -68,29 +76,29 @@ ul.log li:first-child{border-top:0}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
 .legend i{display:inline-block;width:22px;height:5px;border-radius:3px;vertical-align:middle;margin-right:6px}
 /* Gleisbild */
-.trk{fill:none;stroke-width:6;stroke-linecap:butt;stroke-linejoin:round}
+.trk{fill:none;stroke-width:7;stroke-linecap:butt;stroke-linejoin:round}
 .tick{stroke:var(--scope);stroke-width:3}
 .pf{fill:#1a232c;stroke:#2f3c49;stroke-width:1}
-.pftxt{font:500 11px var(--f-mono);fill:#5f7083;text-anchor:middle;letter-spacing:.08em}
-.glbl{font:600 11px var(--f-mono);fill:#7f8ea0;letter-spacing:.06em}
-.sw{font:600 11px var(--f-mono);fill:#7f8ea0}
+.pftxt{font:500 13px var(--f-mono);fill:#5f7083;text-anchor:middle;letter-spacing:.08em}
+.glbl{font:600 13px var(--f-mono);fill:#7f8ea0;letter-spacing:.06em}
+.sw{font:600 13px var(--f-mono);fill:#7f8ea0}
 .sw.set{fill:var(--route)}
 .bld{fill:#1a232c;stroke:#2f3c49}
 .bldtxt{font:700 20px var(--f-head);letter-spacing:.2em;fill:#9fb0c2;text-anchor:middle}
-.edge{font:500 12px var(--f-mono);fill:#6d7d90}
-.ann{font:600 12px var(--f-mono);fill:var(--amber)}
+.edge{font:500 14px var(--f-mono);fill:#6d7d90}
+.ann{font:600 14px var(--f-mono);fill:var(--amber)}
 .stem{fill:none;stroke:#6d7d90;stroke-width:2}
 .housing{fill:#10161c;stroke:#6d7d90;stroke-width:1.5}
-.slbl{font:600 11px var(--f-mono);fill:#8fa0b3;text-anchor:middle}
+.slbl{font:600 13px var(--f-mono);fill:#8fa0b3;text-anchor:middle}
 .ring{fill:none;stroke:var(--amber);stroke-width:2;opacity:0}
 .ring.attn{opacity:1;animation:pulse 1.2s ease-in-out infinite}
 .ring.sel{opacity:1;stroke:var(--route)}
 @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.ring.attn{animation:none}}
 .hit{fill:transparent;cursor:pointer}
-.train{fill:none;stroke-width:9;stroke-linejoin:round}
+.train{fill:none;stroke-width:10;stroke-linejoin:round}
 .tlamp{fill:#fff6c8}
-.tl{font:600 11px var(--f-mono);fill:var(--fg);text-anchor:middle;paint-order:stroke;stroke:var(--scope);stroke-width:3px;stroke-linejoin:round}
+.tl{font:600 13px var(--f-mono);fill:var(--fg);text-anchor:middle;paint-order:stroke;stroke:var(--scope);stroke-width:3px;stroke-linejoin:round}
 .tl.late{fill:var(--amber)}
 /* Einstieg */
 .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(5,8,11,.82);
@@ -103,7 +111,7 @@ ul.log li:first-child{border-top:0}
 
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>Stellwerk Hohenau</h1><p>Kreuzungsbahnhof · eingleisige Strecke Eschbach – Linden</p></div>
+    <div class="brand"><h1>Stellwerk Hohenau</h1><p>Kreuzungsbahnhof · 5 Gleise · eingleisige Strecke Eschbach – Linden</p></div>
     <div class="stats">
       <div>Punkte<b id="score">0</b></div>
       <div>Pünktlich<b id="punct">–</b></div>
@@ -123,7 +131,7 @@ ul.log li:first-child{border-top:0}
     </div>
   </header>
 
-  <section class="plan"><svg id="plan" viewBox="0 0 1200 410" role="img" aria-label="Gleisbildplan Bahnhof Hohenau"></svg></section>
+  <section class="plan"><svg id="plan" viewBox="0 0 1600 540" role="img" aria-label="Gleisbildplan Bahnhof Hohenau"></svg></section>
 
   <section class="cmd" id="cmd" aria-live="polite">
     <div class="msg" id="msg">Tippe ein Signal an.</div>
@@ -167,54 +175,47 @@ function pick(a){return a[Math.floor(Math.random()*a.length)]}
 function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
 
 /* ---------- Gleisgeometrie (Abschnitte und ihre Fahrwege) ---------- */
-var PIECES={
-  WL:{sec:'WL',pts:[[-150,250],[200,250]]},
-  W1s:{sec:'W1',pts:[[200,250],[310,250]]},
-  W1d:{sec:'W1',pts:[[200,250],[230,250],[310,330]]},
-  W2s:{sec:'W2',pts:[[310,250],[340,250]]},
-  W2d:{sec:'W2',pts:[[310,250],[390,170]]},
-  G1:{sec:'G1',pts:[[390,170],[810,170]]},
-  G2:{sec:'G2',pts:[[340,250],[860,250]]},
-  G3:{sec:'G3',pts:[[310,330],[890,330]]},
-  W3s:{sec:'W3',pts:[[860,250],[890,250]]},
-  W3d:{sec:'W3',pts:[[810,170],[890,250]]},
-  W4s:{sec:'W4',pts:[[890,250],[1000,250]]},
-  W4d:{sec:'W4',pts:[[890,330],[970,250],[1000,250]]},
-  EL:{sec:'EL',pts:[[1000,250],[1350,250]]}
+var PIECES={},ROUTES={},SIGS={};
+function mir(p){return p.map(function(q){return [1600-q[0],q[1]]})}
+var WP={
+  W1s:[[200,310],[300,310]],W1u:[[200,310],[240,310],[320,230]],
+  W2s:[[300,310],[340,310]],W2d:[[300,310],[380,390]],
+  W3s:[[320,230],[360,230]],W3d:[[320,230],[400,150]],
+  W4s:[[380,390],[420,390]],W4d:[[380,390],[460,470]]
 };
-var SECNAME={WL:'Strecke West',EL:'Strecke Ost',W1:'Weichenbereich W1',W2:'Weichenbereich W2',W3:'Weichenbereich W3',W4:'Weichenbereich W4',G1:'Gleis 1',G2:'Gleis 2',G3:'Gleis 3'};
-var ROUTES={
-  A1:{sig:'A',type:'enter',track:1,pieces:[['W1s'],['W2d'],['G1']]},
-  A2:{sig:'A',type:'enter',track:2,pieces:[['W1s'],['W2s'],['G2']]},
-  A3:{sig:'A',type:'enter',track:3,pieces:[['W1d'],['G3']]},
-  F1:{sig:'F',type:'enter',track:1,pieces:[['W4s',1],['W3d',1],['G1',1]]},
-  F2:{sig:'F',type:'enter',track:2,pieces:[['W4s',1],['W3s',1],['G2',1]]},
-  F3:{sig:'F',type:'enter',track:3,pieces:[['W4d',1],['G3',1]]},
-  XE1:{type:'exit',pieces:[['W3d'],['W4s'],['EL']]},
-  XE2:{type:'exit',pieces:[['W3s'],['W4s'],['EL']]},
-  XE3:{type:'exit',pieces:[['W4d'],['EL']]},
-  XW1:{type:'exit',pieces:[['W2d',1],['W1s',1],['WL',1]]},
-  XW2:{type:'exit',pieces:[['W2s',1],['W1s',1],['WL',1]]},
-  XW3:{type:'exit',pieces:[['W1d',1],['WL',1]]}
-};
-var SIGS={
-  A:{kind:'enter',x:200,ty:250,hx:182,hy:272,line:'W',routes:['A1','A2','A3']},
-  F:{kind:'enter',x:1000,ty:250,hx:1018,hy:228,line:'E',routes:['F1','F2','F3']},
-  N1:{kind:'exit',x:810,ty:170,hx:792,hy:192,dir:'E',track:1,route:'XE1'},
-  N2:{kind:'exit',x:860,ty:250,hx:842,hy:272,dir:'E',track:2,route:'XE2'},
-  N3:{kind:'exit',x:890,ty:330,hx:872,hy:352,dir:'E',track:3,route:'XE3'},
-  P1:{kind:'exit',x:390,ty:170,hx:408,hy:148,dir:'W',track:1,route:'XW1'},
-  P2:{kind:'exit',x:340,ty:250,hx:358,hy:228,dir:'W',track:2,route:'XW2'},
-  P3:{kind:'exit',x:310,ty:330,hx:328,hy:308,dir:'W',track:3,route:'XW3'}
-};
+Object.keys(WP).forEach(function(n){
+  PIECES[n]={sec:n.slice(0,2),pts:WP[n]};
+  var e='E'+n.slice(1);PIECES[e]={sec:e.slice(0,2),pts:mir(WP[n])};
+});
+PIECES.WL={sec:'WL',pts:[[-150,310],[200,310]]};
+PIECES.EL={sec:'EL',pts:[[1400,310],[1750,310]]};
+var GY={1:150,2:230,3:310,4:390,5:470},GX={1:[400,1200],2:[360,1240],3:[340,1260],4:[420,1180],5:[460,1140]};
+var THROAT={1:['W1u','W3d'],2:['W1u','W3s'],3:['W1s','W2s'],4:['W1s','W2d','W4s'],5:['W1s','W2d','W4d']};
+var SECNAME={WL:'Strecke West',EL:'Strecke Ost'};
+['W','E'].forEach(function(p){for(var i=1;i<=4;i++)SECNAME[p+i]='Weichenbereich '+p+i});
+SIGS.A={kind:'enter',x:200,ty:310,hx:182,hy:332,line:'W',routes:[]};
+SIGS.F={kind:'enter',x:1400,ty:310,hx:1418,hy:288,line:'E',routes:[]};
+for(var k=1;k<=5;k++){
+  PIECES['G'+k]={sec:'G'+k,pts:[[GX[k][0],GY[k]],[GX[k][1],GY[k]]]};
+  SECNAME['G'+k]='Gleis '+k;
+  var et=THROAT[k].map(function(p){return 'E'+p.slice(1)});
+  ROUTES['A'+k]={sig:'A',type:'enter',track:k,pieces:THROAT[k].map(function(p){return [p]}).concat([['G'+k]])};
+  ROUTES['F'+k]={sig:'F',type:'enter',track:k,pieces:et.map(function(p){return [p]}).concat([['G'+k,1]])};
+  ROUTES['XE'+k]={type:'exit',pieces:et.slice().reverse().map(function(p){return [p,1]}).concat([['EL']])};
+  ROUTES['XW'+k]={type:'exit',pieces:THROAT[k].slice().reverse().map(function(p){return [p,1]}).concat([['WL',1]])};
+  SIGS.A.routes.push('A'+k);SIGS.F.routes.push('F'+k);
+  SIGS['N'+k]={kind:'exit',x:GX[k][1],ty:GY[k],hx:GX[k][1]-18,hy:GY[k]+22,dir:'E',track:k,route:'XE'+k};
+  SIGS['P'+k]={kind:'exit',x:GX[k][0],ty:GY[k],hx:GX[k][0]+18,hy:GY[k]-22,dir:'W',track:k,route:'XW'+k};
+}
 var TYPES={
-  RB:{pre:'RB',L:120,vmax:72,dwell:10,color:'#4fc3a1',base:80,plans:[1,3],num:function(){return 7000+rnd(0,999)}},
-  RE:{pre:'RE',L:150,vmax:92,dwell:8,color:'#ff9f43',base:100,plans:[1,2],num:function(){return 4000+rnd(0,999)}},
-  IC:{pre:'IC',L:200,vmax:110,dwell:6,color:'#bcd7ff',base:150,plans:[2],num:function(){return 200+rnd(0,99)}},
-  GZ:{pre:'Gz',L:240,vmax:56,dwell:0,color:'#b08d68',base:60,plans:[3],num:function(){return 50000+rnd(0,9999)}}
+  RB:{pre:'RB',L:120,vmax:90,dwell:10,color:'#4fc3a1',base:80,plans:[1,4,5],num:function(){return 7000+rnd(0,999)}},
+  RE:{pre:'RE',L:150,vmax:115,dwell:8,color:'#ff9f43',base:100,plans:[2,4],num:function(){return 4000+rnd(0,999)}},
+  IC:{pre:'IC',L:200,vmax:135,dwell:6,color:'#bcd7ff',base:150,plans:[2,3],num:function(){return 200+rnd(0,99)}},
+  ICE:{pre:'ICE',L:260,vmax:150,dwell:6,color:'#d9c7ff',base:200,plans:[3],num:function(){return 500+rnd(0,499)}},
+  GZ:{pre:'Gz',L:240,vmax:70,dwell:0,color:'#b08d68',base:60,plans:[1,5],num:function(){return 50000+rnd(0,9999)}}
 };
-var ACC=30,BRAKE=45,MARGIN=6,TIMESCALE=6;
-var INTV={ruhig:[22,34],normal:[14,24],hektisch:[9,16]};
+var ACC=36,BRAKE=55,MARGIN=6,TIMESCALE=6;
+var INTV={ruhig:[16,26],normal:[10,18],hektisch:[6,11]};
 
 /* ---------- Zustand ---------- */
 var trains=[],T,resv,occSec,occPiece,queue,sigState,score,served,punct,idc,lastGen,lastDir,logs,swPos;
@@ -226,17 +227,17 @@ var svg=$('#plan');
 var gStatic=el('g',{},svg), gFree=el('g',{},svg), gRes=el('g',{},svg), gOcc=el('g',{},svg),
     gTick=el('g',{},svg), gLbl=el('g',{},svg), gTrain=el('g',{},svg), gSig=el('g',{},svg);
 
-el('rect',{x:540,y:76,width:160,height:50,rx:3,class:'bld'},gStatic);
-el('path',{d:'M530 76 L620 54 L710 76 Z',class:'bld'},gStatic);
-var bt=el('text',{x:620,y:108,class:'bldtxt'},gStatic);bt.textContent='HOHENAU';
-el('rect',{x:440,y:188,width:320,height:40,rx:3,class:'pf'},gStatic);
-el('rect',{x:380,y:272,width:440,height:40,rx:3,class:'pf'},gStatic);
-var t1=el('text',{x:600,y:213,class:'pftxt'},gStatic);t1.textContent='BAHNSTEIG 1';
-var t2=el('text',{x:600,y:297,class:'pftxt'},gStatic);t2.textContent='BAHNSTEIG 2';
-[['Gleis 1',470,156],['Gleis 2',470,239],['Gleis 3',470,320]].forEach(function(g){var t=el('text',{x:g[1],y:g[2],class:'glbl'},gStatic);t.textContent=g[0]});
-var eW=el('text',{x:10,y:292,class:'edge'},gStatic);eW.textContent='◀ nach Eschbach';
-var eE=el('text',{x:1190,y:292,class:'edge','text-anchor':'end'},gStatic);eE.textContent='nach Linden ▶';
-var kn=el('text',{x:10,y:396,class:'edge'},gStatic);kn.textContent='Bf Hohenau · Spurplanstellwerk · Maßstab frei';
+el('rect',{x:720,y:56,width:160,height:50,rx:3,class:'bld'},gStatic);
+el('path',{d:'M710 56 L800 34 L890 56 Z',class:'bld'},gStatic);
+var bt=el('text',{x:800,y:88,class:'bldtxt'},gStatic);bt.textContent='HOHENAU';
+[[480,170,640,'BAHNSTEIG 1'],[440,250,720,'BAHNSTEIG 2'],[500,330,620,'BAHNSTEIG 3'],[540,410,540,'BAHNSTEIG 4']].forEach(function(p){
+  el('rect',{x:p[0],y:p[1],width:p[2],height:40,rx:3,class:'pf'},gStatic);
+  var t=el('text',{x:p[0]+p[2]/2,y:p[1]+25,class:'pftxt'},gStatic);t.textContent=p[3];
+});
+for(var gk=1;gk<=5;gk++){var gt=el('text',{x:520,y:gk===1?142:GY[gk]-8,class:'glbl'},gStatic);gt.textContent='Gleis '+gk}
+var eW=el('text',{x:10,y:356,class:'edge'},gStatic);eW.textContent='◀ nach Eschbach';
+var eE=el('text',{x:1590,y:356,class:'edge','text-anchor':'end'},gStatic);eE.textContent='nach Linden ▶';
+var kn=el('text',{x:10,y:526,class:'edge'},gStatic);kn.textContent='Bf Hohenau · Spurplanstellwerk · Maßstab frei';
 
 var pieceEls={},pieceSt={};
 Object.keys(PIECES).forEach(function(id){
@@ -244,15 +245,17 @@ Object.keys(PIECES).forEach(function(id){
   var pl=el('polyline',{points:p.pts.map(function(q){return q.join(',')}).join(' '),class:'trk',stroke:'#5a6b7f'},gFree);
   pieceEls[id]=pl;pieceSt[id]=0;
 });
-[[200,250],[310,250],[340,250],[860,250],[890,250],[1000,250],[390,170],[810,170],[310,330],[890,330]].forEach(function(q){
-  el('line',{x1:q[0],y1:q[1]-8,x2:q[0],y2:q[1]+8,class:'tick'},gTick);
-});
+(function(){var seen={};Object.keys(PIECES).forEach(function(id){
+  if(id==='WL'||id==='EL')return;var p=PIECES[id].pts;
+  [p[0],p[p.length-1]].forEach(function(q){var key=q.join(',');if(seen[key]||q[0]<0||q[0]>1600)return;seen[key]=1;
+    el('line',{x1:q[0],y1:q[1]-8,x2:q[0],y2:q[1]+8,class:'tick'},gTick)})
+})})();
 var swEls={};
-[['W1',228,236],['W2',298,236],['W3',918,236],['W4',958,236]].forEach(function(s){
+[['W1',222,296],['W2',300,296],['W3',300,214],['W4',366,412],['E1',1378,296],['E2',1300,296],['E3',1300,214],['E4',1234,412]].forEach(function(s){
   swEls[s[0]]=el('text',{x:s[1],y:s[2],class:'sw','text-anchor':'middle'},gLbl);
 });
-var annW=el('text',{x:10,y:236,class:'ann'},gLbl);
-var annE=el('text',{x:1190,y:236,class:'ann','text-anchor':'end'},gLbl);
+var annW=el('text',{x:10,y:292,class:'ann'},gLbl);
+var annE=el('text',{x:1590,y:292,class:'ann','text-anchor':'end'},gLbl);
 
 Object.keys(SIGS).forEach(function(id){
   var s=SIGS[id];
@@ -265,8 +268,8 @@ Object.keys(SIGS).forEach(function(id){
   s.lg=el('circle',{cx:s.hx+9,cy:s.hy,r:5.5},g);
   var north=s.hy<s.ty;
   var lt=el('text',{x:s.hx,y:north?s.hy-15:s.hy+24,class:'slbl'},g);lt.textContent=id;
-  s.ring=el('circle',{cx:s.hx,cy:s.hy,r:26,class:'ring'},g);
-  var hit=el('circle',{cx:s.hx,cy:s.hy,r:34,class:'hit'},g);
+  s.ring=el('circle',{cx:s.hx,cy:s.hy,r:28,class:'ring'},g);
+  var hit=el('circle',{cx:s.hx,cy:s.hy,r:40,class:'hit'},g);
   hit.addEventListener('click',function(){onSignal(id)});
 });
 
@@ -333,10 +336,10 @@ function makeEntry(type,dir,t,plan){
 }
 function genEntry(){
   var r=Math.random();
-  var type=r<.34?'RB':r<.64?'RE':r<.8?'IC':'GZ';
+  var type=r<.3?'RB':r<.58?'RE':r<.74?'IC':r<.82?'ICE':'GZ';
   var dir=Math.random()<.5?'E':'W';
   var iv=INTV[diff];
-  var t=Math.max(lastGen+rnd(iv[0],iv[1]),lastDir[dir]+9);
+  var t=Math.max(lastGen+rnd(iv[0],iv[1]),lastDir[dir]+7);
   lastGen=t;lastDir[dir]=t;
   var e=makeEntry(type,dir,t);
   queue.push(e);queue.sort(function(a,b){return a.t-b.t});
@@ -350,7 +353,7 @@ function spawnTrain(e){
     pts:[],cum:[],segs:[],head:0,v:ty.vmax*.9,platEnd:null,track:null,enterRoute:null,exitRoute:null,
     dwelled:ty.dwell===0,dwellT:ty.dwell,dwellTimer:0,delay:Math.max(0,T-e.t),entrySig:east?'A':'F',arrived:false,base:ty.base};
   var sec=east?'WL':'EL';
-  var pts=east?[[-150,250],[200,250]]:[[1350,250],[1000,250]];
+  var pts=east?[[-150,310],[200,310]]:[[1750,310],[1400,310]];
   pushPts(t,pts);
   t.segs.push({sec:sec,piece:sec,a:0,b:total(t)});
   var n=Math.max(2,Math.round(t.L/36)),car=t.L/n;
@@ -468,7 +471,7 @@ function render(){
       (st===2?gOcc:st===1?gRes:gFree).appendChild(pieceEls[id]);
     }
   });
-  ['W1','W2','W3','W4'].forEach(function(w){
+  ['W1','W2','W3','W4','E1','E2','E3','E4'].forEach(function(w){
     var r=resv[w];
     if(r)swPos[w]=/s$/.test(r.piece)?'+':'−';
     var e=swEls[w];e.textContent=w+' '+swPos[w];
@@ -580,7 +583,7 @@ function refreshCmd(){
 function reset(){
   T=0;trains.forEach(function(t){t.el.remove();t.lamp.remove();t.txt.remove()});
   trains=[];resv={};occSec={};occPiece={};queue=[];score=0;served=0;punct=0;idc=0;lastGen=0;lastDir={E:0,W:0};logs=[];
-  swPos={W1:'+',W2:'+',W3:'+',W4:'+'};
+  swPos={W1:'+',W2:'+',W3:'+',W4:'+',E1:'+',E2:'+',E3:'+',E4:'+'};
   sigState={};Object.keys(SIGS).forEach(function(id){sigState[id]={route:null}});
   sel=null;buildCmd();
   seed();refill();
@@ -589,15 +592,15 @@ function reset(){
 }
 function seed(){
   // Ein Regionalzug steht schon in Gleis 3, ein Güterzug wartet vor Signal A.
-  var e1=makeEntry('RB','W',-5,3);
-  setRoute('F','F3');
+  var e1=makeEntry('RB','W',-5,4);
+  setRoute('F','F4');
   var t1=spawnTrain(e1);computeOcc();
   t1.head=t1.platEnd-MARGIN;t1.v=0;t1.arrived=true;t1.dwellTimer=4;
   sigState.F.route=null;
-  var e2=makeEntry('GZ','E',-2,3);
+  var e2=makeEntry('GZ','E',-2,5);
   var t2=spawnTrain(e2);t2.head=total(t2)-MARGIN;t2.v=0;t2.delay=12;
   lastGen=4;lastDir={E:0,W:0};
-  log('Dienstbeginn 06:00. RB in Gleis 3, Güterzug wartet vor Signal A.');
+  log('Dienstbeginn 06:00. RB in Gleis 4, Güterzug wartet vor Signal A.');
 }
 
 /* ---------- Schleife ---------- */
@@ -633,4 +636,5 @@ requestAnimationFrame(frame);
 window.__stellwerk={setRoute:setRoute,cancelRoute:cancelRoute,get trains(){return trains},get queue(){return queue},SIGS:SIGS,step:step,start:function(){running=true;paused=false;$('#intro').hidden=true},posAt:posAt,get T(){return T}};
 })();
 </script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:"){addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
 </html>
