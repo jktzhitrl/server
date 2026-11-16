@@ -63,6 +63,10 @@ select.btn{padding:0 6px}
 .rbtn b{font-size:16px}
 .rbtn small{font-size:10px}
 .tinfo{width:min(300px,calc(100% - 20px));padding:8px 10px}
+.tinfo .fp{margin-top:6px;font-size:12px}
+.tinfo .fp b{color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.tinfo .fpr{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:2px 0;border-top:1px solid var(--line)}
+.tinfo .fpr .warn{color:var(--amber)}
 .tinfo dl{font-size:12px}
 .al{font-size:12px;padding:6px 9px}
 .wrap .stbar .btn.sm,.wrap .stbar .btn{min-height:28px;padding:0 8px;font-size:12px;border-radius:6px}
@@ -163,6 +167,10 @@ ul.log li:first-child{border-top:0}
 .al{background:rgba(60,38,6,.96);border:1px solid #f2b134;color:#ffe2a8;border-radius:8px;padding:8px 12px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .al small{display:block;color:#e7c27a;font-size:11px}
 .al{position:relative;touch-action:none;cursor:grab;padding-right:34px}
+.al .tip{display:block;color:#ffd58a;font-size:12px;margin-top:2px}
+.alh{display:block;margin-top:6px;border:1px solid #f2b134;background:transparent;color:#ffe2a8;border-radius:6px;padding:4px 8px;font:600 12px var(--f-body);cursor:pointer}
+.alh[disabled]{opacity:.5;cursor:default}
+.aff{color:var(--amber)}
 .alx{position:absolute;right:4px;top:4px;width:28px;height:28px;border:0;border-radius:6px;background:rgba(255,255,255,.12);color:#ffe2a8;font-size:18px;line-height:1;cursor:pointer}
 .alchip{align-self:flex-start;border:1px solid #f2b134;background:rgba(60,38,6,.96);color:#ffe2a8;border-radius:8px;padding:5px 10px;font:600 12px var(--f-body);cursor:pointer}
 .rbtn.blk small{color:var(--amber)}
@@ -180,6 +188,7 @@ ul.log li:first-child{border-top:0}
     <div class="brand"><h1>Stellwerk Hohenau</h1><p>Zweigleisiges Netz mit Abzweig und drei Endbahnhöfen</p></div>
     <div class="stats">
       <div>Punkte<b id="score">0</b></div>
+      <div>Stufe<b id="lvl">1</b></div>
       <div>Pünktlich<b id="punct">–</b></div>
       <div>Rekord<b id="best">0</b></div>
     </div>
@@ -233,8 +242,10 @@ ul.log li:first-child{border-top:0}
       <li><b>Netz:</b> Vier Reihen untereinander: Hauptstrecke Eschbach – Linden, Zweigstrecke Hohenau – Bergheim und die durchgehende Seetalbahn. Was rechts am Bildschirmrand aufhört, fährt in der nächsten Reihe links weiter. Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
       <li><b>Halte:</b> RB halten in allen Orten, RE in den größeren Orten, IC nur in Hohenau, Rosental, Seehof und Eichberg. ICE und Güterzüge fahren durch. Ein haltender Zug zeigt im Plan „Halt“ mit der Restzeit. Züge im Hauptnetz enden in Eschbach, Linden oder Bergheim.</li>
       <li><b>Wende und Durchfahrer:</b> Im Endbahnhof bleibt der Zug stehen, bis die Wendezeit vorbei ist. Manche Züge werden dort abgestellt, dafür kommen neue. Auf der Seetalbahn fahren immer wieder neue Züge von einem Rand zum anderen durch.</li>
+      <li><b>Fahrplan:</b> Jeder Zug hat Sollzeiten für seine Halte (Zuginfo, antippen). Er fährt nicht vor der Sollzeit ab. Punkte gibt es nach der Verspätung bei der Ankunft.</li>
+      <li><b>Stufen:</b> Du beginnst mit Hohenau von Hand. Mit jeder Stufe (nach einigen Fahrten) kommt ein weiterer Bahnhof in den Handbetrieb dazu. Mit „Stufen Aus“ stoppst du das.</li>
       <li><b>Vormerken:</b> Ist die Strecke noch belegt, kannst du das Ziel trotzdem antippen. Die Fahrstraße wird vorgemerkt (Signal blinkt) und automatisch gestellt, sobald alles frei ist. Erneut antippen löscht die Vormerkung.</li>
-      <li><b>Gleiswechsel und Störungen:</b> Auf den Strecken Rosental – Linden und Waldau – Eichberg kann auf dem Gegengleis gefahren werden. Zufällige Störungen (Gleissperrung, Weichenstörung, Signalstörung, Fahrzeugschaden) erscheinen oben links. Bei Signalstörung stellst du die Fahrstraße von Hand, der Zug fährt dann auf Sicht.</li>
+      <li><b>Gleiswechsel und Störungen:</b> Auf den Strecken Rosental – Linden und Waldau – Eichberg kann auf dem Gegengleis gefahren werden. Zufällige Störungen (Gleissperrung, Weichenstörung, Signalstörung, Fahrzeugschaden) erscheinen oben links mit einem Tipp. Betroffene Züge sind mit ⚠ markiert, und du kannst die Entstörung gegen Punktabzug beschleunigen. Bei Signalstörung stellst du die Fahrstraße von Hand, der Zug fährt dann auf Sicht.</li>
       <li><b>Selbstblock (Sbk):</b> Auf freier Strecke sichern Blocksignale (Sbk) die Blockabschnitte. Sie schalten selbsttätig. Mit der Taste Blocksignale: Hand stellst du sie selbst, wie alle anderen Signale.</li>
       <li><b>Betrieb:</b> Alle Bahnhöfe außer Hohenau laufen auf Wunsch automatisch (Taste Auto/Hand). Wertung: Punkte für jede Fahrt, Abzug für Verspätung.</li>
     </ol>
@@ -492,6 +503,48 @@ Object.keys(SIGS).forEach(function(sid){
   out.sort(function(a,b){return a.len-b.len});
   CHAINS[sid]=out;
 });
+/* Fahrplan: kürzester Weg im Signalgraph, Sollzeiten aus Weglänge und Haltezeiten */
+function edgeLen(eid){var q=EDGES[eid].pts;return Math.hypot(q[1][0]-q[0][0],q[1][1]-q[0][1])}
+var SGRAPH={};
+ALLROUTES.forEach(function(r){
+  var c=0;r.parts.forEach(function(q){c+=edgeLen(q.e)});
+  var to=r.to;
+  if(to===null){var S0=SIGS[r.from];if(S0.portal){var pe=S0.portal;to=SIGAT[pe+'@'+EDGES[pe].b];c+=edgeLen(pe)}else to='EXIT:'+r.from}
+  (SGRAPH[r.from]=SGRAPH[r.from]||[]).push({to:to,c:c});
+});
+var PLANF=.55;
+function planTimetable(t,startSig,T0){
+  var dist={},pred={},done={},cur=startSig;dist[startSig]=0;
+  var isT=function(id){if(t.dest){var S1=SIGS[id];return !!(S1&&S1.kind==='tarr'&&S1.station===t.dest)}return /^EXIT:/.test(id)};
+  var guard=0,best=null;
+  while(guard++<2000){
+    var u=null,ud=1e18;
+    Object.keys(dist).forEach(function(k){if(!done[k]&&dist[k]<ud){ud=dist[k];u=k}});
+    if(u===null)break;
+    done[u]=1;
+    if(isT(u)){best=u;break}
+    (SGRAPH[u]||[]).forEach(function(e){var nd=ud+e.c;if(dist[e.to]===undefined||nd<dist[e.to]){dist[e.to]=nd;pred[e.to]=u}});
+  }
+  t.sched=[];t.sollFinal=null;t.lastLate=0;
+  if(!best)return;
+  var path=[best],q=best;while(pred[q]!==undefined){q=pred[q];path.unshift(q)}
+  var vp=t.vmax*PLANF,dw=0;
+  path.forEach(function(id,i){
+    if(i===0)return;
+    var S1=SIGS[id];
+    if(S1&&S1.plat&&(S1.term||t.stops.indexOf(S1.plat)>=0)){
+      t.sched.push({st:S1.plat,sig:id,soll:T0+dist[id]/vp+dw+4,done:false});
+      if(!S1.term)dw+=t.dwellT;
+    }
+  });
+  t.sollFinal=t.sched.length&&t.dest?t.sched[t.sched.length-1].soll:T0+dist[best]/vp+dw+4;
+}
+function displayLate(t){
+  var nx=(t.sched||[]).find(function(x){return !x.done}),lv=0;
+  if(nx)lv=Math.max(0,T-nx.soll);
+  else if(t.sollFinal&&(t.through||t.leaving))lv=Math.max(0,T-t.sollFinal);
+  return Math.max(t.lastLate||0,lv);
+}
 var distCache={};
 function distTo(code){
   if(distCache[code])return distCache[code];
@@ -523,6 +576,7 @@ var ACC=22,BRAKE=32,MARGIN=6,TIMESCALE=6,AUTO_DIST=420;
 var TRACKPLAT={};
 /* ================= Zustand ================= */
 var trains=[],T,resv,occSec,occPiece,queue,sigRoute,score,served,punct,idc,logs;
+var LEVELORDER=['H','L','E','R','W','B','M','N','S','K','D'],LEVELSERVED={ruhig:30,normal:18,hektisch:12},level=1,levelsOn=true;
 var PEND={},faultsOn=true,FAULTS=[],BLOCK={},SIGFAULT={},nextFault=0,FAULTR={ruhig:[120,200],normal:[70,130],hektisch:[40,80]};
 var sbkAuto=true,selTrain=null,nextThrough=0,THRU={ruhig:[60,100],normal:[35,65],hektisch:[20,40]};
 function isAuto(S){if(SIGFAULT[S.id])return false;return S.kind==='block'?(S.exit||sbkAuto):(S.auto||!!(S.station&&STBY[S.station].auto))}
@@ -687,6 +741,7 @@ function spawnThrough(e){
     leaving:false,delay:Math.max(0,T-e.t),base:ty.base,pair:null,dest:null,through:true,from:e.from,runs:0};
   pushPts(t,cp(EDGES[edge].pts));
   t.segs.push({sec:edge,piece:edge,a:0,b:total(t)});
+  planTimetable(t,t.endSig,T+edgeLen(edge)/(t.vmax*PLANF));
   var n=Math.max(2,Math.round(t.L/36)),car=t.L/n;
   t.halo=el('polyline',{class:'thalo',visibility:'hidden'},gTrain);
   t.el=el('polyline',{class:'train',stroke:t.color,'stroke-dasharray':(car-3)+' 3'},gTrain);
@@ -709,6 +764,7 @@ function spawnTrain(e){
     pts:[],cum:[],segs:[],head:0,v:0,slowTo:0,defectUntil:0,curRoute:null,endSig:dep.id,platStop:null,platQueue:[],dwelledAt:{},dwellTimer:0,
     leaving:false,delay:Math.max(0,T-e.t),base:ty.base,pair:e.pair,dest:destOf(e.pair,e.from),runs:0};
   placeOnTrack(t,tk.e,SIGS[st.code+'a'+(st.tracks.indexOf(tk)+1)].node,dep.node);
+  planTimetable(t,dep.id,T+3);
   var n=Math.max(2,Math.round(t.L/36)),car=t.L/n;
   t.halo=el('polyline',{class:'thalo',visibility:'hidden'},gTrain);
   t.el=el('polyline',{class:'train',stroke:t.color,'stroke-dasharray':(car-3)+' 3'},gTrain);
@@ -760,7 +816,7 @@ function transferTrain(t){
   var edge=t.portalEdge,e=EDGES[edge],wasSel=(selTrain===t.id);
   var nt={id:++idc,name:t.name,type:t.type,L:t.L,vmax:t.vmax,color:t.color,stops:t.stops,dwellT:t.dwellT,turnT:t.turnT,
     pts:[],cum:[],segs:[],head:0,v:t.vmax*.9,slowTo:0,defectUntil:0,curRoute:null,endSig:SIGAT[edge+'@'+e.b],platStop:null,platQueue:[],
-    dwelledAt:t.dwelledAt,dwellTimer:0,leaving:false,delay:t.delay,base:t.base,pair:t.pair,dest:t.dest,through:t.through,from:t.from,runs:t.runs};
+    dwelledAt:t.dwelledAt,dwellTimer:0,leaving:false,delay:t.delay,base:t.base,pair:t.pair,dest:t.dest,through:t.through,from:t.from,runs:t.runs,sched:t.sched,sollFinal:t.sollFinal,lastLate:t.lastLate};
   pushPts(nt,cp(e.pts));nt.segs.push({sec:edge,piece:edge,a:0,b:total(nt)});
   var n=Math.max(2,Math.round(nt.L/36)),car=nt.L/n;
   nt.halo=el('polyline',{class:'thalo',visibility:'hidden'},gTrain);
@@ -775,16 +831,17 @@ function transferTrain(t){
   if(wasSel){selTrain=nt.id;updateTinfo()}
 }
 function finishThrough(t){
-  var dm=t.delay/10,pts=Math.max(10,Math.round(t.base-dm*10));
-  score+=pts;served++;if(dm<=4)punct++;
+  var dm=(t.sollFinal?Math.max(0,T-t.sollFinal):0)/10,pts=Math.max(10,Math.round(t.base-dm*10));
+  score+=pts;served++;if(dm<=4)punct++;checkLevel();
   log(t.name+' hat die Seetalbahn nach '+destName(t)+' verlassen · '+(dm<0.5?'pünktlich':'+'+Math.round(dm)+' min')+' · +'+pts+' Pkt');
   if(score>best){best=score;try{localStorage.setItem('stw-best',best)}catch(e){}}
   removeTrain(t);
 }
 function finishRun(t,stCode,sigId){
-  var dm=t.delay/10,ok=stCode===t.dest;
+  var arrT=t.platStop&&t.platStop.arrivedT,late=t.sollFinal?Math.max(0,(arrT||T)-t.sollFinal):0;
+  var dm=late/10,ok=stCode===t.dest;
   var pts=Math.max(10,Math.round(t.base-dm*10)+(ok?0:-40));
-  score+=Math.max(0,pts);served++;if(dm<=4&&ok)punct++;
+  score+=Math.max(0,pts);served++;if(dm<=4&&ok)punct++;checkLevel();
   log(t.name+' in '+STBY[stCode].name+' angekommen'+(ok?'':' (falsches Ziel)')+' · '+(dm<0.5?'pünktlich':'+'+Math.round(dm)+' min')+' · '+(pts>=0?'+':'')+pts+' Pkt');
   if(score>best){best=score;try{localStorage.setItem('stw-best',best)}catch(e){}}
   if(Math.random()<.5){t.dead=true;log(t.name+' wird in '+STBY[stCode].name+' abgestellt, ein anderer Zug folgt.');queue.push(newClosedEntry());return}
@@ -793,6 +850,7 @@ function finishRun(t,stCode,sigId){
   t.curRoute=null;t.platStop=null;t.platQueue=[];t.endSig=dep.id;t.leaving=false;t.dwelledAt={};t.dwellTimer=0;t.delay=0;
   t.dest=destOf(t.pair,stCode);t.runs++;
   var ty=TYPES[t.type],n=ty.num();t.name=ty.pre+' '+n;
+  planTimetable(t,dep.id,T+3);
   log(t.name+' fährt ab '+STBY[stCode].name+' nach '+destName(t)+'.');
 }
 
@@ -919,10 +977,15 @@ function moveTrain(t,dt){
   }
   var ps=t.platStop;
   if(ps&&!ps.done&&Math.abs(t.head-(ps.d-MARGIN))<0.6&&t.v<0.5){
-    if(!ps.arrived){ps.arrived=true;if(!ps.turn)log(t.name+' hält in '+STBY[ps.st].name+', Gleis '+ps.num+'.')}
+    if(!ps.arrived){
+      ps.arrived=true;ps.arrivedT=T;
+      var en=(t.sched||[]).find(function(x){return !x.done&&x.st===ps.st});
+      if(en){en.done=true;en.ist=T;en.late=Math.max(0,T-en.soll);t.lastLate=en.late;ps.minDep=en.soll+(ps.turn?0:t.dwellT)}
+      if(!ps.turn)log(t.name+' hält in '+STBY[ps.st].name+', Gleis '+ps.num+(en&&en.late>=10?' (+'+Math.round(en.late/10)+' min)':'.'));
+    }
     t.dwellTimer+=dt;
     var need=ps.turn?t.turnT:t.dwellT;
-    if(t.dwellTimer>=need){
+    if(t.dwellTimer>=need&&(ps.turn||!ps.minDep||T>=ps.minDep)){
       if(ps.turn){finishRun(t,ps.st,ps.sig);return}
       ps.done=true;t.dwelledAt[ps.st]=true;t.dwellTimer=0;
       if(t.platQueue.length)t.platStop=t.platQueue.shift();
@@ -973,6 +1036,7 @@ function step(dt){
 
 /* ================= Störungen ================= */
 var gFault=null;
+var FAULTTIP={sperre:'Stelle die Fahrstraße über ein anderes Gleis, im Gleiswechsel auf das Gegengleis.',weiche:'Der Abzweig ist gesperrt. Wähle ein anderes Gleis oder warte.',signal:'Stelle die Fahrstraße von Hand. Der Zug fährt dann auf Sicht.',fahrzeug:'Der Zug steht. Lass nachfolgende Züge warten, die Strecke ist blockiert.'};
 function nearestStation(x,y){
   var best=null,bd=1e12;
   STAT.forEach(function(s){var dx=s.cx-x,dy=(s.top||0)-y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=s}});
@@ -996,7 +1060,7 @@ function drawFault(f){
   if(f.node){var N=NODES[f.node];f.els.push(el('circle',{cx:N.x,cy:N.y,r:15,class:'wmark'},gFault));var tx=el('text',{x:N.x,y:N.y+5,class:'wmt','text-anchor':'middle'},gFault);tx.textContent='!';f.els.push(tx)}
 }
 function addFault(f){
-  f.until=T+f.dur;FAULTS.push(f);
+  f.until=T+f.dur;FAULTS.push(f);f.tip=f.tip||FAULTTIP[f.kind];
   f.edges=f.edges||[];f.edges.forEach(function(e){BLOCK[e]=f});
   if(f.sig)SIGFAULT[f.sig]=f;
   if(f.train)f.train.defectUntil=f.until;
@@ -1044,7 +1108,9 @@ function stepFaults(){
 }
 function makeCard(f){
   var c=document.createElement('div');c.className='al';
-  c.innerHTML='<button class="alx" aria-label="Meldung schließen">×</button><b>⚠ '+f.text+'</b><small></small>';
+  c.innerHTML='<button class="alx" aria-label="Meldung schließen">×</button><b>⚠ '+f.text+'</b><span class="tip">Tipp: '+f.tip+'</span><small></small><button class="alh">Entstörung beschleunigen (−30 Punkte)</button>';
+  c.querySelector('.alh').addEventListener('click',function(e){e.stopPropagation();if(f.helped)return;f.helped=true;f.until=T+Math.max(5,(f.until-T)/2);if(f.train)f.train.defectUntil=f.until;score=Math.max(0,score-30);log('Entstörung angefordert: '+f.text);updateAlerts()});
+  c.querySelector('.alh').addEventListener('pointerdown',function(e){e.stopPropagation()});
   var sx=null,dx=0;
   function dismiss(){f.dismissed=true;updateAlerts()}
   c.querySelector('.alx').addEventListener('click',function(e){e.stopPropagation();dismiss()});
@@ -1069,6 +1135,7 @@ function updateAlerts(){
     f.card.hidden=!!f.dismissed;
     if(f.dismissed)hidden++;
     f.card.querySelector('small').textContent='noch '+Math.max(0,Math.ceil(f.until-T))+' s · zum Ausblenden wegwischen';
+    var hb=f.card.querySelector('.alh');hb.disabled=!!f.helped;hb.textContent=f.helped?'Entstörung angefordert':'Entstörung beschleunigen (−30 Punkte)';
   });
   chip.hidden=!(hidden>0);
   chip.textContent='⚠ '+hidden+(hidden===1?' Störung':' Störungen')+' ausgeblendet · antippen';
@@ -1092,11 +1159,11 @@ function render(){
     t.el.setAttribute('points',ps);t.hit.setAttribute('points',ps);t.halo.setAttribute('points',ps);
     t.halo.setAttribute('visibility',selTrain===t.id?'visible':'hidden');
     t.lamp.setAttribute('cx',h[0].toFixed(1));t.lamp.setAttribute('cy',h[1].toFixed(1));
-    var m=posAt(t,t.head-t.L/2),dm=Math.floor(t.delay/10);
+    var m=posAt(t,t.head-t.L/2),dm=Math.floor(displayLate(t)/10);
     t.txt.setAttribute('x',m[0].toFixed(1));t.txt.setAttribute('y',(m[1]-13).toFixed(1));
     var ps2=t.platStop,hold='';
     if(ps2&&!ps2.done&&ps2.arrived){var left=Math.max(0,Math.ceil((ps2.turn?t.turnT:t.dwellT)-t.dwellTimer));hold=(ps2.turn?'  Wende ':'  Halt ')+left+' s'}
-    t.txt.textContent=t.name+(dm>=1?'  +'+dm:'')+hold+(t.defectUntil>T?'  ✕ Störung':'');
+    t.txt.textContent=t.name+(dm>=1?'  +'+dm:'')+hold+(t.defectUntil>T?'  ✕ Störung':(t.aff?'  ⚠':''));
     t.txt.setAttribute('class','tl'+(dm>=1?' late':''));
   });
   var tg=sel?targetsOf(sel):[];
@@ -1118,6 +1185,7 @@ function render(){
   $('#clock').textContent=clockStr(T);
   $('#score').textContent=score;$('#best').textContent=best;
   $('#punct').textContent=served?Math.round(punct/served*100)+' %':'–';
+  $('#lvl').textContent=level;
 }
 function whereIs(t){var S=SIGS[t.endSig];return S&&S.station?STBY[S.station].name:'Strecke'}
 function trainStatus(t){
@@ -1126,11 +1194,26 @@ function trainStatus(t){
   if(t.v<.5)return ['wartet vor '+sigName(t.endSig),'warn'];
   return ['fährt zu '+sigName(t.endSig),'dim'];
 }
+function affectedBy(t){
+  if(t.defectUntil>T)return FAULTS.find(function(f){return f.train===t})||null;
+  if(t.v>=.5||(t.platStop&&!t.platStop.done&&t.platStop.arrived))return null;
+  if(SIGFAULT[t.endSig])return SIGFAULT[t.endSig];
+  if(!SIGS[t.endSig]||sigRoute[t.endSig])return null;
+  var list=ROUTES_FROM[t.endSig],d=t.dest?distTo(t.dest):{},pref=list.filter(function(r){return r.to&&d[r.to]!==undefined&&(d[t.endSig]===undefined||d[r.to]<d[t.endSig])});
+  if(!pref.length)pref=list;
+  var cl=null;
+  for(var i=0;i<pref.length;i++){var c=checkRoute(pref[i],t.id,t.id);if(c.ok)return null;if(c.closed&&!cl)cl=BLOCK[c.why]}
+  return cl||null;
+}
 function renderLists(){
+  trains.forEach(function(t){t.aff=affectedBy(t)});
   var h='';
   trains.forEach(function(t){
     var s=trainStatus(t);
-    h+='<li><span class="tm">'+destName(t).slice(0,3)+'</span><span class="chip" style="background:'+t.color+'">'+t.name+'</span><span class="gl">'+(t.stops.length?'hält '+t.stops.join(''):'Durchf.')+'</span><span class="st '+s[1]+'">→ '+destName(t)+': '+s[0]+'</span></li>';
+    var nx=(t.sched||[]).find(function(x){return !x.done&&STBY[x.st]}),late=Math.floor(displayLate(t)/10);
+    h+='<li><span class="tm">'+destName(t).slice(0,3)+'</span><span class="chip" style="background:'+t.color+'">'+t.name+'</span><span class="gl">'+(t.stops.length?'hält '+t.stops.join(''):'Durchf.')+'</span><span class="st '+s[1]+'">→ '+destName(t)+': '+s[0]+
+      (nx?'<br><small>nächster Halt '+STBY[nx.st].name+' '+clockStr(nx.soll)+(late>=1?' · +'+late+' min':'')+'</small>':'')+
+      (t.aff?'<br><small class="aff">⚠ betroffen: '+t.aff.text+'</small>':'')+'</span></li>';
   });
   queue.filter(function(e){return !e.spawned}).slice(0,3).forEach(function(e){
     var ty=TYPES[e.type];
@@ -1138,6 +1221,21 @@ function renderLists(){
   });
   $('#tt').innerHTML=h;
   $('#log').innerHTML=logs.slice(0,8).map(function(l){return '<li><span class="tm">'+l[0]+'</span><span>'+l[1]+'</span></li>'}).join('');
+}
+function checkLevel(){
+  if(!levelsOn)return;
+  var nl=Math.min(LEVELORDER.length,1+Math.floor(served/LEVELSERVED[diff]));
+  while(level<nl){
+    level++;var st=STBY[LEVELORDER[level-1]];
+    if(st.auto){st.auto=false;buildStBar()}
+    log('NEUE STUFE '+level+': '+st.name+' wird jetzt von Hand gestellt.');
+    say('Neue Stufe '+level+': '+st.name+' ist jetzt im Handbetrieb. Mit Auto/Hand in der Leiste kannst du es ändern.','ok');
+  }
+}
+function applyLevelStart(){
+  level=1;
+  STAT.forEach(function(s){s.auto=true});
+  STBY[LEVELORDER[0]].auto=false;
 }
 function log(m){logs.unshift([clockStr(T),m]);if(logs.length>40)logs.pop()}
 function say(m,kind){var e=$('#msg');e.className='msg '+(kind||'');e.textContent=m}
@@ -1151,7 +1249,7 @@ function selectTrain(id){
 function updateTinfo(){
   var box=$('#tinfo'),t=trains.find(function(x){return x.id===selTrain});
   if(!t){box.hidden=true;selTrain=null;return}
-  var ty=TYPES[t.type],dm=Math.floor(t.delay/10),st=trainStatus(t);
+  var ty=TYPES[t.type],dm=Math.floor(displayLate(t)/10),st=trainStatus(t);
   var halte=t.stops.map(function(c){return STBY[c].name}).join(', ');
   box.hidden=false;
   box.innerHTML='<div class="th"><span class="chip" style="background:'+t.color+'">'+t.name+'</span><small>'+ty.label+'</small><button class="btn sm x" id="tiClose">×</button></div>'+
@@ -1162,7 +1260,12 @@ function updateTinfo(){
    '<dt>Tempo</dt><dd>'+Math.round(t.v*1.3)+' km/h (Höchstgeschw. '+Math.round(t.vmax*1.3)+')</dd>'+
    '<dt>Verspätung</dt><dd class="'+(dm>=1?'warn':'')+'">'+(dm>=1?'+'+dm+' min':'pünktlich')+'</dd>'+
    '<dt>Halte</dt><dd>'+(halte||'keine, fährt durch')+' und Endbahnhöfe</dd>'+
-   '<dt>Zug</dt><dd>'+Math.max(2,Math.round(t.L/36))+' Wagen · Wende '+t.turnT+' s · '+t.runs+' Fahrten</dd></dl>'+
+   '<dt>Zug</dt><dd>'+Math.max(2,Math.round(t.L/36))+' Wagen · Wende '+t.turnT+' s · '+t.runs+' Fahrten</dd>'+
+   (t.aff?'<dt>Betroffen</dt><dd class="warn">'+t.aff.text+'<br><small>Tipp: '+t.aff.tip+'</small></dd>':'')+'</dl>'+
+   '<div class="fp"><b>Fahrplan</b>'+((t.sched&&t.sched.length)?t.sched.map(function(x){
+     var nm=STBY[x.st]?STBY[x.st].name:x.st;
+     return '<div class="fpr"><span>'+nm+'</span><span>'+clockStr(x.soll)+'</span><span class="'+(x.done&&x.late>=10?'warn':'')+'">'+(x.done?('Ist '+clockStr(x.ist)+(x.late>=10?' · +'+Math.round(x.late/10)+' min':'')):'–')+'</span></div>';
+   }).join(''):'<div class="fpr"><span>kein Halt bis zum Ziel</span></div>')+'</div>'+
    '<div class="acts"><button class="btn sm" id="tiShow">Im Plan zeigen</button></div>';
   $('#tiClose').addEventListener('click',function(){selTrain=null;updateTinfo()});
   $('#tiShow').addEventListener('click',function(){var h=posAt(t,t.head);scrollTo(h[0],h[1])});
@@ -1233,6 +1336,13 @@ function buildStBar(){
     say(sbkAuto?'Blocksignale schalten selbsttätig.':'Blocksignale im Handbetrieb: Startsignal tippen, dann Zielsignal.','');
   });
   sw.appendChild(sl);sw.appendChild(st);bar.appendChild(sw);
+  var lw=document.createElement('span');lw.className='stn';
+  var ll=document.createElement('button');ll.className='btn sm';ll.textContent='Stufen';ll.style.cursor='default';
+  var lt=document.createElement('button');lt.className='btn sm tg';
+  function llab(){lt.textContent=levelsOn?'Ein':'Aus';lt.classList.toggle('auto',levelsOn)}
+  llab();
+  lt.addEventListener('click',function(){levelsOn=!levelsOn;llab();say(levelsOn?'Weitere Bahnhöfe kommen mit steigender Stufe dazu.':'Keine neuen Handbahnhöfe mehr.','')});
+  lw.appendChild(ll);lw.appendChild(lt);bar.appendChild(lw);
   var fw=document.createElement('span');fw.className='stn';
   var fl=document.createElement('button');fl.className='btn sm';fl.textContent='Störungen';fl.style.cursor='default';
   var ft=document.createElement('button');ft.className='btn sm tg';
@@ -1260,6 +1370,7 @@ function reset(){
   T=0;selTrain=null;trains.forEach(function(t){t.el.remove();t.lamp.remove();t.txt.remove();t.halo.remove();t.hit.remove()});
   trains=[];resv={};occSec={};occPiece={};queue=[];score=0;served=0;punct=0;idc=0;logs=[];
   FAULTS.slice().forEach(function(f){endFault(f)});PEND={};BLOCK={};SIGFAULT={};
+  if(levelsOn)applyLevelStart();buildStBar();
   sigRoute={};Object.keys(SIGS).forEach(function(id){sigRoute[id]=null});
   sel=null;buildCmd();nextFault=rnd(FAULTR[diff][0],FAULTR[diff][1]);updateAlerts();
   var n=NUM[diff],gap=GAP[diff];
@@ -1348,7 +1459,7 @@ $('#bList').addEventListener('click',function(){var d=$('#drawer');d.hidden=!d.h
 $('#bListClose').addEventListener('click',function(){$('#drawer').hidden=true});
 window.__stellwerk={setRoute:setRoute,cancelRoute:cancelRoute,get trains(){return trains},get queue(){return queue},SIGS:SIGS,STAT:STAT,ROUTES_FROM:ROUTES_FROM,EDGES:EDGES,
   step:step,start:function(){running=true;paused=false;$('#intro').hidden=true},posAt:posAt,get T(){return T},get score(){return score},get served(){return served},
-  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},setSbk:function(v){sbkAuto=v},setFaults:function(v){faultsOn=v},rl:function(){renderLists();updateAlerts();render()},TP:TRACKPLAT,blockEdges:function(es,dur){addFault({kind:'sperre',dur:dur,edges:es,text:'Test'})},GWG:GWGROUPS,get FAULTS(){return FAULTS},forceFault:function(){spawnFault()},get PEND(){return PEND},CHAINS:CHAINS,chainTargets:function(id){var t=targetsOf(id);return t.map(function(x){return {to:x,hops:t.hops[x]}})},candidate:candidate,total:total,distTo:distTo};
+  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},setSbk:function(v){sbkAuto=v},setLevels:function(v){levelsOn=v},get level(){return level},setFaults:function(v){faultsOn=v},rl:function(){renderLists();updateAlerts();render()},TP:TRACKPLAT,blockEdges:function(es,dur){addFault({kind:'sperre',dur:dur,edges:es,text:'Test'})},GWG:GWGROUPS,get FAULTS(){return FAULTS},forceFault:function(){spawnFault()},get PEND(){return PEND},CHAINS:CHAINS,chainTargets:function(id){var t=targetsOf(id);return t.map(function(x){return {to:x,hops:t.hops[x]}})},candidate:candidate,total:total,distTo:distTo};
 })();
 </script>
 
