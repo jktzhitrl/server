@@ -514,7 +514,8 @@ var FLEET=[
   {type:'ICE',from:'E',pair:['E','L']},{type:'RE',from:'E',pair:['E','B']}
 ];
 var NUM={ruhig:3,normal:5,hektisch:7},GAP={ruhig:40,normal:26,hektisch:16};
-var ACC=36,BRAKE=55,MARGIN=6,TIMESCALE=6,AUTO_DIST=420;
+var SPD=.55;Object.keys(TYPES).forEach(function(k){TYPES[k].vmax=Math.round(TYPES[k].vmax*SPD)});
+var ACC=22,BRAKE=32,MARGIN=6,TIMESCALE=6,AUTO_DIST=420;
 
 var TRACKPLAT={};
 /* ================= Zustand ================= */
@@ -905,7 +906,7 @@ function moveTrain(t,dt){
   var lim=t.leaving?Infinity:total(t)-MARGIN;
   if(t.platStop&&!t.platStop.done)lim=Math.min(lim,t.platStop.d-MARGIN);
   var dist=lim-t.head,vt;
-  var vm=t.vmax;if(t.slowTo&&t.head<t.slowTo)vm=Math.min(vm,30);
+  var vm=t.vmax;if(t.slowTo&&t.head<t.slowTo)vm=Math.min(vm,20);
   if(dist<=0)vt=0;else vt=Math.min(vm,Math.sqrt(2*BRAKE*dist));
   if(t.v<vt)t.v=Math.min(vt,t.v+ACC*dt);else t.v=vt;
   t.head+=t.v*dt;
