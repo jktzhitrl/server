@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Stellwerk Hohenau</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: Pultkopf mit Uhr und Tempo, Gleisbild als Hauptfläche, Befehlsleiste darunter, dann Fahrplan und Meldungen */
+:root{
+  --bg:#0d1115; --panel:#151b21; --panel2:#1c242c; --line:#2b3642; --fg:#e8edf2; --muted:#8a97a5;
+  --free:#5a6b7f; --route:#f5f8fc; --occ:#ff4f45; --go:#3ddc84; --amber:#f3b43a; --scope:#080b0e;
+  --f-head:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--fg);font:16px/1.4 var(--f-body);
+  padding-block:12px 20px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent}
+.wrap{max-width:1360px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+button{font:inherit;color:inherit}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.brand{flex:1 1 220px;min-width:0}
+.brand h1{margin:0;font:700 28px/1 var(--f-head);letter-spacing:.06em;text-transform:uppercase}
+.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.clock{font:500 34px/1 var(--f-mono);letter-spacing:.04em;padding:6px 14px;background:var(--scope);border:1px solid var(--line);border-radius:8px;color:var(--amber);font-variant-numeric:tabular-nums}
+.stats{display:flex;gap:16px;font-size:13px;color:var(--muted)}
+.stats b{display:block;font:600 22px/1.1 var(--f-mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn{min-height:46px;min-width:46px;padding:0 14px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;font-weight:600;font-size:15px;cursor:pointer;touch-action:manipulation}
+.btn:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btn.on{border-color:var(--amber);color:var(--amber)}
+select.btn{padding:0 10px;appearance:auto}
+.plan{background:var(--scope);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+#plan{display:block;width:100%;min-width:780px;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.cmd{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;min-height:72px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.cmd .msg{flex:1 1 220px;min-width:0;font-size:15px}
+.cmd .msg.err{color:var(--amber)} .cmd .msg.ok{color:var(--go)}
+.cmd .msg small{display:block;color:var(--muted);font-size:13px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.rbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:92px;min-height:54px;padding:6px 14px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;cursor:pointer;touch-action:manipulation}
+.rbtn b{font:700 19px/1 var(--f-head);letter-spacing:.05em;text-transform:uppercase}
+.rbtn small{font:500 11px var(--f-mono);color:var(--go);margin-top:3px}
+.rbtn[disabled]{opacity:.5;cursor:not-allowed}
+.rbtn[disabled] small{color:var(--occ)}
+.rbtn.cur{border-color:var(--route)}
+.rbtn.cancel b{font-size:16px}
+.lower{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px}
+@media (max-width:820px){.lower{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.card h2{margin:0 0 8px;font:600 15px var(--f-head);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+ul.list li{display:grid;grid-template-columns:66px 92px 46px minmax(0,1fr);gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--line);font-size:14px;min-width:0}
+ul.list li:first-child{border-top:0}
+.tm{font:500 13px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.chip{display:inline-block;padding:2px 7px;border-radius:5px;font:600 13px var(--f-mono);color:#0b0f13;text-align:center;white-space:nowrap}
+.gl{font:500 13px var(--f-mono);color:var(--muted)}
+.st{min-width:0;overflow-wrap:anywhere}
+.st.warn{color:var(--amber)}
+.st.dim{color:var(--muted)}
+ul.log li{display:grid;grid-template-columns:48px minmax(0,1fr);gap:8px;padding:4px 0;border-top:1px solid var(--line);font-size:14px}
+ul.log li:first-child{border-top:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:22px;height:5px;border-radius:3px;vertical-align:middle;margin-right:6px}
+/* Gleisbild */
+.trk{fill:none;stroke-width:6;stroke-linecap:butt;stroke-linejoin:round}
+.tick{stroke:var(--scope);stroke-width:3}
+.pf{fill:#1a232c;stroke:#2f3c49;stroke-width:1}
+.pftxt{font:500 11px var(--f-mono);fill:#5f7083;text-anchor:middle;letter-spacing:.08em}
+.glbl{font:600 11px var(--f-mono);fill:#7f8ea0;letter-spacing:.06em}
+.sw{font:600 11px var(--f-mono);fill:#7f8ea0}
+.sw.set{fill:var(--route)}
+.bld{fill:#1a232c;stroke:#2f3c49}
+.bldtxt{font:700 20px var(--f-head);letter-spacing:.2em;fill:#9fb0c2;text-anchor:middle}
+.edge{font:500 12px var(--f-mono);fill:#6d7d90}
+.ann{font:600 12px var(--f-mono);fill:var(--amber)}
+.stem{fill:none;stroke:#6d7d90;stroke-width:2}
+.housing{fill:#10161c;stroke:#6d7d90;stroke-width:1.5}
+.slbl{font:600 11px var(--f-mono);fill:#8fa0b3;text-anchor:middle}
+.ring{fill:none;stroke:var(--amber);stroke-width:2;opacity:0}
+.ring.attn{opacity:1;animation:pulse 1.2s ease-in-out infinite}
+.ring.sel{opacity:1;stroke:var(--route)}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.ring.attn{animation:none}}
+.hit{fill:transparent;cursor:pointer}
+.train{fill:none;stroke-width:9;stroke-linejoin:round}
+.tlamp{fill:#fff6c8}
+.tl{font:600 11px var(--f-mono);fill:var(--fg);text-anchor:middle;paint-order:stroke;stroke:var(--scope);stroke-width:3px;stroke-linejoin:round}
+.tl.late{fill:var(--amber)}
+/* Einstieg */
+.overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(5,8,11,.82);
+  padding:16px max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
+.overlay .card{max-width:600px;padding:20px 22px;background:var(--panel2)}
+.overlay h2{font:700 26px var(--f-head);letter-spacing:.06em;color:var(--fg);margin-bottom:10px}
+.overlay ol{margin:0 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:7px}
+.overlay .go{width:100%;min-height:54px;font-size:18px;background:var(--amber);color:#14110a;border-color:var(--amber)}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Stellwerk Hohenau</h1><p>Kreuzungsbahnhof · eingleisige Strecke Eschbach – Linden</p></div>
+    <div class="stats">
+      <div>Punkte<b id="score">0</b></div>
+      <div>Pünktlich<b id="punct">–</b></div>
+      <div>Rekord<b id="best">0</b></div>
+    </div>
+    <div class="clock" id="clock" aria-label="Uhrzeit">06:00</div>
+    <div class="ctrl">
+      <button class="btn" id="bPause" aria-label="Pause">⏸</button>
+      <button class="btn on" id="b1">×1</button>
+      <button class="btn" id="b2">×2</button>
+      <button class="btn" id="b4">×4</button>
+      <select class="btn" id="diff" aria-label="Verkehrsdichte">
+        <option value="ruhig">Ruhig</option><option value="normal" selected>Normal</option><option value="hektisch">Hektisch</option>
+      </select>
+      <button class="btn" id="bReset">Neu</button>
+      <button class="btn" id="bHelp" aria-label="Hilfe">?</button>
+    </div>
+  </header>
+
+  <section class="plan"><svg id="plan" viewBox="0 0 1200 410" role="img" aria-label="Gleisbildplan Bahnhof Hohenau"></svg></section>
+
+  <section class="cmd" id="cmd" aria-live="polite">
+    <div class="msg" id="msg">Tippe ein Signal an.</div>
+    <div class="opts" id="opts"></div>
+  </section>
+
+  <div class="legend">
+    <span><i style="background:var(--free)"></i>Gleis frei</span>
+    <span><i style="background:var(--route)"></i>Fahrstraße festgelegt</span>
+    <span><i style="background:var(--occ)"></i>Gleis besetzt</span>
+    <span>Amber blinkend: Zug wartet auf dich</span>
+  </div>
+
+  <div class="lower">
+    <section class="card"><h2>Fahrplan und Zuglauf</h2><ul class="list" id="tt"></ul></section>
+    <section class="card"><h2>Meldungen</h2><ul class="list log" id="log"></ul></section>
+  </div>
+</div>
+
+<div class="overlay" id="intro">
+  <div class="card">
+    <h2>Dienst im Stellwerk Hohenau</h2>
+    <ol>
+      <li><b>Einfahrt:</b> Tippe Signal <b>A</b> (West) oder <b>F</b> (Ost) und wähle ein Gleis. Die Fahrstraße wird weiß, das Signal zeigt Fahrt.</li>
+      <li><b>Ausfahrt:</b> Steht ein Zug am Gleisende, blinkt sein Ausfahrsignal (N bzw. P). Tippe es an, sobald die Strecke frei ist.</li>
+      <li><b>Eingleisige Strecke:</b> Die Strecke ist nur in einer Richtung nutzbar. Lass Züge im Bahnhof kreuzen.</li>
+      <li><b>Sicherung:</b> Rot bedeutet besetzt. Besetzte oder festgelegte Abschnitte lassen sich nicht doppelt belegen. Eine Fahrstraße löst du durch erneutes Antippen auf, solange der Zug steht.</li>
+      <li><b>Wertung:</b> Punkte für jeden ausgefahrenen Zug, Bonus für das Regelgleis, Abzug für Verspätung.</li>
+    </ol>
+    <button class="btn go" id="bGo">Dienst antreten</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var NS='http://www.w3.org/2000/svg';
+function $(s){return document.querySelector(s)}
+function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+
+/* ---------- Gleisgeometrie (Abschnitte und ihre Fahrwege) ---------- */
+var PIECES={
+  WL:{sec:'WL',pts:[[-150,250],[200,250]]},
+  W1s:{sec:'W1',pts:[[200,250],[310,250]]},
+  W1d:{sec:'W1',pts:[[200,250],[230,250],[310,330]]},
+  W2s:{sec:'W2',pts:[[310,250],[340,250]]},
+  W2d:{sec:'W2',pts:[[310,250],[390,170]]},
+  G1:{sec:'G1',pts:[[390,170],[810,170]]},
+  G2:{sec:'G2',pts:[[340,250],[860,250]]},
+  G3:{sec:'G3',pts:[[310,330],[890,330]]},
+  W3s:{sec:'W3',pts:[[860,250],[890,250]]},
+  W3d:{sec:'W3',pts:[[810,170],[890,250]]},
+  W4s:{sec:'W4',pts:[[890,250],[1000,250]]},
+  W4d:{sec:'W4',pts:[[890,330],[970,250],[1000,250]]},
+  EL:{sec:'EL',pts:[[1000,250],[1350,250]]}
+};
+var SECNAME={WL:'Strecke West',EL:'Strecke Ost',W1:'Weichenbereich W1',W2:'Weichenbereich W2',W3:'Weichenbereich W3',W4:'Weichenbereich W4',G1:'Gleis 1',G2:'Gleis 2',G3:'Gleis 3'};
+var ROUTES={
+  A1:{sig:'A',type:'enter',track:1,pieces:[['W1s'],['W2d'],['G1']]},
+  A2:{sig:'A',type:'enter',track:2,pieces:[['W1s'],['W2s'],['G2']]},
+  A3:{sig:'A',type:'enter',track:3,pieces:[['W1d'],['G3']]},
+  F1:{sig:'F',type:'enter',track:1,pieces:[['W4s',1],['W3d',1],['G1',1]]},
+  F2:{sig:'F',type:'enter',track:2,pieces:[['W4s',1],['W3s',1],['G2',1]]},
+  F3:{sig:'F',type:'enter',track:3,pieces:[['W4d',1],['G3',1]]},
+  XE1:{type:'exit',pieces:[['W3d'],['W4s'],['EL']]},
+  XE2:{type:'exit',pieces:[['W3s'],['W4s'],['EL']]},
+  XE3:{type:'exit',pieces:[['W4d'],['EL']]},
+  XW1:{type:'exit',pieces:[['W2d',1],['W1s',1],['WL',1]]},
+  XW2:{type:'exit',pieces:[['W2s',1],['W1s',1],['WL',1]]},
+  XW3:{type:'exit',pieces:[['W1d',1],['WL',1]]}
+};
+var SIGS={
+  A:{kind:'enter',x:200,ty:250,hx:182,hy:272,line:'W',routes:['A1','A2','A3']},
+  F:{kind:'enter',x:1000,ty:250,hx:1018,hy:228,line:'E',routes:['F1','F2','F3']},
+  N1:{kind:'exit',x:810,ty:170,hx:792,hy:192,dir:'E',track:1,route:'XE1'},
+  N2:{kind:'exit',x:860,ty:250,hx:842,hy:272,dir:'E',track:2,route:'XE2'},
+  N3:{kind:'exit',x:890,ty:330,hx:872,hy:352,dir:'E',track:3,route:'XE3'},
+  P1:{kind:'exit',x:390,ty:170,hx:408,hy:148,dir:'W',track:1,route:'XW1'},
+  P2:{kind:'exit',x:340,ty:250,hx:358,hy:228,dir:'W',track:2,route:'XW2'},
+  P3:{kind:'exit',x:310,ty:330,hx:328,hy:308,dir:'W',track:3,route:'XW3'}
+};
+var TYPES={
+  RB:{pre:'RB',L:120,vmax:72,dwell:10,color:'#4fc3a1',base:80,plans:[1,3],num:function(){return 7000+rnd(0,999)}},
+  RE:{pre:'RE',L:150,vmax:92,dwell:8,color:'#ff9f43',base:100,plans:[1,2],num:function(){return 4000+rnd(0,999)}},
+  IC:{pre:'IC',L:200,vmax:110,dwell:6,color:'#bcd7ff',base:150,plans:[2],num:function(){return 200+rnd(0,99)}},
+  GZ:{pre:'Gz',L:240,vmax:56,dwell:0,color:'#b08d68',base:60,plans:[3],num:function(){return 50000+rnd(0,9999)}}
+};
+var ACC=30,BRAKE=45,MARGIN=6,TIMESCALE=6;
+var INTV={ruhig:[22,34],normal:[14,24],hektisch:[9,16]};
+
+/* ---------- Zustand ---------- */
+var trains=[],T,resv,occSec,occPiece,queue,sigState,score,served,punct,idc,lastGen,lastDir,logs,swPos;
+var speed=1,paused=true,running=false,diff='normal',sel=null,best=0;
+try{best=+localStorage.getItem('stw-best')||0}catch(e){}
+
+/* ---------- Gleisbild aufbauen ---------- */
+var svg=$('#plan');
+var gStatic=el('g',{},svg), gFree=el('g',{},svg), gRes=el('g',{},svg), gOcc=el('g',{},svg),
+    gTick=el('g',{},svg), gLbl=el('g',{},svg), gTrain=el('g',{},svg), gSig=el('g',{},svg);
+
+el('rect',{x:540,y:76,width:160,height:50,rx:3,class:'bld'},gStatic);
+el('path',{d:'M530 76 L620 54 L710 76 Z',class:'bld'},gStatic);
+var bt=el('text',{x:620,y:108,class:'bldtxt'},gStatic);bt.textContent='HOHENAU';
+el('rect',{x:440,y:188,width:320,height:40,rx:3,class:'pf'},gStatic);
+el('rect',{x:380,y:272,width:440,height:40,rx:3,class:'pf'},gStatic);
+var t1=el('text',{x:600,y:213,class:'pftxt'},gStatic);t1.textContent='BAHNSTEIG 1';
+var t2=el('text',{x:600,y:297,class:'pftxt'},gStatic);t2.textContent='BAHNSTEIG 2';
+[['Gleis 1',470,156],['Gleis 2',470,239],['Gleis 3',470,320]].forEach(function(g){var t=el('text',{x:g[1],y:g[2],class:'glbl'},gStatic);t.textContent=g[0]});
+var eW=el('text',{x:10,y:292,class:'edge'},gStatic);eW.textContent='◀ nach Eschbach';
+var eE=el('text',{x:1190,y:292,class:'edge','text-anchor':'end'},gStatic);eE.textContent='nach Linden ▶';
+var kn=el('text',{x:10,y:396,class:'edge'},gStatic);kn.textContent='Bf Hohenau · Spurplanstellwerk · Maßstab frei';
+
+var pieceEls={},pieceSt={};
+Object.keys(PIECES).forEach(function(id){
+  var p=PIECES[id];
+  var pl=el('polyline',{points:p.pts.map(function(q){return q.join(',')}).join(' '),class:'trk',stroke:'#5a6b7f'},gFree);
+  pieceEls[id]=pl;pieceSt[id]=0;
+});
+[[200,250],[310,250],[340,250],[860,250],[890,250],[1000,250],[390,170],[810,170],[310,330],[890,330]].forEach(function(q){
+  el('line',{x1:q[0],y1:q[1]-8,x2:q[0],y2:q[1]+8,class:'tick'},gTick);
+});
+var swEls={};
+[['W1',228,236],['W2',298,236],['W3',918,236],['W4',958,236]].forEach(function(s){
+  swEls[s[0]]=el('text',{x:s[1],y:s[2],class:'sw','text-anchor':'middle'},gLbl);
+});
+var annW=el('text',{x:10,y:236,class:'ann'},gLbl);
+var annE=el('text',{x:1190,y:236,class:'ann','text-anchor':'end'},gLbl);
+
+Object.keys(SIGS).forEach(function(id){
+  var s=SIGS[id];
+  var g=el('g',{},gSig);
+  el('path',{d:'M'+s.x+' '+s.ty+' L'+s.x+' '+s.hy+' L'+s.hx+' '+s.hy,class:'stem'},g);
+  el('rect',{x:s.hx-19,y:s.hy-9,width:38,height:18,rx:9,class:'housing'},g);
+  s.hr=el('circle',{cx:s.hx-9,cy:s.hy,r:11,fill:'#ff4f45','fill-opacity':.25},g);
+  s.hg=el('circle',{cx:s.hx+9,cy:s.hy,r:11,fill:'#3ddc84','fill-opacity':0},g);
+  s.lr=el('circle',{cx:s.hx-9,cy:s.hy,r:5.5},g);
+  s.lg=el('circle',{cx:s.hx+9,cy:s.hy,r:5.5},g);
+  var north=s.hy<s.ty;
+  var lt=el('text',{x:s.hx,y:north?s.hy-15:s.hy+24,class:'slbl'},g);lt.textContent=id;
+  s.ring=el('circle',{cx:s.hx,cy:s.hy,r:26,class:'ring'},g);
+  var hit=el('circle',{cx:s.hx,cy:s.hy,r:34,class:'hit'},g);
+  hit.addEventListener('click',function(){onSignal(id)});
+});
+
+/* ---------- Hilfsfunktionen Zugweg ---------- */
+function clockStr(sim){var s=21600+Math.floor(sim*TIMESCALE);var h=Math.floor(s/3600)%24,m=Math.floor(s/60)%60;return (h<10?'0':'')+h+':'+(m<10?'0':'')+m}
+function posAt(t,d){
+  var P=t.pts,C=t.cum,n=P.length,dx,dy,l;
+  if(d<=0){dx=P[1][0]-P[0][0];dy=P[1][1]-P[0][1];l=Math.hypot(dx,dy);return [P[0][0]+dx/l*d,P[0][1]+dy/l*d]}
+  var tot=C[n-1];
+  if(d>=tot){dx=P[n-1][0]-P[n-2][0];dy=P[n-1][1]-P[n-2][1];l=Math.hypot(dx,dy);return [P[n-1][0]+dx/l*(d-tot),P[n-1][1]+dy/l*(d-tot)]}
+  var i=1;while(C[i]<d)i++;
+  var f=(d-C[i-1])/(C[i]-C[i-1]);
+  return [P[i-1][0]+(P[i][0]-P[i-1][0])*f,P[i-1][1]+(P[i][1]-P[i-1][1])*f];
+}
+function pushPts(t,pts){
+  for(var i=0;i<pts.length;i++){
+    var last=t.pts[t.pts.length-1];
+    if(last&&last[0]===pts[i][0]&&last[1]===pts[i][1])continue;
+    var add=last?Math.hypot(pts[i][0]-last[0],pts[i][1]-last[1]):0;
+    t.pts.push(pts[i].slice());t.cum.push((t.cum.length?t.cum[t.cum.length-1]:0)+add);
+  }
+}
+function total(t){return t.cum[t.cum.length-1]}
+
+function appendRoute(t,route){
+  var def=route.def;
+  route.nPts=t.pts.length;route.nSegs=def.pieces.length;
+  route.startD=total(t);
+  def.pieces.forEach(function(pr){
+    var P=PIECES[pr[0]],pts=P.pts.map(function(q){return q.slice()});
+    if(pr[1])pts.reverse();
+    var a=total(t);pushPts(t,pts);var b=total(t);
+    t.segs.push({sec:P.sec,piece:pr[0],a:a,b:b});
+    resv[P.sec]={owner:t.id,piece:pr[0]};
+  });
+  route.endD=total(t);route.train=t;
+  if(def.type==='enter'){t.enterRoute=route;t.track=def.track;t.platEnd=route.endD}
+  else{t.exitRoute=route}
+}
+
+function computeOcc(){
+  occSec={};occPiece={};
+  trains.forEach(function(t){
+    t.segs.forEach(function(s){
+      if(s.a<=t.head&&s.b>t.head-t.L){(occSec[s.sec]=occSec[s.sec]||[]).push(t.id);occPiece[s.piece]=true}
+    });
+  });
+}
+function check(def,owner,selfId){
+  for(var i=0;i<def.pieces.length;i++){
+    var sec=PIECES[def.pieces[i][0]].sec,r=resv[sec];
+    if(r&&r.owner!==owner)return {ok:false,why:sec};
+    var o=occSec[sec];
+    if(o&&o.some(function(id){return id!==selfId}))return {ok:false,why:sec};
+  }
+  return {ok:true};
+}
+
+/* ---------- Fahrplan / Zugbildung ---------- */
+function makeEntry(type,dir,t,plan){
+  var ty=TYPES[type];
+  return {id:++idc,type:type,dir:dir,t:t,num:ty.num(),plan:plan||pick(ty.plans),spawned:false,
+    name:ty.pre+' '+ty.num()};
+}
+function genEntry(){
+  var r=Math.random();
+  var type=r<.34?'RB':r<.64?'RE':r<.8?'IC':'GZ';
+  var dir=Math.random()<.5?'E':'W';
+  var iv=INTV[diff];
+  var t=Math.max(lastGen+rnd(iv[0],iv[1]),lastDir[dir]+9);
+  lastGen=t;lastDir[dir]=t;
+  var e=makeEntry(type,dir,t);
+  queue.push(e);queue.sort(function(a,b){return a.t-b.t});
+}
+function refill(){queue=queue.filter(function(e){return !e.spawned});while(queue.length<7)genEntry()}
+
+function spawnTrain(e){
+  var ty=TYPES[e.type];
+  var east=e.dir==='E';
+  var t={id:++idc,name:e.name,type:e.type,dir:e.dir,L:ty.L,vmax:ty.vmax,color:ty.color,plan:e.plan,
+    pts:[],cum:[],segs:[],head:0,v:ty.vmax*.9,platEnd:null,track:null,enterRoute:null,exitRoute:null,
+    dwelled:ty.dwell===0,dwellT:ty.dwell,dwellTimer:0,delay:Math.max(0,T-e.t),entrySig:east?'A':'F',arrived:false,base:ty.base};
+  var sec=east?'WL':'EL';
+  var pts=east?[[-150,250],[200,250]]:[[1350,250],[1000,250]];
+  pushPts(t,pts);
+  t.segs.push({sec:sec,piece:sec,a:0,b:total(t)});
+  var n=Math.max(2,Math.round(t.L/36)),car=t.L/n;
+  t.el=el('polyline',{class:'train',stroke:t.color,'stroke-dasharray':(car-3)+' 3'},gTrain);
+  t.lamp=el('circle',{r:3.5,class:'tlamp'},gTrain);
+  t.txt=el('text',{class:'tl'},gTrain);
+  trains.push(t);e.spawned=true;
+  var S=sigState[t.entrySig];
+  if(S.route&&!S.route.train)appendRoute(t,S.route);
+  return t;
+}
+
+/* ---------- Fahrstraßen stellen ---------- */
+function waitingTrain(sig){return trains.find(function(t){return t.entrySig===sig&&!t.enterRoute})}
+function exitCandidate(sg){
+  return trains.find(function(t){return t.track===sg.track&&t.dir===sg.dir&&t.enterRoute&&!t.exitRoute&&t.head>t.enterRoute.startD+2});
+}
+function ownerFor(sigId,key){
+  var sg=SIGS[sigId],def=ROUTES[key];
+  if(sg.kind==='enter'){var t=waitingTrain(sigId);return {owner:t?t.id:'pend:'+sigId,train:t||null}}
+  var c=exitCandidate(sg);return {owner:c?c.id:null,train:c||null};
+}
+function setRoute(sigId,key){
+  var sg=SIGS[sigId],def=ROUTES[key],S=sigState[sigId];
+  if(S.route&&!cancelRoute(sigId,true))return false;
+  var o=ownerFor(sigId,key);
+  if(sg.kind==='exit'&&!o.train){say('An diesem Gleis wartet kein Zug.','err');return false}
+  var c=check(def,o.owner,o.train&&o.train.id);
+  if(!c.ok){say('Fahrstraße nicht möglich: '+SECNAME[c.why]+' ist belegt oder festgelegt.','err');return false}
+  var route={key:key,def:def,train:null,owner:o.owner,startD:0,endD:0};
+  if(o.train)appendRoute(o.train,route);
+  else{def.pieces.forEach(function(pr){resv[PIECES[pr[0]].sec]={owner:o.owner,piece:pr[0]}})}
+  S.route=route;
+  say(sg.kind==='enter'?('Signal '+sigId+' zeigt Fahrt auf Gleis '+def.track+'.'):('Signal '+sigId+' zeigt Fahrt.'),'ok');
+  return true;
+}
+function cancelRoute(sigId,silent){
+  var S=sigState[sigId],r=S.route;if(!r)return true;
+  var t=r.train;
+  if(t){
+    if(t.v>1||t.head>r.startD-0.5){say('Der Zug nähert sich bereits. Die Fahrstraße ist nicht mehr auflösbar.','err');return false}
+    t.pts.length=r.nPts;t.cum.length=r.nPts;t.segs.splice(t.segs.length-r.nSegs,r.nSegs);
+    if(r.def.type==='enter'){t.enterRoute=null;t.track=null;t.platEnd=null}else{t.exitRoute=null}
+  }
+  r.def.pieces.forEach(function(pr){var sec=PIECES[pr[0]].sec,x=resv[sec];if(x&&x.owner===r.owner)delete resv[sec]});
+  S.route=null;
+  if(!silent)say('Fahrstraße von Signal '+sigId+' aufgelöst.','');
+  return true;
+}
+
+/* ---------- Simulation ---------- */
+function moveTrain(t,dt){
+  var tot=total(t);
+  var lim=t.exitRoute?Infinity:tot-MARGIN;
+  if(!t.dwelled&&t.platEnd!=null)lim=Math.min(lim,t.platEnd-MARGIN);
+  var dist=lim-t.head,vt;
+  if(dist<=0)vt=0;else vt=Math.min(t.vmax,Math.sqrt(2*BRAKE*dist));
+  if(t.v<vt)t.v=Math.min(vt,t.v+ACC*dt);else t.v=vt;
+  t.head+=t.v*dt;
+  if(isFinite(lim)&&dist>0){
+    if(t.head>lim)t.head=lim;
+    if(lim-t.head<0.35&&vt<3){t.head=lim;t.v=0}
+  }
+  var atPlat=t.platEnd!=null&&Math.abs(t.head-(t.platEnd-MARGIN))<0.6&&t.v<0.5;
+  if(atPlat&&!t.arrived){t.arrived=true;log(t.name+' steht in Gleis '+t.track+'.')}
+  if(!t.dwelled&&atPlat){t.dwellTimer+=dt;if(t.dwellTimer>=t.dwellT){t.dwelled=true}}
+  if(t.v<0.5&&(t.dwelled||t.platEnd==null))t.delay+=dt;
+}
+function releaseSegs(){
+  trains.forEach(function(t){
+    for(var i=t.segs.length-1;i>=0;i--){
+      var s=t.segs[i];
+      if(t.head-t.L>=s.b){
+        var r=resv[s.sec];if(r&&r.owner===t.id&&r.piece===s.piece)delete resv[s.sec];
+        t.segs.splice(i,1);
+      }
+    }
+  });
+}
+function finish(t){
+  var dm=t.delay/10;
+  var pts=Math.max(10,Math.round(t.base+(t.track===t.plan?25:0)-dm*12));
+  score+=pts;served++;if(dm<=3)punct++;
+  log(t.name+' fährt nach '+(t.dir==='E'?'Linden':'Eschbach')+' aus · '+(dm<0.5?'pünktlich':'+'+Math.round(dm)+' min')+' · +'+pts+' Pkt');
+  t.el.remove();t.lamp.remove();t.txt.remove();
+  trains.splice(trains.indexOf(t),1);
+  if(score>best){best=score;try{localStorage.setItem('stw-best',best)}catch(e){}}
+}
+function step(dt){
+  T+=dt;
+  trains.forEach(function(t){moveTrain(t,dt)});
+  computeOcc();releaseSegs();computeOcc();
+  refill();
+  queue.forEach(function(e){
+    if(!e.spawned&&T>=e.t){
+      var sec=e.dir==='E'?'WL':'EL';
+      if(!occSec[sec]&&!resv[sec]){spawnTrain(e);computeOcc()}
+    }
+  });
+  Object.keys(sigState).forEach(function(id){
+    var r=sigState[id].route;
+    if(r&&r.train&&r.train.head>r.startD+2)sigState[id].route=null;
+  });
+  for(var i=trains.length-1;i>=0;i--){var t=trains[i];if(t.exitRoute&&t.segs.length===0)finish(t)}
+}
+
+/* ---------- Anzeige ---------- */
+var GR=['#5a6b7f','#f5f8fc','#ff4f45'];
+function render(){
+  Object.keys(PIECES).forEach(function(id){
+    var p=PIECES[id];
+    var st=occPiece[id]?2:((resv[p.sec]&&resv[p.sec].piece===id)?1:0);
+    if(st!==pieceSt[id]){
+      pieceSt[id]=st;pieceEls[id].setAttribute('stroke',GR[st]);
+      (st===2?gOcc:st===1?gRes:gFree).appendChild(pieceEls[id]);
+    }
+  });
+  ['W1','W2','W3','W4'].forEach(function(w){
+    var r=resv[w];
+    if(r)swPos[w]=/s$/.test(r.piece)?'+':'−';
+    var e=swEls[w];e.textContent=w+' '+swPos[w];
+    e.setAttribute('class','sw'+(r?' set':''));
+  });
+  trains.forEach(function(t){
+    var d0=t.head-t.L,pts=[posAt(t,d0)];
+    for(var i=0;i<t.cum.length;i++){if(t.cum[i]>d0&&t.cum[i]<t.head)pts.push(t.pts[i])}
+    var h=posAt(t,t.head);pts.push(h);
+    t.el.setAttribute('points',pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' '));
+    t.lamp.setAttribute('cx',h[0].toFixed(1));t.lamp.setAttribute('cy',h[1].toFixed(1));
+    var m=posAt(t,t.head-t.L/2),dm=Math.floor(t.delay/10);
+    t.txt.setAttribute('x',m[0].toFixed(1));t.txt.setAttribute('y',(m[1]-12).toFixed(1));
+    t.txt.textContent=t.name+(dm>=1?'  +'+dm:'');
+    t.txt.setAttribute('class','tl'+(dm>=1?' late':''));
+  });
+  Object.keys(SIGS).forEach(function(id){
+    var s=SIGS[id],g=!!sigState[id].route;
+    s.lr.setAttribute('fill',g?'#3a1a18':'#ff4f45');s.hr.setAttribute('fill-opacity',g?0:.28);
+    s.lg.setAttribute('fill',g?'#3ddc84':'#143325');s.hg.setAttribute('fill-opacity',g?.3:0);
+    var attn=false;
+    if(!g){
+      if(s.kind==='enter'){var w=waitingTrain(id);attn=!!(w&&w.v<.5&&w.head>total(w)-12)}
+      else{var c=exitCandidate(s);attn=!!(c&&c.v<.5&&c.dwelled&&c.arrived)}
+    }
+    s.ring.setAttribute('class','ring'+(sel===id?' sel':attn?' attn':''));
+  });
+  var nw=null,ne=null;
+  queue.forEach(function(e){if(!e.spawned){if(e.dir==='E'&&!nw)nw=e;if(e.dir==='W'&&!ne)ne=e}});
+  function ann(e,east){
+    if(!e||e.t-T>14)return '';
+    var s=Math.ceil(e.t-T);
+    return east?(s>0?'▶ '+e.name+' in '+s+' s':'▶ '+e.name+' wartet auf freie Strecke'):(s>0?e.name+' in '+s+' s ◀':e.name+' wartet auf freie Strecke ◀');
+  }
+  annW.textContent=ann(nw,true);annE.textContent=ann(ne,false);
+  $('#clock').textContent=clockStr(T);
+  $('#score').textContent=score;$('#best').textContent=best;
+  $('#punct').textContent=served?Math.round(punct/served*100)+' %':'–';
+}
+
+function trainStatus(t){
+  if(!t.enterRoute){return t.v<.5?['wartet vor Signal '+t.entrySig,'warn']:['nähert sich Signal '+t.entrySig,'dim']}
+  if(!t.exitRoute){
+    if(!t.arrived)return ['fährt in Gleis '+t.track+' ein','dim'];
+    if(!t.dwelled)return ['Halt Gleis '+t.track,'dim'];
+    return t.dwellT===0?['Durchfahrt Gleis '+t.track+' · wartet auf Ausfahrt','warn']:['Gleis '+t.track+' · wartet auf Ausfahrt','warn'];
+  }
+  if(!t.dwelled)return ['Halt Gleis '+t.track,'dim'];
+  return t.v<.5?['wartet vor Ausfahrsignal','warn']:['fährt aus','dim'];
+}
+function renderLists(){
+  var h='';
+  trains.forEach(function(t){
+    var s=trainStatus(t);
+    h+='<li><span class="tm">'+(t.dir==='E'?'▶':'◀')+' Bf</span><span class="chip" style="background:'+t.color+'">'+t.name+'</span><span class="gl">Gl '+t.plan+'</span><span class="st '+s[1]+'">'+s[0]+'</span></li>';
+  });
+  queue.filter(function(e){return !e.spawned}).slice(0,5).forEach(function(e){
+    var late=T>e.t;
+    h+='<li><span class="tm">'+clockStr(e.t)+'</span><span class="chip" style="background:'+TYPES[e.type].color+'">'+e.name+'</span><span class="gl">Gl '+e.plan+'</span><span class="st '+(late?'warn':'dim')+'">'+(late?'wartet vor der Strecke':'aus '+(e.dir==='E'?'Eschbach':'Linden'))+'</span></li>';
+  });
+  $('#tt').innerHTML=h;
+  $('#log').innerHTML=logs.slice(0,8).map(function(l){return '<li><span class="tm">'+l[0]+'</span><span>'+l[1]+'</span></li>'}).join('');
+}
+function log(m){logs.unshift([clockStr(T),m]);if(logs.length>40)logs.pop()}
+function say(m,kind){var e=$('#msg');e.className='msg '+(kind||'');e.textContent=m}
+
+/* ---------- Bedienung ---------- */
+function onSignal(id){
+  var sg=SIGS[id];
+  if(!running)return;
+  if(sg.kind==='enter'){sel=(sel===id)?null:id;buildCmd();return}
+  sel=null;buildCmd();
+  if(sigState[id].route){cancelRoute(id);return}
+  setRoute(id,sg.route);
+}
+var cmdBtns=[];
+function buildCmd(){
+  var box=$('#opts');box.innerHTML='';cmdBtns=[];
+  if(!sel){say('Tippe ein Signal an. Einfahrt: A oder F. Ausfahrt: N oder P.');return}
+  var sg=SIGS[sel];
+  say('Signal '+sel+' – wähle das Einfahrgleis.','');
+  sg.routes.forEach(function(k){
+    var b=document.createElement('button');b.className='rbtn';b.dataset.k=k;
+    b.innerHTML='<b>Gleis '+ROUTES[k].track+'</b><small>frei</small>';
+    b.addEventListener('click',function(){
+      if(b.disabled)return;
+      if(setRoute(sel,k)){sel=null;buildCmd()}
+    });
+    box.appendChild(b);cmdBtns.push(b);
+  });
+  var c=document.createElement('button');c.className='rbtn cancel';c.innerHTML='<b>Auflösen</b><small>Fahrstraße</small>';
+  c.addEventListener('click',function(){cancelRoute(sel);sel=null;buildCmd()});
+  c.dataset.k='cancel';box.appendChild(c);cmdBtns.push(c);
+  refreshCmd();
+}
+function refreshCmd(){
+  if(!sel)return;
+  var S=sigState[sel];
+  cmdBtns.forEach(function(b){
+    var k=b.dataset.k,sm=b.querySelector('small');
+    if(k==='cancel'){b.hidden=!S.route;return}
+    var o=ownerFor(sel,k),c=check(ROUTES[k],o.owner,o.train&&o.train.id);
+    b.disabled=!c.ok;
+    sm.textContent=c.ok?(S.route&&S.route.key===k?'eingestellt':'frei'):'belegt';
+    b.classList.toggle('cur',!!(S.route&&S.route.key===k));
+  });
+}
+
+function reset(){
+  T=0;trains.forEach(function(t){t.el.remove();t.lamp.remove();t.txt.remove()});
+  trains=[];resv={};occSec={};occPiece={};queue=[];score=0;served=0;punct=0;idc=0;lastGen=0;lastDir={E:0,W:0};logs=[];
+  swPos={W1:'+',W2:'+',W3:'+',W4:'+'};
+  sigState={};Object.keys(SIGS).forEach(function(id){sigState[id]={route:null}});
+  sel=null;buildCmd();
+  seed();refill();
+  queue.forEach(function(e){e.t+=3});
+  computeOcc();render();renderLists();
+}
+function seed(){
+  // Ein Regionalzug steht schon in Gleis 3, ein Güterzug wartet vor Signal A.
+  var e1=makeEntry('RB','W',-5,3);
+  setRoute('F','F3');
+  var t1=spawnTrain(e1);computeOcc();
+  t1.head=t1.platEnd-MARGIN;t1.v=0;t1.arrived=true;t1.dwellTimer=4;
+  sigState.F.route=null;
+  var e2=makeEntry('GZ','E',-2,3);
+  var t2=spawnTrain(e2);t2.head=total(t2)-MARGIN;t2.v=0;t2.delay=12;
+  lastGen=4;lastDir={E:0,W:0};
+  log('Dienstbeginn 06:00. RB in Gleis 3, Güterzug wartet vor Signal A.');
+}
+
+/* ---------- Schleife ---------- */
+var lastTs=performance.now(),acc=0;
+function frame(now){
+  var dt=Math.min(0.1,(now-lastTs)/1000);lastTs=now;
+  if(running&&!paused){
+    var sd=dt*speed,n=Math.max(1,Math.ceil(sd/0.03));
+    for(var i=0;i<n;i++)step(sd/n);
+    acc+=dt;if(acc>.25){acc=0;renderLists();refreshCmd()}
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+
+function setSpeed(s){
+  speed=s;paused=false;
+  ['b1','b2','b4'].forEach(function(id){$('#'+id).classList.toggle('on',(id==='b'+s))});
+  $('#bPause').classList.remove('on');
+}
+$('#b1').addEventListener('click',function(){setSpeed(1)});
+$('#b2').addEventListener('click',function(){setSpeed(2)});
+$('#b4').addEventListener('click',function(){setSpeed(4)});
+$('#bPause').addEventListener('click',function(){paused=!paused;this.classList.toggle('on',paused)});
+$('#diff').addEventListener('change',function(){diff=this.value;say('Verkehrsdichte: '+this.options[this.selectedIndex].text+'. Gilt für neue Zugmeldungen.','')});
+$('#bReset').addEventListener('click',function(){reset();running=true;paused=false;$('#bPause').classList.remove('on')});
+$('#bHelp').addEventListener('click',function(){paused=true;$('#bPause').classList.add('on');$('#intro').hidden=false});
+$('#bGo').addEventListener('click',function(){$('#intro').hidden=true;running=true;paused=false;$('#bPause').classList.remove('on')});
+
+reset();
+running=false;
+requestAnimationFrame(frame);
+window.__stellwerk={setRoute:setRoute,cancelRoute:cancelRoute,get trains(){return trains},get queue(){return queue},SIGS:SIGS,step:step,start:function(){running=true;paused=false;$('#intro').hidden=true},posAt:posAt,get T(){return T}};
+})();
+</script>
+</html>
