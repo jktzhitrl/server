@@ -161,7 +161,10 @@ ul.log li:first-child{border-top:0}
 .ring.pend{opacity:1;stroke:#ffb020;stroke-width:4;animation:pulse 1.4s ease-in-out infinite}
 .alerts{position:absolute;left:10px;top:10px;z-index:4;display:flex;flex-direction:column;gap:6px;width:min(420px,calc(100% - 20px))}
 .al{background:rgba(60,38,6,.96);border:1px solid #f2b134;color:#ffe2a8;border-radius:8px;padding:8px 12px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.4)}
-.al small{display:block;color:#e7c27a;font-size:12px}
+.al small{display:block;color:#e7c27a;font-size:11px}
+.al{position:relative;touch-action:none;cursor:grab;padding-right:34px}
+.alx{position:absolute;right:4px;top:4px;width:28px;height:28px;border:0;border-radius:6px;background:rgba(255,255,255,.12);color:#ffe2a8;font-size:18px;line-height:1;cursor:pointer}
+.alchip{align-self:flex-start;border:1px solid #f2b134;background:rgba(60,38,6,.96);color:#ffe2a8;border-radius:8px;padding:5px 10px;font:600 12px var(--f-body);cursor:pointer}
 .rbtn.blk small{color:var(--amber)}
 /* Einstieg */
 .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(5,8,11,.82);
@@ -199,7 +202,7 @@ ul.log li:first-child{border-top:0}
 
   <div class="stage">
     <section class="plan" id="planbox"><svg id="plan" viewBox="0 0 3880 1930" role="img" aria-label="Gleisbildplan Strecke Eschbach Hohenau Linden"></svg></section>
-    <div class="alerts" id="alerts" hidden aria-live="polite"></div>
+    <div class="alerts" id="alerts" hidden aria-live="polite"><button class="alchip" id="alchip" hidden></button></div>
     <aside class="tinfo" id="tinfo" hidden aria-live="polite"></aside>
     <aside class="drawer" id="drawer" hidden>
       <div class="drawer-head"><h2>Fahrplan und Meldungen</h2><button class="btn sm" id="bListClose">Schließen</button></div>
@@ -1003,6 +1006,7 @@ function endFault(f){
   f.edges.forEach(function(e){if(BLOCK[e]===f)delete BLOCK[e]});
   if(f.sig&&SIGFAULT[f.sig]===f)delete SIGFAULT[f.sig];
   f.els.forEach(function(x){x.remove()});
+  if(f.card){f.card.remove();f.card=null}
   FAULTS.splice(FAULTS.indexOf(f),1);log('Störung behoben: '+f.text);updateAlerts();
 }
 function spawnFault(){
@@ -1038,11 +1042,36 @@ function stepFaults(){
     var r=FAULTR[diff];nextFault=T+rnd(r[0],r[1]);
   }
 }
+function makeCard(f){
+  var c=document.createElement('div');c.className='al';
+  c.innerHTML='<button class="alx" aria-label="Meldung schließen">×</button><b>⚠ '+f.text+'</b><small></small>';
+  var sx=null,dx=0;
+  function dismiss(){f.dismissed=true;updateAlerts()}
+  c.querySelector('.alx').addEventListener('click',function(e){e.stopPropagation();dismiss()});
+  c.addEventListener('pointerdown',function(e){if(e.target.closest('.alx'))return;sx=e.clientX;dx=0;c.style.transition='none';try{c.setPointerCapture(e.pointerId)}catch(x){}});
+  c.addEventListener('pointermove',function(e){if(sx===null)return;dx=e.clientX-sx;c.style.transform='translateX('+dx+'px)';c.style.opacity=String(Math.max(.15,1-Math.abs(dx)/260))});
+  function end(){
+    if(sx===null)return;sx=null;c.style.transition='transform .18s,opacity .18s';
+    if(Math.abs(dx)>70){c.style.transform='translateX('+(dx>0?400:-400)+'px)';c.style.opacity='0';setTimeout(function(){c.style.transform='';c.style.opacity='';dismiss()},170)}
+    else{c.style.transform='';c.style.opacity=''}
+  }
+  c.addEventListener('pointerup',end);c.addEventListener('pointercancel',end);
+  $('#alerts').insertBefore(c,$('#alchip'));
+  return c;
+}
 function updateAlerts(){
-  var a=$('#alerts');
+  var a=$('#alerts'),chip=$('#alchip');
   if(!FAULTS.length){a.hidden=true;return}
   a.hidden=false;
-  a.innerHTML=FAULTS.map(function(f){return '<div class="al"><b>⚠ '+f.text+'</b><small>noch '+Math.max(0,Math.ceil(f.until-T))+' s</small></div>'}).join('');
+  var hidden=0;
+  FAULTS.forEach(function(f){
+    if(!f.card)f.card=makeCard(f);
+    f.card.hidden=!!f.dismissed;
+    if(f.dismissed)hidden++;
+    f.card.querySelector('small').textContent='noch '+Math.max(0,Math.ceil(f.until-T))+' s · zum Ausblenden wegwischen';
+  });
+  chip.hidden=!(hidden>0);
+  chip.textContent='⚠ '+hidden+(hidden===1?' Störung':' Störungen')+' ausgeblendet · antippen';
 }
 
 /* ================= Anzeige ================= */
@@ -1314,6 +1343,7 @@ reset();
 running=false;
 requestAnimationFrame(frame);
 window.addEventListener('resize',function(){var b=$('#planbox');if(zoom*VBW<b.clientWidth&&zoom*VBH<b.clientHeight)fitZoom()});
+$('#alchip').addEventListener('click',function(){FAULTS.forEach(function(f){f.dismissed=false});updateAlerts()});
 $('#bList').addEventListener('click',function(){var d=$('#drawer');d.hidden=!d.hidden;renderLists()});
 $('#bListClose').addEventListener('click',function(){$('#drawer').hidden=true});
 window.__stellwerk={setRoute:setRoute,cancelRoute:cancelRoute,get trains(){return trains},get queue(){return queue},SIGS:SIGS,STAT:STAT,ROUTES_FROM:ROUTES_FROM,EDGES:EDGES,
