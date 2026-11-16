@@ -79,7 +79,7 @@ body{display:flex;flex-direction:column}
 .cmd .msg{flex:1 1 220px;min-width:0;font-size:15px}
 .cmd .msg.err{color:var(--amber)} .cmd .msg.ok{color:var(--go)}
 .cmd .msg small{display:block;color:var(--muted);font-size:13px}
-.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;max-height:132px;overflow-y:auto}
 .rbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:92px;min-height:54px;padding:6px 14px;border:1px solid var(--line);background:var(--panel2);border-radius:8px;cursor:pointer;touch-action:manipulation}
 .rbtn b{font:700 19px/1 var(--f-head);letter-spacing:.05em;text-transform:uppercase}
 .rbtn small{font:500 11px var(--f-mono);color:var(--go);margin-top:3px}
@@ -195,7 +195,7 @@ ul.log li:first-child{border-top:0}
   <div class="card">
     <h2>Dienst im Stellwerk Hohenau</h2>
     <ol>
-      <li><b>Start und Ziel:</b> Jede Fahrstraße hat ein Startsignal und ein Zielsignal. Tippe das Startsignal, dann ein weiß gestricheltes Zielsignal.</li>
+      <li><b>Start und Ziel:</b> Jede Fahrstraße hat ein Startsignal und ein Zielsignal. Tippe das Startsignal, dann ein weiß gestricheltes Zielsignal. Das Ziel darf bis zu drei Abschnitte weit weg liegen, alle Signale dazwischen werden mitgestellt.</li>
       <li><b>Netz:</b> Die Hauptstrecke Eschbach – Linden hat in Hohenau eine Abzweigung nach Bergheim (untere Reihe). Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
       <li><b>Halte:</b> RB halten in allen Orten, RE in Hohenau, Rosental und Wiesental, IC nur in Hohenau. ICE und Güterzüge fahren durch. Alle Züge halten am Ende in Eschbach, Linden oder Bergheim.</li>
       <li><b>Wende:</b> Im Endbahnhof bleibt der Zug stehen, bis die Wendezeit vorbei ist. Danach fährt er zum Abfahrtssignal und kehrt auf die Strecke zurück.</li>
@@ -386,6 +386,21 @@ function enumRoutes(){
   Object.keys(ROUTES_FROM).forEach(function(k){ROUTES_FROM[k].sort(function(a,b){return a.parts.length-b.parts.length})});
 }
 enumRoutes();
+/* Fahrstraßenketten: vom Startsignal bis zu einem Zielsignal bis zu 3 Abschnitte weiter, alle Zwischensignale werden mitgestellt */
+var CHAINS={},MAXHOPS=3;
+Object.keys(SIGS).forEach(function(sid){
+  var out=[];
+  (function dfs(cur,routes,seen,len){
+    ROUTES_FROM[cur].forEach(function(r){
+      if(!r.to||seen[r.to])return;
+      var rs=routes.concat([r]),l=len+r.parts.length;
+      out.push({to:r.to,routes:rs,len:l});
+      if(rs.length<MAXHOPS&&SIGS[r.to].kind!=='tarr'){var sn=cp(seen);sn[r.to]=1;dfs(r.to,rs,sn,l)}
+    });
+  })(sid,[],(function(){var o={};o[sid]=1;return o})(),0);
+  out.sort(function(a,b){return a.len-b.len});
+  CHAINS[sid]=out;
+});
 var distCache={};
 function distTo(code){
   if(distCache[code])return distCache[code];
@@ -493,7 +508,7 @@ function total(t){return t.cum[t.cum.length-1]}
 function appendRoute(t,route){
   var def=route.def;
   route.nPts=t.pts.length;route.nSegs=def.parts.length;route.startD=total(t);
-  route.prevCur=t.curRoute;route.prevPlat=t.platStop;route.prevEnd=t.endSig;
+  route.prevCur=t.curRoute;route.prevPlat=t.platStop;route.prevQueue=t.platQueue.slice();route.prevEnd=t.endSig;
   def.parts.forEach(function(p){
     var a=total(t);pushPts(t,p.pts);var b=total(t);
     t.segs.push({sec:p.e,piece:p.e,a:a,b:b});
@@ -502,9 +517,11 @@ function appendRoute(t,route){
   route.endD=total(t);route.train=t;
   t.curRoute=route;t.endSig=def.to;
   var S=SIGS[def.to];
-  if(S&&S.plat&&(!t.platStop||t.platStop.done)){
-    if(S.term)t.platStop={d:route.endD,st:S.plat,sig:S.id,done:false,num:S.num,turn:true};
-    else if(t.stops.indexOf(S.plat)>=0&&!t.dwelledAt[S.plat])t.platStop={d:route.endD,st:S.plat,sig:S.id,done:false,num:S.num};
+  if(S&&S.plat){
+    var ns=null;
+    if(S.term)ns={d:route.endD,st:S.plat,sig:S.id,done:false,num:S.num,turn:true};
+    else if(t.stops.indexOf(S.plat)>=0&&!t.dwelledAt[S.plat])ns={d:route.endD,st:S.plat,sig:S.id,done:false,num:S.num};
+    if(ns){if(!t.platStop||t.platStop.done)t.platStop=ns;else t.platQueue.push(ns)}
   }
 }
 function computeOcc(){
@@ -554,7 +571,7 @@ function spawnTrain(e){
   if(!tk)return null;
   var dep=SIGS[DEP_OF[st.code+'a'+(st.tracks.indexOf(tk)+1)]];
   var t={id:++idc,name:e.name,type:e.type,L:ty.L,vmax:ty.vmax,color:ty.color,stops:ty.stops,dwellT:ty.dwell,turnT:ty.turn,
-    pts:[],cum:[],segs:[],head:0,v:0,curRoute:null,endSig:dep.id,platStop:null,dwelledAt:{},dwellTimer:0,
+    pts:[],cum:[],segs:[],head:0,v:0,curRoute:null,endSig:dep.id,platStop:null,platQueue:[],dwelledAt:{},dwellTimer:0,
     leaving:false,delay:Math.max(0,T-e.t),base:ty.base,pair:e.pair,dest:destOf(e.pair,e.from),runs:0};
   placeOnTrack(t,tk.e,SIGS[st.code+'a'+(st.tracks.indexOf(tk)+1)].node,dep.node);
   var n=Math.max(2,Math.round(t.L/36)),car=t.L/n;
@@ -586,7 +603,7 @@ function finishRun(t,stCode,sigId){
   if(score>best){best=score;try{localStorage.setItem('stw-best',best)}catch(e){}}
   var dep=SIGS[DEP_OF[sigId]],arr=SIGS[sigId];
   placeOnTrack(t,arr.edge,arr.node,dep.node);
-  t.curRoute=null;t.platStop=null;t.endSig=dep.id;t.leaving=false;t.dwelledAt={};t.dwellTimer=0;t.delay=0;
+  t.curRoute=null;t.platStop=null;t.platQueue=[];t.endSig=dep.id;t.leaving=false;t.dwelledAt={};t.dwellTimer=0;t.delay=0;
   t.dest=destOf(t.pair,stCode);t.runs++;
   var ty=TYPES[t.type],n=ty.num();t.name=ty.pre+' '+n;
   log(t.name+' fährt ab '+STBY[stCode].name+' nach '+STBY[t.dest].name+'.');
@@ -604,43 +621,66 @@ function commit(S,def,o){
   return route;
 }
 function sigName(id){var S=SIGS[id];return S?S.title:'Strecke'}
+function feasibleChain(c,o){
+  for(var k=0;k<c.routes.length;k++){
+    var r=c.routes[k];
+    if(k>0&&sigRoute[r.from])return {ok:false,msg:'Signal '+r.from+' ist bereits gestellt.'};
+    var x=checkRoute(r,o.owner,o.train.id);
+    if(!x.ok)return {ok:false,msg:EDGES[x.why].label+' ist belegt oder festgelegt.'};
+  }
+  return {ok:true};
+}
+function commitChain(c,o){
+  var t=o.train,list=[];
+  c.routes.forEach(function(def){
+    var route={def:def,from:def.from,train:null,owner:o.owner,startD:0,endD:0,chain:list};
+    appendRoute(t,route);sigRoute[def.from]=route;list.push(route);
+  });
+}
 function setRoute(fromId,toId,quiet){
-  var S=SIGS[fromId];
-  var list=ROUTES_FROM[fromId].filter(function(r){return r.to===toId});
-  if(!list.length)return false;
+  var cl=(CHAINS[fromId]||[]).filter(function(c){return c.to===toId});
+  if(!cl.length)return false;
   if(sigRoute[fromId]&&!cancelRoute(fromId,true))return false;
   var o=ownerFor(fromId);
   if(!o.owner){if(!quiet)say('An Signal '+fromId+' wartet kein Zug.','err');return false}
   var first=null;
-  for(var i=0;i<list.length;i++){
-    var c=checkRoute(list[i],o.owner,o.train.id);
-    if(c.ok){commit(S,list[i],o);if(!quiet)say('Fahrstraße '+fromId+' → '+toId+' eingestellt.','ok');return true}
-    if(!first)first=c;
+  for(var i=0;i<cl.length;i++){
+    var f=feasibleChain(cl[i],o);
+    if(f.ok){commitChain(cl[i],o);if(!quiet)say('Fahrstraße '+fromId+' → '+toId+' eingestellt'+(cl[i].routes.length>1?' ('+cl[i].routes.length+' Abschnitte).':'.'),'ok');return true}
+    if(!first)first=f;
   }
-  if(!quiet)say('Fahrstraße nicht möglich: '+EDGES[first.why].label+' ist belegt oder festgelegt.','err');
+  if(!quiet)say('Fahrstraße nicht möglich: '+first.msg,'err');
   return false;
+}
+function cancelOne(sigId){
+  var r=sigRoute[sigId],t=r.train;
+  t.pts.length=r.nPts;t.cum.length=r.nPts;t.segs.splice(t.segs.length-r.nSegs,r.nSegs);
+  t.curRoute=r.prevCur;t.platStop=r.prevPlat;t.platQueue=r.prevQueue;t.endSig=r.prevEnd;
+  r.def.parts.forEach(function(p){var x=resv[p.e];if(x&&x.owner===r.owner)delete resv[p.e]});
+  sigRoute[sigId]=null;
 }
 function cancelRoute(sigId,silent){
   var r=sigRoute[sigId];if(!r)return true;
-  var t=r.train;
+  var t=r.train,ch=r.chain||[r];
+  for(var i=0;i<ch.length;i++){if(sigRoute[ch[i].from]!==ch[i]){say('Ein Teil der Fahrstraße ist schon befahren und nicht auflösbar.','err');return false}}
   if(t){
-    if(t.curRoute!==r||t.v>1||t.head>r.startD-0.5){say('Der Zug fährt bereits. Die Fahrstraße ist nicht auflösbar.','err');return false}
-    t.pts.length=r.nPts;t.cum.length=r.nPts;t.segs.splice(t.segs.length-r.nSegs,r.nSegs);
-    t.curRoute=r.prevCur;t.platStop=r.prevPlat;t.endSig=r.prevEnd;
+    if(t.v>1||t.head>ch[0].startD-0.5||t.curRoute!==ch[ch.length-1]){say('Der Zug fährt bereits. Die Fahrstraße ist nicht auflösbar.','err');return false}
+    for(i=ch.length-1;i>=0;i--)cancelOne(ch[i].from);
+  }else{
+    ch.forEach(function(x){x.def.parts.forEach(function(p){var y=resv[p.e];if(y&&y.owner===x.owner)delete resv[p.e]});sigRoute[x.from]=null});
   }
-  r.def.parts.forEach(function(p){var x=resv[p.e];if(x&&x.owner===r.owner)delete resv[p.e]});
-  sigRoute[sigId]=null;
   if(!silent)say('Fahrstraße von Signal '+sigId+' aufgelöst.','');
   return true;
 }
 function targetsOf(id){
   var seen={},out=[];
-  ROUTES_FROM[id].forEach(function(r){if(r.to&&!seen[r.to]){seen[r.to]=1;out.push(r.to)}});
+  (CHAINS[id]||[]).forEach(function(c){if(!seen[c.to]){seen[c.to]=c.routes.length;out.push(c.to)}else seen[c.to]=Math.min(seen[c.to],c.routes.length)});
+  out.hops=seen;
   return out;
 }
 function targetFree(from,to){
   var o=ownerFor(from);if(!o.owner)return false;
-  return ROUTES_FROM[from].some(function(r){return r.to===to&&checkRoute(r,o.owner,o.train.id).ok});
+  return CHAINS[from].some(function(c){return c.to===to&&feasibleChain(c,o).ok});
 }
 function autoStep(){
   trains.forEach(function(t){
@@ -678,6 +718,7 @@ function moveTrain(t,dt){
     if(t.dwellTimer>=need){
       if(ps.turn){finishRun(t,ps.st,ps.sig);return}
       ps.done=true;t.dwelledAt[ps.st]=true;t.dwellTimer=0;
+      if(t.platQueue.length)t.platStop=t.platQueue.shift();
     }
     return;
   }
@@ -818,11 +859,12 @@ function buildCmd(){
   var tg=targetsOf(sel);
   if(!tg.length){say('Von Signal '+sel+' sind keine Fahrstraßen möglich.','err');sel=null;return}
   var t=candidate(sel);
-  say('Start '+sel+' ('+sigName(sel)+')'+(t?' · '+t.name+' nach '+STBY[t.dest].name:'')+'. Wähle das Zielsignal.','');
-  tg.forEach(function(to){
+  say('Start '+sel+' ('+sigName(sel)+')'+(t?' · '+t.name+' nach '+STBY[t.dest].name:'')+'. Wähle das Zielsignal, auch weiter entfernte (bis 3 Abschnitte).','');
+  var hops=tg.hops;
+  tg.slice().sort(function(a,b){return hops[a]-hops[b]}).forEach(function(to){
     var b=document.createElement('button');b.className='rbtn';b.dataset.to=to;
     var S=SIGS[to];
-    b.innerHTML='<b>'+(S.kind==='block'?'Sbk '+to:S.kind==='tarr'||S.kind==='track'?'Gleis '+S.num:S.title)+'</b><small>'+to+'</small>';
+    b.innerHTML='<b>'+(S.kind==='block'?'Sbk '+to.slice(1):S.kind==='tarr'||S.kind==='track'?STBY[S.station].name.slice(0,3)+' Gl '+S.num:S.title)+'</b><small>'+to+(hops[to]>1?' · '+hops[to]+' Abschn.':'')+'</small>';
     b.addEventListener('click',function(){if(b.disabled)return;if(setRoute(sel,to)){sel=null;buildCmd()}});
     box.appendChild(b);cmdBtns.push(b);
   });
@@ -835,7 +877,7 @@ function refreshCmd(){
   if(!sel)return;
   cmdBtns.forEach(function(b){
     var ok=targetFree(sel,b.dataset.to);
-    b.disabled=!ok;b.querySelector('small').textContent=b.dataset.to+(ok?' · frei':' · belegt');
+    b.disabled=!ok;b.classList.toggle('blk',!ok);
   });
 }
 function buildStBar(){
@@ -925,7 +967,7 @@ $('#bList').addEventListener('click',function(){var d=$('#drawer');d.hidden=!d.h
 $('#bListClose').addEventListener('click',function(){$('#drawer').hidden=true});
 window.__stellwerk={setRoute:setRoute,cancelRoute:cancelRoute,get trains(){return trains},get queue(){return queue},SIGS:SIGS,STAT:STAT,ROUTES_FROM:ROUTES_FROM,EDGES:EDGES,
   step:step,start:function(){running=true;paused=false;$('#intro').hidden=true},posAt:posAt,get T(){return T},get score(){return score},get served(){return served},
-  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},setSbk:function(v){sbkAuto=v},candidate:candidate,total:total,distTo:distTo};
+  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},setSbk:function(v){sbkAuto=v},chainTargets:function(id){var t=targetsOf(id);return t.map(function(x){return {to:x,hops:t.hops[x]}})},candidate:candidate,total:total,distTo:distTo};
 })();
 </script>
 
