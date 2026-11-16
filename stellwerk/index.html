@@ -478,11 +478,11 @@ var TYPES={
   GZ:{label:'Güterzug',pre:'Gz',L:240,vmax:70,dwell:0,turn:18,stops:[],color:'#a07a52',base:60,num:function(){return 50000+rnd(0,9999)}}
 };
 var FLEET=[
-  {type:'RB',from:'E',pair:['E','L']},{type:'RE',from:'L',pair:['E','L']},{type:'RB',from:'B',pair:['E','B']},
-  {type:'IC',from:'E',pair:['E','L']},{type:'GZ',from:'L',pair:['L','E']},{type:'RE',from:'E',pair:['E','B']},
-  {type:'ICE',from:'L',pair:['E','L']},{type:'RB',from:'E',pair:['E','L']}
+  {type:'RB',from:'E',pair:['E','L']},{type:'RE',from:'L',pair:['E','L']},{type:'IC',from:'E',pair:['E','L']},
+  {type:'RB',from:'L',pair:['E','L']},{type:'RB',from:'B',pair:['E','B']},{type:'GZ',from:'L',pair:['L','E']},
+  {type:'ICE',from:'E',pair:['E','L']},{type:'RE',from:'E',pair:['E','B']}
 ];
-var NUM={ruhig:2,normal:3,hektisch:5},GAP={ruhig:40,normal:30,hektisch:20};
+var NUM={ruhig:3,normal:5,hektisch:7},GAP={ruhig:40,normal:26,hektisch:16};
 var ACC=36,BRAKE=55,MARGIN=6,TIMESCALE=6,AUTO_DIST=420;
 
 var TRACKPLAT={};
@@ -702,8 +702,8 @@ function randType(branch){
   return r<.3?'RB':r<.55?'RE':r<.7?'IC':r<.8?'ICE':'GZ';
 }
 function newClosedEntry(){
-  var from=pick(['E','L','B']),type=randType(from==='B');
-  var pair=from==='B'?['E','B']:(from==='E'&&(type==='RB'||type==='RE')&&Math.random()<.35?['E','B']:['E','L']);
+  var from=pick(['E','E','L','L','L','B']),type=randType(from==='B');
+  var pair=from==='B'?['E','B']:(from==='E'&&(type==='RB'||type==='RE')&&Math.random()<.2?['E','B']:['E','L']);
   var ty=TYPES[type];
   return {id:++idc,type:type,from:from,pair:pair,t:T+rnd(8,30),spawned:false,name:ty.pre+' '+ty.num()};
 }
@@ -714,7 +714,7 @@ function newThroughEntry(){
 function destName(t){return t.through?(t.from==='W3'?'Osten':'Westen'):STBY[t.dest].name}
 function entryText(e){
   if(e.through)return 'aus '+(e.from==='W3'?'Westen':'Osten')+' durch nach '+(e.from==='W3'?'Osten':'Westen');
-  return entryText(e);
+  return 'ab '+STBY[e.from].name+' nach '+STBY[destOf(e.pair,e.from)].name;
 }
 function finishThrough(t){
   var dm=t.delay/10,pts=Math.max(10,Math.round(t.base-dm*10));
@@ -1227,7 +1227,7 @@ $('#bList').addEventListener('click',function(){var d=$('#drawer');d.hidden=!d.h
 $('#bListClose').addEventListener('click',function(){$('#drawer').hidden=true});
 window.__stellwerk={setRoute:setRoute,cancelRoute:cancelRoute,get trains(){return trains},get queue(){return queue},SIGS:SIGS,STAT:STAT,ROUTES_FROM:ROUTES_FROM,EDGES:EDGES,
   step:step,start:function(){running=true;paused=false;$('#intro').hidden=true},posAt:posAt,get T(){return T},get score(){return score},get served(){return served},
-  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},setSbk:function(v){sbkAuto=v},setFaults:function(v){faultsOn=v},TP:TRACKPLAT,blockEdges:function(es,dur){addFault({kind:'sperre',dur:dur,edges:es,text:'Test'})},GWG:GWGROUPS,get FAULTS(){return FAULTS},forceFault:function(){spawnFault()},get PEND(){return PEND},CHAINS:CHAINS,chainTargets:function(id){var t=targetsOf(id);return t.map(function(x){return {to:x,hops:t.hops[x]}})},candidate:candidate,total:total,distTo:distTo};
+  setAllAuto:function(v){STAT.forEach(function(s){s.auto=v})},setSbk:function(v){sbkAuto=v},setFaults:function(v){faultsOn=v},rl:function(){renderLists();updateAlerts();render()},TP:TRACKPLAT,blockEdges:function(es,dur){addFault({kind:'sperre',dur:dur,edges:es,text:'Test'})},GWG:GWGROUPS,get FAULTS(){return FAULTS},forceFault:function(){spawnFault()},get PEND(){return PEND},CHAINS:CHAINS,chainTargets:function(id){var t=targetsOf(id);return t.map(function(x){return {to:x,hops:t.hops[x]}})},candidate:candidate,total:total,distTo:distTo};
 })();
 </script>
 
