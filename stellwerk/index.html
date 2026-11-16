@@ -95,6 +95,7 @@ ul.log li:first-child{border-top:0}
 .housing{fill:#161616;stroke:#000;stroke-width:1.5}
 .housing.sbk{fill:#1f2b1f;stroke:#3d6b3d}
 .slbl{font:600 15px var(--f-mono);fill:#222;text-anchor:middle}
+.housing.sbk{stroke-width:2.5}
 .ring{fill:none;stroke:var(--amber);stroke-width:3;opacity:0}
 .ring.attn{opacity:1;animation:pulse 1.2s ease-in-out infinite}
 .ring.sel{opacity:1;stroke:#111}
@@ -154,7 +155,7 @@ ul.log li:first-child{border-top:0}
     <span><i style="background:var(--occ)"></i>Gleis besetzt</span>
     <span>Amber blinkend: Zug wartet auf dich</span>
     <span>Weiß gestrichelt: mögliches Zielsignal</span>
-    <span>S1, S2 …: Selbstblock (automatisch)</span>
+    <span>Sbk 1, Sbk 2 …: selbsttätige Signale auf freier Strecke (grünes Gehäuse)</span>
   </div>
 
   <div class="lower">
@@ -169,7 +170,7 @@ ul.log li:first-child{border-top:0}
     <ol>
       <li><b>Start und Ziel:</b> Jede Fahrstraße hat ein Startsignal und ein Zielsignal. Tippe das Startsignal, dann ein weiß gestricheltes Zielsignal.</li>
       <li><b>Netz:</b> Die Hauptstrecke Eschbach – Linden hat in Hohenau eine Abzweigung nach Bergheim (untere Reihe). Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
-      <li><b>Halte:</b> RB halten überall, RE und IC nur in Hohenau, ICE und Güterzüge fahren durch. Alle Züge halten am Ende in Eschbach, Linden oder Bergheim.</li>
+      <li><b>Halte:</b> RB halten in allen Orten, RE in Hohenau, Rosental und Wiesental, IC nur in Hohenau. ICE und Güterzüge fahren durch. Alle Züge halten am Ende in Eschbach, Linden oder Bergheim.</li>
       <li><b>Wende:</b> Im Endbahnhof bleibt der Zug stehen, bis die Wendezeit vorbei ist. Danach fährt er zum Abfahrtssignal und kehrt auf die Strecke zurück.</li>
       <li><b>Selbstblock (Sbk):</b> Auf freier Strecke sichern selbsttätige Blocksignale S1, S2 … die Blockabschnitte. Ein Zug fährt erst in den nächsten Block, wenn dieser frei ist. So können Züge dicht hintereinander fahren.</li>
       <li><b>Betrieb:</b> Alle Bahnhöfe außer Hohenau laufen auf Wunsch automatisch (Taste Auto/Hand). Wertung: Punkte für jede Fahrt, Abzug für Verspätung.</li>
@@ -371,7 +372,7 @@ function distTo(code){
 
 var TYPES={
   RB:{pre:'RB',L:120,vmax:90,dwell:9,turn:20,stops:['M','H','R','W'],color:'#4fc3a1',base:80,num:function(){return 7000+rnd(0,999)}},
-  RE:{pre:'RE',L:150,vmax:115,dwell:8,turn:24,stops:['H'],color:'#ff9f43',base:100,num:function(){return 4000+rnd(0,999)}},
+  RE:{pre:'RE',L:150,vmax:115,dwell:8,turn:24,stops:['H','R','W'],color:'#ff9f43',base:100,num:function(){return 4000+rnd(0,999)}},
   IC:{pre:'IC',L:200,vmax:135,dwell:7,turn:28,stops:['H'],color:'#7fb2ff',base:150,num:function(){return 200+rnd(0,99)}},
   ICE:{pre:'ICE',L:260,vmax:150,dwell:0,turn:30,stops:[],color:'#b79cff',base:200,num:function(){return 500+rnd(0,499)}},
   GZ:{pre:'Gz',L:240,vmax:70,dwell:0,turn:18,stops:[],color:'#a07a52',base:60,num:function(){return 50000+rnd(0,9999)}}
@@ -434,7 +435,7 @@ Object.keys(SIGS).forEach(function(id){
   el('rect',{x:s.hx-21,y:s.hy-10,width:42,height:20,rx:10,class:'housing'+(s.kind==='block'?' sbk':'')},g);
   s.lr=el('circle',{cx:s.hx-10,cy:s.hy,r:6.5},g);
   s.lg=el('circle',{cx:s.hx+10,cy:s.hy,r:6.5},g);
-  var lt=el('text',{x:s.hx,y:east?s.hy+26:s.hy-16,class:'slbl'},g);lt.textContent=id;
+  var lt=el('text',{x:s.hx,y:east?s.hy+26:s.hy-16,class:'slbl'},g);lt.textContent=(s.kind==='block'?'Sbk '+id.slice(1):id);
   s.ring=el('circle',{cx:s.hx,cy:s.hy,r:30,class:'ring'},g);
   var hit=el('circle',{cx:s.hx,cy:s.hy,r:40,class:'hit'},g);
   hit.addEventListener('click',function(){onSignal(id)});
