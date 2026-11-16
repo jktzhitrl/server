@@ -1,0 +1,7 @@
+{
+  "appId": "de.stellwerk.hohenau",
+  "appName": "Stellwerk",
+  "webDir": "www",
+  "backgroundColor": "#0d1115",
+  "server": { "androidScheme": "https" }
+}

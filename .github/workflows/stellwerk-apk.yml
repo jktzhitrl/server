@@ -1,0 +1,50 @@
+name: Stellwerk Android-App
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'stellwerk/**'
+      - 'app/**'
+      - '.github/workflows/stellwerk-apk.yml'
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Web-Dateien kopieren
+        run: |
+          mkdir -p www
+          cp -r ../stellwerk/* www/
+      - name: Abhängigkeiten installieren
+        run: npm install --no-audit --no-fund
+      - name: Android-Projekt erzeugen
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Querformat und Symbol setzen
+        run: |
+          sed -i '/<activity$/a\            android:screenOrientation="sensorLandscape"' android/app/src/main/AndroidManifest.xml
+          grep -n sensorLandscape android/app/src/main/AndroidManifest.xml
+          npx @capacitor/assets generate --android --iconBackgroundColor '#0d1115' --iconBackgroundColorDark '#0d1115' || echo "Symbol-Erzeugung übersprungen"
+      - name: APK bauen
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stellwerk-apk
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
