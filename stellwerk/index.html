@@ -1,8 +1,10 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0d1115">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stellwerk">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -44,7 +46,27 @@ button{font:inherit;color:inherit}
 select.btn{padding:0 10px;appearance:auto}
 .plan{border:1px solid var(--line);border-radius:10px;overflow:auto;position:absolute;inset:0;touch-action:none;-webkit-overflow-scrolling:touch}
 html,body{height:100%}
-body{display:flex;flex-direction:column}
+body{display:flex;flex-direction:column;font-size:14px;padding-block:6px 8px}
+.btn{min-height:36px;min-width:36px;padding:0 10px;font-size:13px;border-radius:7px}
+.btn.sm{min-height:32px;padding:0 9px;font-size:12px}
+select.btn{padding:0 6px}
+.clock{font-size:24px;padding:3px 10px}
+.stats b{font-size:17px}
+.stats{font-size:11px;gap:12px}
+.brand h1{font-size:19px}
+.brand p{font-size:11px;margin:1px 0 0}
+.top{gap:4px 12px}
+.wrap{gap:6px}
+.stbar{gap:6px 10px}
+.cmd{min-height:44px;padding:5px 10px;font-size:13px}
+.rbtn{min-height:42px;min-width:70px;padding:3px 9px}
+.rbtn b{font-size:16px}
+.rbtn small{font-size:10px}
+.tinfo{width:min(300px,calc(100% - 20px));padding:8px 10px}
+.tinfo dl{font-size:12px}
+.al{font-size:12px;padding:6px 9px}
+.stbar .btn{min-height:28px;padding:0 8px;font-size:12px;border-radius:6px}
+.top .btn{min-height:34px}
 .wrap{flex:1;min-height:0;max-width:none;width:100%}
 .stage{position:relative;flex:1;min-height:0}
 .cmd{min-height:60px;padding:8px 14px}
@@ -1215,7 +1237,7 @@ function setZoom(z){
   box.scrollLeft=cx*zoom-box.clientWidth/2;box.scrollTop=cy*zoom-box.clientHeight/2;
 }
 function fitZoom(){var box=$('#planbox');zoom=Math.min(box.clientWidth/VBW,box.clientHeight/VBH);applyZoom();box.scrollLeft=0;box.scrollTop=0}
-function scrollTo(x,y){var box=$('#planbox');if(zoom<.5){zoom=.5;applyZoom()}box.scrollLeft=x*zoom-box.clientWidth/2;box.scrollTop=y*zoom-box.clientHeight/2}
+function scrollTo(x,y){var box=$('#planbox');if(zoom<.34){zoom=.34;applyZoom()}box.scrollLeft=x*zoom-box.clientWidth/2;box.scrollTop=y*zoom-box.clientHeight/2}
 
 function reset(){
   T=0;selTrain=null;trains.forEach(function(t){t.el.remove();t.lamp.remove();t.txt.remove();t.halo.remove();t.hit.remove()});
@@ -1258,7 +1280,7 @@ $('#bPause').addEventListener('click',function(){paused=!paused;this.classList.t
 $('#diff').addEventListener('change',function(){diff=this.value;reset();running=true;paused=false;$('#bPause').classList.remove('on');say('Verkehrsdichte '+this.options[this.selectedIndex].text+': neu gestartet.','')});
 $('#bReset').addEventListener('click',function(){reset();running=true;paused=false;$('#bPause').classList.remove('on')});
 $('#bHelp').addEventListener('click',function(){paused=true;$('#bPause').classList.add('on');$('#intro').hidden=false});
-$('#bGo').addEventListener('click',function(){$('#intro').hidden=true;running=true;paused=false;$('#bPause').classList.remove('on');scrollTo(STBY.H.cx,STBY.H.top)});
+$('#bGo').addEventListener('click',function(){$('#intro').hidden=true;running=true;paused=false;$('#bPause').classList.remove('on')});
 
 /* Wischen und Zoomen mit Fingern oder Maus: Ziehen verschiebt den Plan, zwei Finger zoomen */
 (function(){
