@@ -93,6 +93,7 @@ ul.log li:first-child{border-top:0}
 .ann{font:600 19px var(--f-mono);fill:#8a4a00}
 .stem{fill:none;stroke:#111;stroke-width:2.5}
 .housing{fill:#161616;stroke:#000;stroke-width:1.5}
+.housing.sbk{fill:#1f2b1f;stroke:#3d6b3d}
 .slbl{font:600 15px var(--f-mono);fill:#222;text-anchor:middle}
 .ring{fill:none;stroke:var(--amber);stroke-width:3;opacity:0}
 .ring.attn{opacity:1;animation:pulse 1.2s ease-in-out infinite}
@@ -153,6 +154,7 @@ ul.log li:first-child{border-top:0}
     <span><i style="background:var(--occ)"></i>Gleis besetzt</span>
     <span>Amber blinkend: Zug wartet auf dich</span>
     <span>Weiß gestrichelt: mögliches Zielsignal</span>
+    <span>S1, S2 …: Selbstblock (automatisch)</span>
   </div>
 
   <div class="lower">
@@ -169,7 +171,8 @@ ul.log li:first-child{border-top:0}
       <li><b>Netz:</b> Die Hauptstrecke Eschbach – Linden hat in Hohenau eine Abzweigung nach Bergheim (untere Reihe). Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
       <li><b>Halte:</b> RB halten überall, RE und IC nur in Hohenau, ICE und Güterzüge fahren durch. Alle Züge halten am Ende in Eschbach, Linden oder Bergheim.</li>
       <li><b>Wende:</b> Im Endbahnhof bleibt der Zug stehen, bis die Wendezeit vorbei ist. Danach fährt er zum Abfahrtssignal und kehrt auf die Strecke zurück.</li>
-      <li><b>Betrieb:</b> Alle Bahnhöfe außer Hohenau laufen auf Wunsch automatisch (Taste Auto/Hand). Die Blocksignale auf der Strecke sind immer automatisch. Wertung: Punkte für jede Fahrt, Abzug für Verspätung.</li>
+      <li><b>Selbstblock (Sbk):</b> Auf freier Strecke sichern selbsttätige Blocksignale S1, S2 … die Blockabschnitte. Ein Zug fährt erst in den nächsten Block, wenn dieser frei ist. So können Züge dicht hintereinander fahren.</li>
+      <li><b>Betrieb:</b> Alle Bahnhöfe außer Hohenau laufen auf Wunsch automatisch (Taste Auto/Hand). Wertung: Punkte für jede Fahrt, Abzug für Verspätung.</li>
     </ol>
     <button class="btn go" id="bGo">Dienst antreten</button>
   </div>
@@ -290,26 +293,37 @@ var stB={code:'B',name:'Bergheim',kind:'term',auto:true,trk:terminal('B',4200,YS
 var blk=0;
 function line(id,a,b,allow){addEdge(id,a,b,allow,'Strecke')}
 function pt(id,x,y){addNode(id,x,y)}
-function blockAt(edge,node){blk++;addSig('B'+blk,edge,node,{kind:'block',auto:true,title:'Blocksignal B'+blk})}
+function blockAt(edge,node){blk++;addSig('S'+blk,edge,node,{kind:'block',auto:true,title:'Selbstblock S'+blk})}
 function einf(id,edge,node,st,t){addSig(id,edge,node,{kind:'in',station:st,auto:false,title:'Einfahrt '+STBY[st].name,dir:t})}
+/* Selbstblock (Sbk): Streckenabschnitte werden in Blockabschnitte von höchstens 280 Einheiten geteilt, jeder mit einem selbsttätigen Blocksignal */
+function slink(id,a,b,allow,ein){
+  var A=NODES[a],B=NODES[b],len=Math.abs(B.x-A.x),n=Math.max(1,Math.floor(len/280)),sx=B.x>A.x?1:-1,prev=a;
+  for(var i=1;i<=n+1;i++){
+    var last=i===n+1,nid=last?b:id+'n'+i,eid=id+'e'+i;
+    if(!last)pt(nid,A.x+sx*len*i/(n+1),A.y);
+    line(eid,prev,nid,allow);
+    if(!last)blockAt(eid,nid);else if(ein)einf(ein[0],eid,nid,ein[1],ein[2]);
+    prev=nid;
+  }
+}
 /* Hauptstrecke Süd (nach Osten) */
-pt('b1',850,YLS);line('ls1a','EtD0','b1','E');line('ls1b','b1','MsA0','E');blockAt('ls1a','b1');einf('MA','ls1b','MsA0','M','E');
-pt('b2',1490,YLS);line('ls2a','MsD0','b2','E');line('ls2b','b2','HsA0','E');blockAt('ls2a','b2');einf('HA','ls2b','HsA0','H','E');
-pt('Jd',2850,YLS);pt('b3',2990,YLS);pt('Q1',3300,YS2);
-line('ls3a','HsD0','Jd','E');line('ls3b','Jd','b3','E');line('ls3c','b3','RsA0','E');addEdge('brS1','Jd','Q1','E','Abzweig');
-NODES['Jd'].stem='ls3a';blockAt('ls3b','b3');blockAt('brS1','Q1');einf('RA','ls3c','RsA0','R','E');
-pt('b4',4120,YLS);line('ls4a','RsD0','b4','E');line('ls4b','b4','LtA0','E');blockAt('ls4a','b4');einf('LA','ls4b','LtA0','L','E');
+slink('ls1','EtD0','MsA0','E',['MA','M','E']);
+slink('ls2','MsD0','HsA0','E',['HA','H','E']);
+pt('Jd',2850,YLS);pt('Q1',3300,YS2);
+line('ls3a','HsD0','Jd','E');addEdge('brS1','Jd','Q1','E','Abzweig');NODES['Jd'].stem='ls3a';
+slink('ls3','Jd','RsA0','E',['RA','R','E']);blockAt('brS1','Q1');
+slink('ls4','RsD0','LtA0','E',['LA','L','E']);
 /* Hauptstrecke Nord (nach Westen) */
-pt('b5',4180,YLN);line('ln5a','LtD0','b5','W');line('ln5b','b5','RnA0','W');blockAt('ln5a','b5');einf('RF','ln5b','RnA0','R','W');
-pt('b6',3500,YLN);pt('Jm',2970,YLN);pt('Q2',3420,YN2);
-line('ln4a','RnD0','b6','W');line('ln4b','b6','Jm','W');line('ln3a','Jm','HnA0','W');addEdge('brN4','Q2','Jm','W','Abzweig');
-NODES['Jm'].stem='ln3a';blockAt('ln4a','b6');einf('HF','ln3a','HnA0','H','W');
-pt('b8',1510,YLN);line('ln2a','HnD0','b8','W');line('ln2b','b8','MnA0','W');blockAt('ln2a','b8');einf('MF','ln2b','MnA0','M','W');
-pt('b9',870,YLN);line('ln1a','MnD0','b9','W');line('ln1b','b9','EtA0','W');blockAt('ln1a','b9');einf('EF','ln1b','EtA0','E','W');
+slink('ln5','LtD0','RnA0','W',['RF','R','W']);
+pt('Jm',2970,YLN);pt('Q2',3420,YN2);
+slink('ln4','RnD0','Jm','W',null);
+line('ln3a','Jm','HnA0','W');addEdge('brN4','Q2','Jm','W','Abzweig');NODES['Jm'].stem='ln3a';einf('HF','ln3a','HnA0','H','W');
+slink('ln2','HnD0','MnA0','W',['MF','M','W']);
+slink('ln1','MnD0','EtA0','W',['EF','E','W']);
 /* Zweigstrecke (untere Reihe) */
-line('brS2','Q1','WsA0','E');einf('WA','brS2','WsA0','W','E');
-pt('bw',4040,YS2);line('brS3','WsD0','bw','E');line('brS4','bw','BtA0','E');blockAt('brS3','bw');einf('BA','brS4','BtA0','B','E');
-pt('bw3',4060,YN2);line('brN1','BtD0','bw3','W');line('brN2','bw3','WnA0','W');blockAt('brN1','bw3');einf('WF','brN2','WnA0','W','W');
+slink('brS2','Q1','WsA0','E',['WA','W','E']);
+slink('brS3','WsD0','BtA0','E',['BA','B','E']);
+slink('brN1','BtD0','WnA0','W',['WF','W','W']);
 line('brN3','WnD0','Q2','W');blockAt('brN3','Q2');
 var VBW=5060,VBH=860;
 
@@ -417,7 +431,7 @@ Object.keys(SIGS).forEach(function(id){
   s.hx=N.x+(east?-24:24);s.hy=N.y+(east?26:-26);
   var g=el('g',{},gSig);
   el('path',{d:'M'+N.x+' '+N.y+' L'+N.x+' '+s.hy+' L'+s.hx+' '+s.hy,class:'stem'},g);
-  el('rect',{x:s.hx-21,y:s.hy-10,width:42,height:20,rx:10,class:'housing'},g);
+  el('rect',{x:s.hx-21,y:s.hy-10,width:42,height:20,rx:10,class:'housing'+(s.kind==='block'?' sbk':'')},g);
   s.lr=el('circle',{cx:s.hx-10,cy:s.hy,r:6.5},g);
   s.lg=el('circle',{cx:s.hx+10,cy:s.hy,r:6.5},g);
   var lt=el('text',{x:s.hx,y:east?s.hy+26:s.hy-16,class:'slbl'},g);lt.textContent=id;
@@ -747,7 +761,7 @@ function buildCmd(){
   tg.forEach(function(to){
     var b=document.createElement('button');b.className='rbtn';b.dataset.to=to;
     var S=SIGS[to];
-    b.innerHTML='<b>'+(S.kind==='block'?'Block '+to:S.kind==='tarr'||S.kind==='track'?'Gleis '+S.num:S.title)+'</b><small>'+to+'</small>';
+    b.innerHTML='<b>'+(S.kind==='block'?'Sbk '+to:S.kind==='tarr'||S.kind==='track'?'Gleis '+S.num:S.title)+'</b><small>'+to+'</small>';
     b.addEventListener('click',function(){if(b.disabled)return;if(setRoute(sel,to)){sel=null;buildCmd()}});
     box.appendChild(b);cmdBtns.push(b);
   });
