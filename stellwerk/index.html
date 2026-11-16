@@ -197,7 +197,7 @@ ul.log li:first-child{border-top:0}
     <ol>
       <li><b>Start und Ziel:</b> Jede Fahrstraße hat ein Startsignal und ein Zielsignal. Tippe das Startsignal, dann ein weiß gestricheltes Zielsignal. Das Ziel darf bis zu drei Abschnitte weit weg liegen, alle Signale dazwischen werden mitgestellt.</li>
       <li><b>Netz:</b> Die Hauptstrecke Eschbach – Linden hat in Hohenau eine Abzweigung nach Bergheim (untere Reihe). Das Ziel jedes Zuges steht in der Zugliste. Wähle in Hohenau das passende Zielsignal.</li>
-      <li><b>Halte:</b> RB halten in allen Orten, RE in Hohenau, Rosental und Wiesental, IC nur in Hohenau. ICE und Güterzüge fahren durch. Alle Züge halten am Ende in Eschbach, Linden oder Bergheim.</li>
+      <li><b>Halte:</b> RB und RE halten in allen Orten (Mühlau, Hohenau, Rosental, Wiesental), IC in Hohenau und Rosental. ICE und Güterzüge fahren durch. Ein haltender Zug zeigt im Plan „Halt“ mit der Restzeit. Alle Züge halten am Ende in Eschbach, Linden oder Bergheim.</li>
       <li><b>Wende:</b> Im Endbahnhof bleibt der Zug stehen, bis die Wendezeit vorbei ist. Danach fährt er zum Abfahrtssignal und kehrt auf die Strecke zurück.</li>
       <li><b>Selbstblock (Sbk):</b> Auf freier Strecke sichern Blocksignale (Sbk) die Blockabschnitte. Sie schalten selbsttätig. Mit der Taste Blocksignale: Hand stellst du sie selbst, wie alle anderen Signale.</li>
       <li><b>Betrieb:</b> Alle Bahnhöfe außer Hohenau laufen auf Wunsch automatisch (Taste Auto/Hand). Wertung: Punkte für jede Fahrt, Abzug für Verspätung.</li>
@@ -414,8 +414,8 @@ function distTo(code){
 
 var TYPES={
   RB:{label:'Regionalbahn',pre:'RB',L:120,vmax:90,dwell:9,turn:20,stops:['M','H','R','W'],color:'#4fc3a1',base:80,num:function(){return 7000+rnd(0,999)}},
-  RE:{label:'Regional-Express',pre:'RE',L:150,vmax:115,dwell:8,turn:24,stops:['H','R','W'],color:'#ff9f43',base:100,num:function(){return 4000+rnd(0,999)}},
-  IC:{label:'InterCity',pre:'IC',L:200,vmax:135,dwell:7,turn:28,stops:['H'],color:'#7fb2ff',base:150,num:function(){return 200+rnd(0,99)}},
+  RE:{label:'Regional-Express',pre:'RE',L:150,vmax:115,dwell:8,turn:24,stops:['M','H','R','W'],color:'#ff9f43',base:100,num:function(){return 4000+rnd(0,999)}},
+  IC:{label:'InterCity',pre:'IC',L:200,vmax:135,dwell:7,turn:28,stops:['H','R'],color:'#7fb2ff',base:150,num:function(){return 200+rnd(0,99)}},
   ICE:{label:'ICE (durchfahrend)',pre:'ICE',L:260,vmax:150,dwell:0,turn:30,stops:[],color:'#b79cff',base:200,num:function(){return 500+rnd(0,499)}},
   GZ:{label:'Güterzug',pre:'Gz',L:240,vmax:70,dwell:0,turn:18,stops:[],color:'#a07a52',base:60,num:function(){return 50000+rnd(0,9999)}}
 };
@@ -455,6 +455,7 @@ STAT.forEach(function(s){
   s.cx=(x0+x1)/2;s.top=top;
   el('rect',{x:s.cx-90,y:top-92,width:180,height:34,class:'bld'},gStatic);
   var nm=el('text',{x:s.cx,y:top-68,class:'stname'},gStatic);nm.textContent=s.name;
+  var kd=el('text',{x:s.cx,y:top-42,class:'edge','text-anchor':'middle'},gStatic);kd.textContent=s.kind==='term'?'Endbahnhof':s.kind==='hp'?'Haltepunkt':'Bahnhof';
 });
 var pieceTop={},pieceSt={};
 Object.keys(EDGES).forEach(function(id){
@@ -769,7 +770,9 @@ function render(){
     t.lamp.setAttribute('cx',h[0].toFixed(1));t.lamp.setAttribute('cy',h[1].toFixed(1));
     var m=posAt(t,t.head-t.L/2),dm=Math.floor(t.delay/10);
     t.txt.setAttribute('x',m[0].toFixed(1));t.txt.setAttribute('y',(m[1]-13).toFixed(1));
-    t.txt.textContent=t.name+(dm>=1?'  +'+dm:'');
+    var ps2=t.platStop,hold='';
+    if(ps2&&!ps2.done&&ps2.arrived){var left=Math.max(0,Math.ceil((ps2.turn?t.turnT:t.dwellT)-t.dwellTimer));hold=(ps2.turn?'  Wende ':'  Halt ')+left+' s'}
+    t.txt.textContent=t.name+(dm>=1?'  +'+dm:'')+hold;
     t.txt.setAttribute('class','tl'+(dm>=1?' late':''));
   });
   var tg=sel?targetsOf(sel):[];
