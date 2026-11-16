@@ -1,10 +1,8 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d1115">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Stellwerk">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1115">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -44,7 +42,7 @@ button{font:inherit;color:inherit}
 .btn:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .btn.on{border-color:var(--amber);color:var(--amber)}
 select.btn{padding:0 10px;appearance:auto}
-.plan{border:1px solid var(--line);border-radius:10px;overflow:auto;position:absolute;inset:0}
+.plan{border:1px solid var(--line);border-radius:10px;overflow:auto;position:absolute;inset:0;touch-action:none;-webkit-overflow-scrolling:touch}
 html,body{height:100%}
 body{display:flex;flex-direction:column}
 .wrap{flex:1;min-height:0;max-width:none;width:100%}
@@ -69,7 +67,7 @@ body{display:flex;flex-direction:column}
 .drawer .legend{margin-top:8px;flex-direction:column}
 .thit{fill:none;stroke:transparent;stroke-width:46;stroke-linejoin:round;pointer-events:stroke;cursor:pointer}
 .thalo{fill:none;stroke:#1d6bff;stroke-width:22;stroke-linejoin:round;opacity:.6;pointer-events:none}
-#plan{display:block;max-width:none;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#plan{display:block;max-width:none;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
 .stbar{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px 14px;align-items:center;padding-bottom:4px}
 .stn{display:inline-flex;gap:4px;flex:none}
 .btn.sm{min-height:40px;padding:0 12px;font-size:14px}
@@ -1262,6 +1260,44 @@ $('#bReset').addEventListener('click',function(){reset();running=true;paused=fal
 $('#bHelp').addEventListener('click',function(){paused=true;$('#bPause').classList.add('on');$('#intro').hidden=false});
 $('#bGo').addEventListener('click',function(){$('#intro').hidden=true;running=true;paused=false;$('#bPause').classList.remove('on');scrollTo(STBY.H.cx,STBY.H.top)});
 
+/* Wischen und Zoomen mit Fingern oder Maus: Ziehen verschiebt den Plan, zwei Finger zoomen */
+(function(){
+  var box=$('#planbox'),ptr={},drag=null,pinch=null,moved=false,suppress=false;
+  function dist(){var k=Object.keys(ptr);if(k.length<2)return 0;var a=ptr[k[0]],b=ptr[k[1]];return Math.hypot(a.x-b.x,a.y-b.y)}
+  function mid(){var k=Object.keys(ptr),a=ptr[k[0]],b=ptr[k[1]];return {x:(a.x+b.x)/2,y:(a.y+b.y)/2}}
+  function zoomAt(z,cx,cy){
+    var r=box.getBoundingClientRect(),px=(box.scrollLeft+cx-r.left)/zoom,py=(box.scrollTop+cy-r.top)/zoom;
+    zoom=Math.max(.12,Math.min(1.6,z));applyZoom();
+    box.scrollLeft=px*zoom-(cx-r.left);box.scrollTop=py*zoom-(cy-r.top);
+  }
+  box.addEventListener('pointerdown',function(e){
+    ptr[e.pointerId]={x:e.clientX,y:e.clientY};
+    var n=Object.keys(ptr).length;
+    if(n===1){drag={x:e.clientX,y:e.clientY,sl:box.scrollLeft,st:box.scrollTop};moved=false}
+    else if(n===2){drag=null;var m=mid();pinch={d:dist(),z:zoom};moved=true}
+  });
+  window.addEventListener('pointermove',function(e){
+    if(!ptr[e.pointerId])return;
+    ptr[e.pointerId]={x:e.clientX,y:e.clientY};
+    if(pinch&&Object.keys(ptr).length>=2){var m=mid(),d=dist();if(pinch.d>0)zoomAt(pinch.z*d/pinch.d,m.x,m.y);return}
+    if(drag){
+      var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+      if(!moved&&Math.hypot(dx,dy)>8)moved=true;
+      if(moved){box.scrollLeft=drag.sl-dx;box.scrollTop=drag.st-dy}
+    }
+  });
+  function up(e){
+    if(!ptr[e.pointerId])return;
+    delete ptr[e.pointerId];
+    var n=Object.keys(ptr).length;
+    if(n<2)pinch=null;
+    if(n===0){drag=null;if(moved){suppress=true;setTimeout(function(){suppress=false},120)}}
+    else if(n===1){var k=Object.keys(ptr)[0];drag={x:ptr[k].x,y:ptr[k].y,sl:box.scrollLeft,st:box.scrollTop}}
+  }
+  window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+  box.addEventListener('click',function(e){if(suppress){e.stopPropagation();e.preventDefault()}},true);
+  box.addEventListener('wheel',function(e){if(e.ctrlKey){e.preventDefault();zoomAt(zoom*(e.deltaY<0?1.12:1/1.12),e.clientX,e.clientY)}},{passive:false});
+})();
 buildStBar();
 fitZoom();
 reset();
