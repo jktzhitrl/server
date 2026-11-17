@@ -232,7 +232,7 @@ ul.log li:first-child{border-top:0}
     <h2>Dienst im Stellwerk Hohenau</h2>
     <ol>
       <li><b>Start und Ziel:</b> Jede Fahrstraße hat ein Startsignal und ein Zielsignal. Tippe das Startsignal, danach ein weiß gestricheltes Zielsignal. Das Ziel darf bis zu drei Abschnitte weit weg liegen.</li>
-      <li><b>Einfahrt:</b> Aus drei Linien im Westen (Braunschweig, Halberstadt, Leipzig) und drei im Osten (Berlin, Stendal, Güter-Umgehung) kommen Züge zum Bahnhof. Wähle für jeden Zug ein Bahnsteiggleis (1 bis 6).</li>
+      <li><b>Einfahrt:</b> Aus drei Linien im Westen (Braunschweig, Halberstadt, Leipzig) und drei im Osten (Berlin, Stendal, Güter-Umgehung) kommen Züge zum Bahnhof. Wähle für jeden Zug ein Bahnsteiggleis (1 bis 6). Die Gleisharfen bestehen aus Doppelkreuzungsweichen (DKW). Es gibt meist mehrere Wege zu einem Gleis, gestellt wird der erste freie.</li>
       <li><b>Ausfahrt:</b> Am Gleisende stellst du die Fahrstraße zur Ausfahrlinie. Das Ziel des Zuges steht in der Zugliste.</li>
       <li><b>Halt und Wende:</b> RB, RE und IC halten am Bahnsteig. ICE und Güterzüge fahren durch. Manche Züge enden im Bahnhof, stehen dort die Wendezeit und fahren zurück.</li>
       <li><b>Wertung:</b> Fahrplan mit Sollzeiten, Punkte nach der Verspätung. Dazu kommen Vormerken von Fahrstraßen, Störungen mit Tipps und Selbstblock auf den Linien.</li>
@@ -317,13 +317,18 @@ function terminal(code,xt,yA,yD,bufWest){
   return {A0:P+'A0',D0:P+'D0',tracks:tr,buf:true};
 }
 
-var VBW=3500,VBH=780;
-var NR=12,NL=3,ROWY0=130,RS=48,DX=48,PP=84,XW0=300,XC=1750;
+var VBW=3800,VBH=800;
+var NR=12,RS=48,ROWY0=130,XW0=380,CW=100,NC=9,XC=1900,TWX=1330;
 var GWGROUPS=[],PORTALS=[];
 var blk=0;
 function ry(r){return ROWY0+RS*r}
 function line(id,a,b,allow){addEdge(id,a,b,allow,'Strecke')}
 function pt(id,x,y){addNode(id,x,y)}
+function addEdgeP(id,a,b,mid,allow,label){
+  var A=NODES[a],B=NODES[b];
+  EDGES[id]={id:id,a:a,b:b,pts:[[A.x,A.y]].concat(mid||[],[[B.x,B.y]]),allow:allow||null,label:label||'Weichenbereich'};
+  A.edges.push(id);B.edges.push(id);
+}
 function blockAt(edge,node){blk++;return addSig('S'+blk,edge,node,{kind:'block',auto:true,title:'Selbstblock S'+blk})}
 /* Selbstblock: Blockabschnitte von höchstens 280 Einheiten */
 function slink(id,a,b,allow,isExit){
@@ -338,49 +343,85 @@ function slink(id,a,b,allow,isExit){
   if(isExit&&lastBlk)lastBlk.exit=true;
   return {first:id+'e1',last:id+'e'+(n+1),blk:lastBlk};
 }
-/* Der große Bahnhof: Gleisharfe links und rechts, 6 Fernlinien (je 2 Gleise) und 6 Bahnsteiggleise */
+/* Der große Bahnhof. Zwei Gleisharfen aus Doppelkreuzungsweichen (DKW), 12 Gleisreihen:
+   Reihen 0 bis 3 und 10, 11 sind Linien, Reihen 4 bis 9 sind die Bahnsteiggleise 1 bis 6. */
 var stH={code:'H',name:'Elbstadt Hbf',kind:'hbf',auto:false,tracks:[]};
 STAT.push(stH);STBY.H=stH;
 var WN=['Braunschweig','Halberstadt','Leipzig'],EN=['Berlin','Stendal','Güter-Umgehung'];
-function throat(pre,mirror){
+var LINEPAIRS=[[0,1],[2,3],[10,11]];
+function isLineRow(r){return r<4||r>9}
+var DKWCOUNT=0;
+function lattice(pre,mirror){
   function X(x){return mirror?2*XC-x:x}
-  var g,r;
-  for(g=0;g<NR-1;g++){addNode(pre+'A'+g,X(XW0+PP*g),ry(g));addNode(pre+'M'+g,X(XW0+PP*g+DX),ry(g+1))}
-  for(g=0;g<NR-1;g++)addEdge(pre+'D'+g,pre+'A'+g,pre+'M'+g,null,'Weichenstraße');
-  for(r=1;r<=NR-2;r++)addEdge(pre+'S'+r,pre+'M'+(r-1),pre+'A'+r,null,'Weichenstraße');
-  for(r=1;r<=NL*2-1;r++)NODES[pre+'M'+(r-1)].stem=pre+'S'+r;
-  for(r=NL*2;r<=NR-2;r++)NODES[pre+'A'+r].stem=pre+'S'+r;
+  var cand=[],g,c,r,i;
+  for(g=0;g<NR-1;g++)for(c=0;c<NC;c++)if((g+c)%2===0)cand.push({g:g,c:c,alive:true});
+  function rowEvents(rr){return cand.filter(function(d){return d.alive&&(d.g===rr||d.g===rr-1)}).sort(function(a,b){return a.c-b.c})}
+  var changed=true;
+  while(changed){
+    changed=false;
+    cand.forEach(function(d){
+      if(!d.alive)return;
+      var inA=false,outA=false;
+      [d.g,d.g+1].forEach(function(rr){
+        var ev=rowEvents(rr),idx=ev.indexOf(d);
+        if(idx>0||(idx===0&&isLineRow(rr)))inA=true;
+        if(idx<ev.length-1||!isLineRow(rr))outA=true;
+      });
+      if(!(inA&&outA)){d.alive=false;changed=true}
+    });
+  }
+  var alive=cand.filter(function(d){return d.alive});
+  alive.forEach(function(d){
+    var xc=XW0+CW*d.c,ym=ry(d.g)+RS/2,k=d.g+'_'+d.c;
+    addNode(pre+'i'+k,X(xc-12),ym);addNode(pre+'o'+k,X(xc+12),ym);
+    addEdge(pre+'M'+k,pre+'i'+k,pre+'o'+k,null,'Doppelkreuzungsweiche');
+    NODES[pre+'i'+k].stem=pre+'M'+k;NODES[pre+'o'+k].stem=pre+'M'+k;
+    if(!mirror)DKWCOUNT++;
+  });
+  for(r=0;r<NR;r++){
+    var ev=rowEvents(r);if(!ev.length)continue;
+    var y=ry(r),d0=ev[0],xc0=XW0+CW*d0.c;
+    if(isLineRow(r)){
+      addNode(pre+'J'+r,X(xc0-90),y);
+      addEdgeP(pre+'jr'+r,pre+'J'+r,pre+'i'+d0.g+'_'+d0.c,[[X(xc0-36),y]],null,'Weichenstraße');
+    }
+    for(i=0;i<ev.length-1;i++){
+      var a=ev[i],b=ev[i+1],xa=XW0+CW*a.c,xb=XW0+CW*b.c;
+      addEdgeP(pre+'R'+r+'_'+i,pre+'o'+a.g+'_'+a.c,pre+'i'+b.g+'_'+b.c,[[X(xa+36),y],[X(xb-36),y]],null,'Weichenstraße');
+    }
+    if(!isLineRow(r)){
+      var l=ev[ev.length-1],xl=XW0+CW*l.c;
+      addNode(pre+'P'+r,X(TWX),y);
+      addEdgeP(pre+'Z'+r,pre+'o'+l.g+'_'+l.c,pre+'P'+r,[[X(xl+36),y]],null,'Weichenstraße');
+    }
+  }
 }
-throat('W',false);throat('E',true);
+lattice('W',false);lattice('E',true);
 (function(){
   var tr=[];
-  for(var r=NL*2;r<=NR-1;r++){
-    var num=r-NL*2+1,wn=r<=NR-2?'WA'+r:'WM'+(NR-2),en=r<=NR-2?'EA'+r:'EM'+(NR-2);
-    var wxx=NODES[wn].x,exx=NODES[en].x;
-    addNode('tw'+r,wxx+70,ry(r));addNode('te'+r,exx-70,ry(r));
-    addEdge('Q'+r,wn,'tw'+r,null,'Gleis '+num+' (Zufahrt West)');
-    addEdge('T'+r,'tw'+r,'te'+r,null,'Gleis '+num+' (Elbstadt Hbf)');
-    addEdge('R'+r,'te'+r,en,null,'Gleis '+num+' (Zufahrt Ost)');
-    var w=addSig('Hw'+num,'T'+r,'tw'+r,{kind:'track',station:'H',plat:'H',num:num,auto:false,title:'Gleis '+num+' West'});
-    var e=addSig('He'+num,'T'+r,'te'+r,{kind:'track',station:'H',plat:'H',num:num,auto:false,title:'Gleis '+num+' Ost'});
+  for(var r=4;r<=9;r++){
+    var num=r-3;
+    addEdge('T'+r,'WP'+r,'EP'+r,null,'Gleis '+num+' (Elbstadt Hbf)');
+    var w=addSig('Hw'+num,'T'+r,'WP'+r,{kind:'track',station:'H',plat:'H',num:num,auto:false,title:'Gleis '+num+' West'});
+    var e=addSig('He'+num,'T'+r,'EP'+r,{kind:'track',station:'H',plat:'H',num:num,auto:false,title:'Gleis '+num+' Ost'});
     DEP_OF[w.id]=e.id;DEP_OF[e.id]=w.id;
-    tr.push({e:'T'+r,y:ry(r),x0:NODES['tw'+r].x,x1:NODES['te'+r].x,from:'tw'+r,to:'te'+r,num:num,sig:e.id});
+    tr.push({e:'T'+r,y:ry(r),x0:NODES['WP'+r].x,x1:NODES['EP'+r].x,from:'WP'+r,to:'EP'+r,num:num,sig:e.id});
   }
   stH.tracks=tr;
 })();
 var ENTRIES=[],EXITS={W:[],E:[]};
 function lineRows(pre,mirror,names,key){
-  for(var k=0;k<NL;k++){
-    var ra=mirror?2*k:2*k+1,rd=mirror?2*k+1:2*k;
+  for(var k=0;k<3;k++){
+    var rows=LINEPAIRS[k],ra=mirror?rows[0]:rows[1],rd=mirror?rows[1]:rows[0];
     var farX=mirror?VBW+260:-260,dirIn=mirror?'W':'E',dirOut=mirror?'E':'W';
-    var firstA=pre+(ra===0?'A0':'M'+(ra-1)),firstD=pre+(rd===0?'A0':'M'+(rd-1));
+    var Ja=pre+'J'+ra,Jd=pre+'J'+rd;
     pt(pre+'src'+k,farX,ry(ra));
-    pt(pre+'pre'+k,NODES[firstA].x+(mirror?70:-70),ry(ra));
+    pt(pre+'pre'+k,NODES[Ja].x+(mirror?70:-70),ry(ra));
     var a=slink(pre+'in'+k,pre+'src'+k,pre+'pre'+k,dirIn,false);
-    line(pre+'jn'+k,pre+'pre'+k,firstA,dirIn);
+    line(pre+'jn'+k,pre+'pre'+k,Ja,dirIn);
     addSig('A'+pre+k,a.last,pre+'pre'+k,{kind:'in',station:'H',auto:false,title:'Einfahrt '+names[k],dir:dirIn});
     pt(pre+'trm'+k,farX,ry(rd));
-    var d=slink(pre+'out'+k,firstD,pre+'trm'+k,dirOut,true);
+    var d=slink(pre+'out'+k,Jd,pre+'trm'+k,dirOut,true);
     EXITS[key].push({id:d.blk.id,name:names[k]});
     ENTRIES.push({side:key,k:k,name:names[k],edge:a.first,arrSig:'A'+pre+k,retExit:d.blk.id});
   }
@@ -413,11 +454,15 @@ function enumRoutes(){
         var sg=SIGAT[eid+'@'+m];
         if(sg){addRoute(sid,sg,np);return}
         if(NODES[m].edges.length===1){addRoute(sid,null,np);return}
-        var v2=cp(vis);v2[m]=1;dfs(m,eid,np,v2,cd||dc);
+        vis[m]=1;dfs(m,eid,np,vis,cd||dc);delete vis[m];
       });
     }
   });
-  Object.keys(ROUTES_FROM).forEach(function(k){ROUTES_FROM[k].sort(function(a,b){return a.parts.length-b.parts.length})});
+  Object.keys(ROUTES_FROM).forEach(function(k){
+    ROUTES_FROM[k].sort(function(a,b){return a.parts.length-b.parts.length});
+    var cnt={};ROUTES_FROM[k]=ROUTES_FROM[k].filter(function(r){var key=r.to||'null';cnt[key]=(cnt[key]||0)+1;return cnt[key]<=6});
+  });
+  ALLROUTES.length=0;Object.keys(ROUTES_FROM).forEach(function(k){ROUTES_FROM[k].forEach(function(r){ALLROUTES.push(r)})});
 }
 enumRoutes();
 /* Fahrstraßenketten: vom Startsignal bis zu einem Zielsignal bis zu 3 Abschnitte weiter, alle Zwischensignale werden mitgestellt */
@@ -436,7 +481,7 @@ Object.keys(SIGS).forEach(function(sid){
   CHAINS[sid]=out;
 });
 /* Fahrplan: kürzester Weg im Signalgraph, Sollzeiten aus Weglänge und Haltezeiten */
-function edgeLen(eid){var q=EDGES[eid].pts;return Math.hypot(q[1][0]-q[0][0],q[1][1]-q[0][1])}
+function edgeLen(eid){var q=EDGES[eid].pts,s=0;for(var i=1;i<q.length;i++)s+=Math.hypot(q[i][0]-q[i-1][0],q[i][1]-q[i-1][1]);return s}
 var SGRAPH={};
 ALLROUTES.forEach(function(r){
   var c=0;r.parts.forEach(function(q){c+=edgeLen(q.e)});
