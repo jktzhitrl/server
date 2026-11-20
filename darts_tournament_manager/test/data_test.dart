@@ -17,7 +17,6 @@ void main() {
   late LocalRepository repo;
   late TournamentService svc;
   final admin = user('admin', Role.admin);
-  final director = user('dir', Role.player); // wird per Turnier-Mitgliedschaft Leiter
   final scorer = user('sc', Role.scorer);
   final player = user('pl', Role.player);
 
@@ -63,7 +62,7 @@ void main() {
 
   test('Rollen: Auslosung nur durch Leitung/Admin; Veröffentlichung nötig zum Start', () async {
     var t = await tournament();
-    await repo.setMember(t.id, TournamentMember('sc', 'sc', Role.scorer));
+    await repo.setMember(t.id, const TournamentMember('sc', 'sc', Role.scorer));
     expect(() => svc.draw(player, t), throwsA(isA<PermissionDenied>()));
     expect(() => svc.draw(scorer, t), throwsA(isA<PermissionDenied>()));
     t = await svc.draw(admin, t, rng: Random(1));
@@ -78,7 +77,7 @@ void main() {
 
   test('voller Ablauf: starten, Schreiber, Bestätigung, automatische nächste Runde', () async {
     var t = await tournament();
-    await repo.setMember(t.id, TournamentMember('sc', 'sc', Role.scorer));
+    await repo.setMember(t.id, const TournamentMember('sc', 'sc', Role.scorer));
     t = await svc.draw(admin, t, rng: Random(2));
     t = await svc.publish(admin, t);
 

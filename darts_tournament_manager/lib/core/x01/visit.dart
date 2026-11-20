@@ -54,6 +54,7 @@ VisitEvaluation evaluateDarts({
   required bool opened,
   required List<DartThrow> darts,
   required X01Rules rules,
+  bool allowIncomplete = false,
 }) {
   if (darts.isEmpty) throw ArgumentError('Keine Darts übergeben');
   if (darts.length > 3) throw ArgumentError('Maximal 3 Darts pro Aufnahme');
@@ -106,7 +107,7 @@ VisitEvaluation evaluateDarts({
     }
     cur = next;
   }
-  if (darts.length != 3) {
+  if (darts.length != 3 && !allowIncomplete) {
     throw ArgumentError('Aufnahme unvollständig: ${darts.length} von 3 Darts');
   }
   return VisitEvaluation(
@@ -115,7 +116,7 @@ VisitEvaluation evaluateDarts({
     scoreAfter: cur,
     points: remaining - cur,
     enteredTotal: sum,
-    dartsCounted: 3,
+    dartsCounted: darts.length,
     openedAfter: open,
   );
 }

@@ -20,6 +20,7 @@ X01Match newMatch({
     );
 
 void main() {
+  draftTests();
   test('Spielerwechsel, Restscore und Aufnahmen', () {
     var m = newMatch();
     expect(m.state.currentPlayer, 0);
@@ -177,5 +178,25 @@ void main() {
     var m = newMatch().submitTotal(60).submitTotal(0).submitTotal(60);
     expect(m.legAverage(0), 60.0);
     expect(m.legAverage(1), 0.0);
+  });
+}
+
+void draftTests() {
+  test('Vorschau einer laufenden Aufnahme', () {
+    final m = newMatch(start: 100);
+    var pv = m.previewDraft([d('T20')]);
+    expect(pv.remaining, 40);
+    expect(pv.complete, isFalse);
+    expect(pv.dartsLeft, 2);
+    pv = m.previewDraft([d('T20'), d('D20')]);
+    expect(pv.complete, isTrue);
+    expect(pv.evaluation!.isCheckout, isTrue);
+    pv = m.previewDraft([d('T20'), d('T20')]);
+    expect(pv.evaluation!.isBust, isTrue);
+    expect(pv.complete, isTrue);
+    pv = m.previewDraft([d('S1'), d('S1'), d('S1')]);
+    expect(pv.complete, isTrue);
+    expect(pv.remaining, 97);
+    expect(m.previewDraft([]).dartsLeft, 3);
   });
 }

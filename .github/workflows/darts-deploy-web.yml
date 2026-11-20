@@ -1,0 +1,97 @@
+name: Darts Manager – Deploy (Firebase Hosting)
+
+# Baut die Flutter-Webanwendung und veröffentlicht sie auf Firebase Hosting.
+#  * Push auf main      -> Live-Kanal
+#  * Pull Request       -> Vorschau-Kanal (7 Tage)
+#  * workflow_dispatch  -> optional zusätzlich Rules/Indizes/Functions deployen
+#
+# Benötigte Repository-Secrets (Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT   JSON-Schlüssel eines Dienstkontos (Hosting-/Firestore-Rechte)
+#   FIREBASE_PROJECT_ID, FIREBASE_API_KEY, FIREBASE_APP_ID,
+#   FIREBASE_MESSAGING_SENDER_ID, FIREBASE_AUTH_DOMAIN, FIREBASE_STORAGE_BUCKET
+# Optional (Repository-Variable): APP_BASE_URL  (z. B. https://dein-projekt.web.app/)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'darts_tournament_manager/**'
+      - '.github/workflows/darts-deploy-web.yml'
+  pull_request:
+    paths:
+      - 'darts_tournament_manager/**'
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Firestore-Rules, Indizes und Functions mit deployen'
+        type: boolean
+        default: false
+
+concurrency:
+  group: darts-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: darts_tournament_manager
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    # Fork-PRs haben keinen Zugriff auf Secrets
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - name: Tests
+        run: flutter test
+      - name: Web-Build mit Firebase-Konfiguration
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          flutter build web --release \
+            --dart-define=FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }} \
+            --dart-define=FIREBASE_APP_ID=${{ secrets.FIREBASE_APP_ID }} \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }} \
+            --dart-define=FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }} \
+            --dart-define=FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }} \
+            --dart-define=FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }} \
+            --dart-define=APP_BASE_URL=${{ vars.APP_BASE_URL }}
+
+      - name: Deploy (Live-Kanal)
+        if: github.event_name != 'pull_request'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          channelId: live
+          entryPoint: darts_tournament_manager
+
+      - name: Deploy (Vorschau-Kanal)
+        if: github.event_name == 'pull_request'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          expires: 7d
+          entryPoint: darts_tournament_manager
+
+      - name: Rules, Indizes und Functions deployen
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy_backend
+        env:
+          GCP_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$GCP_SA" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npm --prefix functions ci
+          npx --yes firebase-tools@13 deploy --only firestore,functions --project "${{ secrets.FIREBASE_PROJECT_ID }}" --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"

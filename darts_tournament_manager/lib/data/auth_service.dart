@@ -18,6 +18,10 @@ abstract class AuthService {
 
   /// Nur Demo-Modus: sofort mit Name und Rolle starten.
   Future<AppUser> signInDemo(String name, Role role);
+
+  /// Zuschauer ohne Konto (Firebase: anonyme Anmeldung, Rolle `spectator`,
+  /// es wird kein Benutzerdokument angelegt).
+  Future<AppUser> signInAsSpectator();
   Future<void> signOut();
 }
 
@@ -58,6 +62,9 @@ class LocalAuthService implements AuthService {
   }
 
   @override
+  Future<AppUser> signInAsSpectator() => signInDemo('Zuschauer', Role.spectator);
+
+  @override
   Future<AppUser> signIn(String email, String password) =>
       throw UnsupportedError('Im Demo-Modus gibt es keine Passwort-Anmeldung');
   @override
@@ -78,6 +85,8 @@ class FirebaseAuthService implements AuthService {
     _sub = _auth.authStateChanges().listen((u) async {
       if (u == null) {
         _user = null;
+      } else if (u.isAnonymous) {
+        _user = AppUser(uid: u.uid, displayName: 'Zuschauer', role: Role.spectator);
       } else {
         _user = await _load(u);
       }
@@ -124,6 +133,14 @@ class FirebaseAuthService implements AuthService {
     final c = await _auth.createUserWithEmailAndPassword(email: email.trim(), password: password);
     await c.user!.updateDisplayName(name.trim());
     _user = await _load(c.user!, name: name.trim());
+    _c.add(_user);
+    return _user!;
+  }
+
+  @override
+  Future<AppUser> signInAsSpectator() async {
+    final c = await _auth.signInAnonymously();
+    _user = AppUser(uid: c.user!.uid, displayName: 'Zuschauer', role: Role.spectator);
     _c.add(_user);
     return _user!;
   }

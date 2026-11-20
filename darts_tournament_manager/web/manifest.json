@@ -1,12 +1,12 @@
 {
-    "name": "darts_tournament_manager",
-    "short_name": "darts_tournament_manager",
+    "name": "Darts Tournament Manager Pro",
+    "short_name": "Darts Manager",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
+    "background_color": "#0A0E0B",
+    "theme_color": "#2ECC71",
     "description": "Darts Tournament Manager Pro",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

@@ -1,0 +1,175 @@
+rules_version = '2';
+
+// Darts Tournament Manager Pro - Cloud Firestore Security Rules
+//
+// Rollen:  spectator < player < scorer < director < admin
+//  * Globale Rolle:  users/{uid}.role  (nur Admins dürfen sie ändern)
+//  * Turnierrolle:   tournaments/{tid}/members/{uid}.role
+// Effektiv gilt die jeweils höhere Rolle.
+//
+// Alle Schreibzugriffe auf Turniere und Begegnungen sind versioniert
+// (optimistische Sperre): version muss exakt um 1 steigen. Dadurch kann ein
+// Schreiber mit veraltetem Stand (Verbindungsabbruch, zweites Gerät) nichts
+// überschreiben.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------ Hilfsfunktionen
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+
+    function userDoc() { return get(/databases/$(database)/documents/users/$(uid())).data; }
+    function globalRole() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(uid()))
+        ? userDoc().role : 'spectator';
+    }
+    function isAdmin() { return globalRole() == 'admin'; }
+
+    function memberPath(tid) {
+      return /databases/$(database)/documents/tournaments/$(tid)/members/$(uid());
+    }
+    function isMember(tid) { return signedIn() && exists(memberPath(tid)); }
+    function memberRole(tid) { return get(memberPath(tid)).data.role; }
+
+    function isDirector(tid) {
+      return isAdmin() || (isMember(tid) && memberRole(tid) == 'director');
+    }
+    function isStaff(tid) {
+      // darf Ergebnisse eingeben: Schreiber, Leitung, Admin (global oder im Turnier)
+      return isDirector(tid)
+        || globalRole() in ['scorer', 'director']
+        || (isMember(tid) && memberRole(tid) == 'scorer');
+    }
+
+    function visitsOf(data) { return data.x01.visits; }
+    function lastVisit(data) { return data.x01.visits[data.x01.visits.size() - 1]; }
+    function x01Plausible() {
+      return request.resource.data.get('x01', null) == null
+        || resource.data.get('x01', null) == null
+        || (visitsOf(request.resource.data).size() <= visitsOf(resource.data).size() + 1
+            && (visitsOf(request.resource.data).size() == 0
+                || (lastVisit(request.resource.data).points >= 0
+                    && lastVisit(request.resource.data).points <= 180
+                    && lastVisit(request.resource.data).dartsThrown >= 1
+                    && lastVisit(request.resource.data).dartsThrown <= 3)));
+    }
+
+    function versionBumped() {
+      return request.resource.data.version == resource.data.version + 1;
+    }
+    function unchanged(fields) {
+      return request.resource.data.diff(resource.data).unchangedKeys().hasAll(fields);
+    }
+    function onlyChanges(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // -------------------------------------------------------------------- users
+    match /users/{userId} {
+      allow read: if signedIn() && (userId == uid() || isAdmin());
+      // Neue Konten starten IMMER als 'player' - keine Selbstvergabe von Rechten.
+      allow create: if signedIn() && userId == uid()
+        && request.resource.data.uid == uid()
+        && request.resource.data.role == 'player';
+      allow update: if signedIn() && (
+        isAdmin()
+        || (userId == uid() && request.resource.data.role == resource.data.role
+            && request.resource.data.uid == resource.data.uid));
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------ players
+    match /players/{playerId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.id == playerId
+        && (request.resource.data.uid == null || request.resource.data.uid == uid());
+      allow update: if signedIn() && request.resource.data.id == playerId && (
+        resource.data.uid == uid()
+        || isAdmin()
+        || (resource.data.uid == null && globalRole() in ['scorer', 'director']))
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------- tournaments
+    match /tournaments/{tid} {
+      // Datenschutzgrenze ist das Benutzerkonto: Angemeldete sehen alle Turniere
+      // (nötig für Einladungscode-Suche und Listen); nicht angemeldete Zuschauer
+      // nur Turniere mit isPublic == true (Abfrage mit where isPublic == true).
+      allow read: if resource.data.isPublic == true || signedIn();
+
+      // Nur Admins legen Turniere an; Start immer mit version 1.
+      allow create: if isAdmin()
+        && request.resource.data.createdBy == uid()
+        && request.resource.data.version == 1;
+
+      allow update: if signedIn() && versionBumped()
+        && unchanged(['createdBy', 'inviteCode', 'format', 'gameType', 'createdAt', 'id'])
+        && (
+          // Turnierleitung: alles
+          isDirector(tid)
+          // Selbstanmeldung: genau ein Teilnehmer hinzufügen, nur in der Anmeldephase
+          || (onlyChanges(['registrations', 'version'])
+              && resource.data.status == 'registration'
+              && request.resource.data.registrations.size() == resource.data.registrations.size() + 1
+              && request.resource.data.registrations[request.resource.data.registrations.size() - 1].id
+                  == userDoc().playerId)
+          // Schreiber: nur Boardbelegung
+          || (onlyChanges(['boards', 'version']) && isStaff(tid))
+        );
+      allow delete: if isAdmin();
+
+      match /members/{memberId} {
+        allow read: if signedIn() && (isAdmin() || isMember(tid) || memberId == uid());
+        // Leitung vergibt Schreiber/Spieler; nur Admin vergibt Leitung. Selbst: nur 'player'.
+        allow create, update: if signedIn() && request.resource.data.uid == memberId && (
+          isAdmin()
+          || (isDirector(tid) && request.resource.data.role in ['player', 'scorer'])
+          || (memberId == uid() && request.resource.data.role == 'player'
+              && !exists(memberPath(tid))));
+        allow delete: if isDirector(tid);
+      }
+    }
+
+    // ------------------------------------------------------------------ matches
+    match /matches/{mid} {
+      allow read: if resource.data.isPublic == true || signedIn();
+
+      // Turnier-Begegnung: Schreiber/Leitung. Freundschaftsspiel: jeder Angemeldete.
+      allow create: if signedIn() && request.resource.data.version == 0 && (
+        request.resource.data.tournamentId == null
+          ? request.resource.data.scorerUid == uid()
+          : isStaff(request.resource.data.tournamentId));
+
+      allow update: if signedIn() && versionBumped()
+        && unchanged(['id', 'tournamentId', 'planMatchId', 'gameType', 'players', 'createdAt'])
+        && (
+          resource.data.tournamentId == null
+            ? (resource.data.scorerUid == uid() || isAdmin())
+            : isStaff(resource.data.tournamentId))
+        // Bestätigen darf nur die Turnierleitung.
+        && (request.resource.data.status != 'confirmed'
+            || resource.data.status == 'confirmed'
+            || resource.data.tournamentId == null
+            || isDirector(resource.data.tournamentId))
+        // Eingabe-Plausibilität (nur X01): höchstens eine neue Aufnahme pro Schreibvorgang,
+        // Punkte 0..180, Darts 1..3.
+        && x01Plausible();
+
+      allow delete: if isAdmin();
+    }
+
+    // --------------------------------------------------------------- audit_logs
+    match /audit_logs/{aid} {
+      allow create: if signedIn() && request.resource.data.uid == uid();
+      allow read: if signedIn() && (isAdmin() || globalRole() == 'director'
+        || (resource.data.tournamentId != null && isMember(resource.data.tournamentId)
+            && memberRole(resource.data.tournamentId) == 'director'));
+      allow update, delete: if false; // append-only
+    }
+
+    // Alles andere ist gesperrt.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

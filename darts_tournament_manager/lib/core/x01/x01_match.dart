@@ -282,6 +282,32 @@ class X01Match {
     );
   }
 
+  /// Vorschau einer noch laufenden Aufnahme (Modus A, Dart für Dart):
+  /// verbleibender Rest, ob die Aufnahme damit abgeschlossen ist (3 Darts,
+  /// Bust oder Checkout) und das Ergebnis.
+  DraftPreview previewDraft(List<DartThrow> draft) {
+    final s = state;
+    final p = s.currentPlayer;
+    if (draft.isEmpty) {
+      return DraftPreview(
+          remaining: s.remaining[p], complete: false, dartsLeft: 3, evaluation: null);
+    }
+    final ev = evaluateDarts(
+      remaining: s.remaining[p],
+      opened: s.opened[p],
+      darts: draft,
+      rules: rules,
+      allowIncomplete: true,
+    );
+    final complete = ev.outcome != VisitOutcome.normal || draft.length == 3;
+    return DraftPreview(
+      remaining: ev.scoreAfter,
+      complete: complete,
+      dartsLeft: complete ? 0 : 3 - draft.length,
+      evaluation: ev,
+    );
+  }
+
   /// Rückgängig: entfernt die letzte Aufnahme.
   X01Match undo() {
     if (visits.isEmpty) throw MatchStateError('Nichts rückgängig zu machen');
@@ -335,4 +361,19 @@ class X01Match {
   /// Der Dart, der zum Beenden nötig wäre (für Anzeige), falls ein Ein-Dart-Finish möglich.
   DartThrow? get currentFinishTarget =>
       finishTargetFor(state.remaining[state.currentPlayer], rules.outMode);
+}
+
+
+/// Zwischenstand einer laufenden Aufnahme.
+class DraftPreview {
+  final int remaining;
+  final bool complete;
+  final int dartsLeft;
+  final VisitEvaluation? evaluation;
+  const DraftPreview({
+    required this.remaining,
+    required this.complete,
+    required this.dartsLeft,
+    required this.evaluation,
+  });
 }

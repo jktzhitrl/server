@@ -241,6 +241,10 @@ class MatchRecord {
   final CricketMatch? cricket;
   final AroundTheClockMatch? clock;
 
+  /// Laufende, noch nicht abgeschlossene Aufnahme (Modus A) - wird mit
+  /// synchronisiert, damit alle Geräte die aktuelle Aufnahme sehen.
+  final List<DartThrow> draft;
+
   const MatchRecord({
     required this.id,
     required this.gameType,
@@ -257,6 +261,7 @@ class MatchRecord {
     this.x01,
     this.cricket,
     this.clock,
+    this.draft = const [],
   });
 
   /// Index des Siegers, falls entschieden.
@@ -272,6 +277,7 @@ class MatchRecord {
     X01Match? x01,
     CricketMatch? cricket,
     AroundTheClockMatch? clock,
+    List<DartThrow>? draft,
     int? version,
     DateTime? updatedAt,
   }) =>
@@ -291,6 +297,7 @@ class MatchRecord {
         x01: x01 ?? this.x01,
         cricket: cricket ?? this.cricket,
         clock: clock ?? this.clock,
+        draft: draft ?? this.draft,
       );
 
   Map<String, dynamic> toJson() => {
@@ -309,6 +316,7 @@ class MatchRecord {
         'isPublic': isPublic,
         'winnerId': winnerId,
         'x01': x01?.toJson(),
+        'draft': draft.map((d) => d.toJson()).toList(),
         'cricket': cricket == null
             ? null
             : {
@@ -343,6 +351,7 @@ class MatchRecord {
       createdAt: DateTime.parse(j['createdAt'] as String),
       updatedAt: DateTime.parse(j['updatedAt'] as String),
       isPublic: j['isPublic'] as bool? ?? true,
+      draft: [for (final d in (j['draft'] as List? ?? [])) DartThrow.fromJson(d)],
       x01: j['x01'] == null ? null : X01Match.fromJson(Map<String, dynamic>.from(j['x01'] as Map)),
       cricket: c == null
           ? null

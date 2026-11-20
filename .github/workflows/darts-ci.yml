@@ -1,0 +1,98 @@
+name: Darts Manager – CI
+
+on:
+  push:
+    paths:
+      - 'darts_tournament_manager/**'
+      - '.github/workflows/darts-ci.yml'
+  pull_request:
+    paths:
+      - 'darts_tournament_manager/**'
+      - '.github/workflows/darts-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: darts-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: darts_tournament_manager
+
+jobs:
+  flutter:
+    name: Flutter – Analyse, Tests, Web-Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Statische Analyse
+        run: flutter analyze --no-fatal-infos
+      - name: Tests (Kern, Daten, UI)
+        run: flutter test --coverage --reporter expanded
+      - name: Web-Build (Release, Demo-Modus ohne Firebase-Zugangsdaten)
+        run: flutter build web --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: darts_tournament_manager/build/web
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: darts_tournament_manager/coverage/lcov.info
+          retention-days: 7
+
+  parity:
+    name: Dart ⇔ TypeScript – Testvektoren aktuell?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: flutter pub get
+      - name: Vektoren neu erzeugen und mit dem Repository vergleichen
+        run: |
+          dart run tool/gen_vectors.dart > /tmp/vectors.json
+          diff -q /tmp/vectors.json functions/test/vectors.json \
+            || (echo "functions/test/vectors.json ist veraltet: dart run tool/gen_vectors.dart > functions/test/vectors.json" && exit 1)
+
+  functions:
+    name: Cloud Functions – Build und Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: darts_tournament_manager/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: darts_tournament_manager/functions/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  rules:
+    name: Firestore Security Rules – Emulator-Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: darts_tournament_manager/rules-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: darts_tournament_manager/rules-tests/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
